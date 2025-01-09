@@ -1,27 +1,41 @@
 {
   "expo": {
-    "name": "MyOxyrice",
-    "slug": "MyOxyrice",
-    "version": "1.0.0",
+    "name": "Oxyrice_Partner",
+    "slug": "Oxyrice_Partner",
+    "version": "1.0.9",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/iconA.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/iconA.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.oxyrice.pantner"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/iconA.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.oxyrice.pantner",
+      "versionCode": "11"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/iconA.png"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a13cebf5-bce9-4377-9db0-7ffbfb25e275"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9001fed8-f738-46b5-8cba-ff1c48b37db7"
+      }
     }
   }
 }
