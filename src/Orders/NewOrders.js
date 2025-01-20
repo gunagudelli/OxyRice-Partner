@@ -8,6 +8,7 @@ import { useFocusEffect } from "@react-navigation/native"
 const { height, width } = Dimensions.get('window')
 import { useSelector } from "react-redux";
 import ModalDropdown from 'react-native-modal-dropdown';
+// import { useFocusEffect } from "@react-navigation/native";
 
 
 const NewOrders = ({ navigation,route }) => {
@@ -39,9 +40,24 @@ const NewOrders = ({ navigation,route }) => {
     //     }, [])
     // );
 
-    useEffect(() => {
-        fetchData();
-    }, []); // Ensure this is correct and no unnecessary dependencies are added.
+    useFocusEffect(
+        useCallback(() => {
+            // Functions to run when the screen is focused
+            const getdata = async () => {
+                await fetchData();
+            };
+
+            getdata();
+
+            // Cleanup function (if needed) to run when the screen is unfocused
+            return () => {
+                console.log('Screen is unfocused');
+            };
+        }, [])
+    );
+    // useEffect(() => {
+    //     fetchData();
+    // }, []); // Ensure this is correct and no unnecessary dependencies are added.
     
     // const fetchData = async () => {
     //     try {

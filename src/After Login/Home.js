@@ -39,9 +39,9 @@ useFocusEffect(
 
   return (
     <View style={styles.container}>
-      <Text style={styles.welcomeText}>Welcome</Text>
-      <Text style={styles.partnerText}>AskOxy.Ai Partner</Text>
-      <Text style={styles.partnerName}>Radha</Text>
+      <Text style={styles.welcomeText}>Welcome !</Text>
+      <Text style={styles.partnerName}>AskOxy.AI Partner</Text>
+      {/* <Text style={styles.partnerName}>Radha</Text> */}
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.box} onPress={() => navigation.navigate('Orders',{isTestOrder : false})}>

@@ -10,9 +10,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ImageBackground,
-  TextInput
+  // TextInput
 } from "react-native";
-// import { TextInput } from "react-native-paper";
+import { TextInput } from "react-native-paper";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -117,27 +117,38 @@ const LoginPage = () => {
 
           <TextInput
             style={[styles.input, errors.email && styles.inputError]}
-            placeholder="Enter Email"
+            label="Enter Email"
+            placeholderTextColor={"#c0c0c0"}
             keyboardType="email-address"
-            value={email}
             dense={true}
+            value={email}
+            mode="outlined"
+            activeOutlineColor="orange"
             onChangeText={(text)=>{setEmail(text),setErrors({ ...errors, email: false })}}
           />
           {errors.email && (
             <Text style={styles.errorText}>{errors.email}</Text>
           )}
 
-          <View style={[styles.passwordContainer,styles.input]}>
+          <View style={[styles.passwordContainer]}>
             <TextInput
-              style={[errors.password && styles.inputError, { flex: 1 }]}
-              placeholder="Enter Password"
+              style={[errors.password && styles.inputError,styles.input, { flex: 1 }]}
+              label="Enter Password"
               secureTextEntry={!showPassword}
               value={password}
-              // dense={true}
+              dense={true}
+              mode="outlined"
+              activeOutlineColor="orange"
               // onChangeText={setPassword}
               onChangeText={(text)=>{setPassword(text),setErrors({ ...errors, password: false })}}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? "eye-off" : "eye"}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
             />
-            <TouchableOpacity
+            {/* <TouchableOpacity
               // style={styles.eyeIcon}
               onPress={() => setShowPassword(!showPassword)}
             >
@@ -147,7 +158,7 @@ const LoginPage = () => {
                 color="#666"
                 style={{ marginRight: 10 }}
               />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           {errors.password && (
             <Text style={styles.errorText}>{errors.password}</Text>
@@ -210,8 +221,8 @@ const styles = StyleSheet.create({
   input: {
     width: "100%",
     height: 50,
-    borderWidth: 1,
-    borderColor: "#CCC",
+    // borderWidth: 1,
+    // borderColor: "#CCC",
     borderRadius: 8,
     paddingHorizontal: 15,
     backgroundColor: "#FFF",

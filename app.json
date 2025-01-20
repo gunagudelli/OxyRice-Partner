@@ -2,12 +2,12 @@
   "expo": {
     "name": "Oxyrice_Partner",
     "slug": "Oxyrice_Partner",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "orientation": "portrait",
     "icon": "./assets/iconA.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/iconA.png",
+      "image": "./assets/askoxy-splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,11 +17,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/iconA.png",
+        "foregroundImage": "./assets/askoxy-splash.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.oxyrice.pantner",
-      "versionCode": "11"
+      "versionCode": "12"
     },
     "web": {
       "favicon": "./assets/iconA.png"

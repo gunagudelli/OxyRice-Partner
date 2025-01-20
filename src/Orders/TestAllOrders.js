@@ -77,7 +77,7 @@ const TestAllOrders = () => {
     value: key,
   }));
 
-  const handleChange = (item) => {
+  const   handleChange = (item) => {
     setDropLoading(true); 
     setSelectedValue(item.value);
     {setTimeout(() => {
@@ -203,17 +203,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginBottom: height * 0.02,
     alignSelf: 'flex-end',
+    marginRight:20
 },
-  dropdown: {
-    width: width * 0.5, 
-    height: height * 0.07, 
-    borderColor: 'gray',
-    borderWidth: 0.5,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    marginBottom: height * 0.02,
-    alignSelf: 'flex-end',
-  },
+  // dropdown: {
+  //   width: width * 0.5, 
+  //   height: height * 0.07, 
+  //   borderColor: 'gray',
+  //   borderWidth: 0.5,
+  //   borderRadius: 8,
+  //   paddingHorizontal: 8,
+  //   marginBottom: height * 0.02,
+  //   alignSelf: 'flex-end',
+  // },
   loader: {
     marginTop: 10,
   },

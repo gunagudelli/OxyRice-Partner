@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Alert, FlatList,TouchableOpacity } from 'react-native';
 import axios from 'axios';
 import BASE_URL from "../../config";
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+// 
+// ';
 import { useSelector } from "react-redux";
 import { Dropdown } from 'react-native-element-dropdown';
 import { Dimensions } from 'react-native';
@@ -194,6 +195,8 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     marginTop: 20,
+
+
   },
   dropdown: {
     width: width * 0.5,
@@ -204,17 +207,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginBottom: height * 0.02,
     alignSelf: 'flex-end',
+    marginRight:30
 },
-  dropdown: {
-    width: width * 0.5, 
-    height: height * 0.07, 
-    borderColor: 'gray',
-    borderWidth: 0.5,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    marginBottom: height * 0.02,
-    alignSelf: 'flex-end',
-  },
+  // dropdown: {
+  //   width: width * 0.5, 
+  //   height: height * 0.07, 
+  //   borderColor: 'gray',
+  //   borderWidth: 0.5,
+  //   borderRadius: 8,
+  //   paddingHorizontal: 8,
+  //   marginBottom: height * 0.02,
+  //   alignSelf: 'flex-end',
+  // },
   loader: {
     marginTop: 10,
   },

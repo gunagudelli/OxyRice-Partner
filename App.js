@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'; // Import icon library
 import { TouchableOpacity } from 'react-native';
 import Register from './src/Authorization/Register';
 import LoginScreen from './src/Authorization/Login';
+import LoginWithPassword from './src/Authorization/LoginWithPassword';
 import HomeScreen from './src/After Login/Home';
 import Orders from './src/Extra Files/Orders';
 import Main from './src/Orders/Main'
@@ -33,10 +34,10 @@ export default function App() {
     <Provider store={store}> 
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName="LoginWithPassword"
         screenOptions={{
           headerStyle: {
-            backgroundColor: "#03843b"
+            backgroundColor: "#3d2a71"
           },
           headerTintColor: "white",
     headerTitleStyle: {
@@ -59,6 +60,11 @@ export default function App() {
         <Stack.Screen
           name="Login"
           component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="LoginWithPassword"
+          component={LoginWithPassword}
           options={{ headerShown: false }}
         />
         <Stack.Screen

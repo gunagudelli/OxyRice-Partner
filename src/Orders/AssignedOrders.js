@@ -84,7 +84,7 @@ const AssignedOrders = ({ navigation,route }) => {
                     }
                 );
                 setLoader(false)
-                // console.log("getAllOrders response", response.data);
+                console.log("getAllOrders response", response.data);
                 const acceptedOrders = response.data.filter(
                     (order) => {
                         return order && order.orderStatus === "3"

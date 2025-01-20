@@ -19,7 +19,7 @@ const Logout = () => {
           text: "OK",
           onPress: () => {
             AsyncStorage.removeItem("accessToken");
-            navigation.navigate("Login");
+            navigation.navigate("LoginWithPassword");
           }
         }
       ]);
