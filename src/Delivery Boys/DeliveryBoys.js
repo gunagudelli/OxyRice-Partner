@@ -144,6 +144,41 @@ console.log({accessToken})
     return true;
   };
 
+  const handleConvert = async ({userId,testUser}) => {
+    console.log(userId,testUser);
+    const apiUrl = BASE_URL+'erice-service/user/updateTestUsers';
+    const requestBody = {
+      userId: userId,
+      testUser: !testUser,
+    };
+  
+    try {
+      const response = await axios.patch(apiUrl, requestBody, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  console.log("response",response);
+  
+      if (response.status === 200) {
+        if (testUser) {
+          console.log('User successfully converted:', response.data);
+        Alert.alert('Success','User converted to live User successfully!');
+        } else {
+          Alert.alert('Success','User converted to Test User successfully!');
+        }
+        await fetchDeliveryBoys();
+        
+      } else {
+        console.log('Unexpected response:', response);
+        alert('Failed to convert user.');
+      }
+    } catch (error) {
+      console.error('Error converting user:', error.response);
+      alert('An error occurred. Please try again.');
+    }
+  };
+
   const saveChanges = async () => {
     if (!validateFormData()) return;
 
@@ -205,6 +240,13 @@ console.log({accessToken})
           {newload===item.id ? <ActivityIndicator color="#fff"/>:<Text style={styles.statusButtonText}>{item.isActive ? 'Activate' : 'Deactivate'}</Text>}
        
         </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.statusButton, { backgroundColor: !item.testUser ? '#f44336' : '#4CAF50' }]} onPress={
+          () => handleConvert(item, item.testUser)
+        }>
+                  {item.testUser ? <Text style={styles.convertButtonText}>Convert to Live User</Text> 
+                  : <Text style={styles.convertButtonText}>Convert to Test User</Text>}
+                </TouchableOpacity>
 
         {item.deliveryBoyMobile && (
           <TouchableOpacity style={styles.callIconContainer} onPress={() => makeCall(item.deliveryBoyMobile)}>

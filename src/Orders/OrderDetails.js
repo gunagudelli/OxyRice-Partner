@@ -1,6 +1,7 @@
   import React, { useState, useEffect } from 'react';
   import { View,Modal, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
   import axios from 'axios';
+  import { TextInput } from 'react-native-paper';
   import AsyncStorage from '@react-native-async-storage/async-storage';
   import { useNavigation } from '@react-navigation/native';
   import BASE_URL from "../../config";
@@ -39,6 +40,8 @@
     const [userId, setUserId] = useState(null)
     const [testUser, setTestUser]= useState(false);
     const[dbdetails,setDbdetails]=useState([])
+    const [rejectReason, setRejectReason] = useState('');
+    const [isRejected, setIsRejected] = useState(false);
 
     
     useEffect(() => {
@@ -116,16 +119,8 @@
    
 
     const handleRejectOrder = async () => {
-      // const accessToken= await AsyncStorage.getItem('accessToken');
-      setButtonsDisabled(true);
+      
       try {
-        // const userData = await AsyncStorage.getItem("userData");
-        // if (userData) {
-        //     const parsedData = JSON.parse(userData);
-        //     console.log("User ID:", parsedData.userId);
-        //     setUserId(parsedData.userId);
-        //     console.log("Access Token:", parsedData.accessToken);
-        //     setAccessToken(parsedData.accessToken);
 
 
         const response = await axios.post(
@@ -139,6 +134,8 @@
         );
         if (response.status === 200) {
           setStatusMessage(response.data.statusMessage);
+          setButtonsDisabled(true);
+          setIsRejected(false);
           Alert.alert("Success",  response.data.statusMessage,
               [
                 {
@@ -156,6 +153,7 @@
       } catch (error) {
         Alert.alert("Error", "Failed to reject the order.");
         console.error("Error rejecting order:", error.response);
+        setIsRejected(false);
       }
     };
 
@@ -237,16 +235,7 @@
 
 
     const getDeliveryBoys = async () => {
-      // const token = await AsyncStorage.getItem('accessToken');
       try {
-
-        // const userData = await AsyncStorage.getItem("userData");
-        // if (userData) {
-        //     const parsedData = JSON.parse(userData);
-        //     console.log("User ID:", parsedData.userId);
-        //     setUserId(parsedData.userId);
-        //     console.log("Access Token:", parsedData.accessToken);
-        //     setAccessToken(parsedData.accessToken);
 
         const response = await fetch(BASE_URL+'erice-service/deliveryboy/list', {
           method: 'GET',
@@ -259,9 +248,9 @@
         if (response.status === 200) {
           setButtonsDisabled(true)
           const data = await response.json();
-          const filteredData = data.filter(item => item.active === true);
+          const filteredData = data.filter(item => item.active === true && item.testUser === route.params.order.testUser);
           const activeNames = filteredData.map(item => item.deliveryBoyName);
-          console.log(filteredData[0]);
+          console.log("Delivery Boys",filteredData);
           
           // dbId = filteredData.map(item => item.deliveryBoyName);
           setDbNames(filteredData); 
@@ -348,6 +337,11 @@ else{
     // Handle modal cancel
     const handleCancel = () => {
       setIsModalVisible(false); // Close modal when cancel is clicked
+      setButtonsDisabled(false); // Enable buttons
+    };
+
+    const handleRejectCancel = () => {  
+      setIsRejected(false); // Close modal when cancel is clicked
     };
 
     if (loading) {
@@ -519,7 +513,7 @@ else{
         {(orderData.orderStatus  === '1' || orderData.orderStatus  === '2' )&& (
         <TouchableOpacity
             style={[styles.rejectButton, buttonsDisabled && styles.disabledButton]}
-            onPress={handleRejectOrder}
+            onPress={() => setIsRejected(true)}
             disabled={buttonsDisabled}
           >
             <Text style={styles.rejectButtonText}>REJECT</Text>
@@ -617,6 +611,34 @@ else{
     </View>
   </Modal>
 
+  <Modal visible={isRejected} onRequestClose={handleCancel} transparent={true} animationType="slide">
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContainer}>
+        <Text style={styles.modalTitle}>Reject Order</Text>
+        <Text style={styles.label}>Are you sure you want to reject this order?</Text>
+         <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Reason for rejection"  
+            onChangeText={setRejectReason}
+            value={rejectReason}
+            multiline = {true}
+            numberOfLines = {4}
+            textAlignVertical = "top"
+          />
+        </View>
+        <View style={styles.modalActions}>  
+          <TouchableOpacity onPress={handleRejectCancel} style={styles.cancelButton}>
+            <Text style={styles.buttonText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleRejectOrder} style={styles.assignButton}>
+            <Text style={styles.buttonText}>Reject</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  </Modal>
+
         </View>
       </ScrollView>
     );
@@ -641,7 +663,7 @@ else{
       padding: 20,
       borderRadius: 10,
       width: "85%",
-      height:500
+      // height:500
     },
     modalTitle: {
       fontSize: 18,
@@ -780,6 +802,17 @@ else{
     convertButtonText: {
       color: '#fff',
       fontSize: 14,
+    },
+    inputContainer: {
+      marginBottom: 20,
+    },
+    input: {
+      // height: 40,
+      borderColor: '#ddd',
+      borderWidth: 1,
+      marginBottom: 15,
+      paddingLeft: 10,
+      borderRadius: 5,
     },
   });
 

@@ -22,21 +22,21 @@ const AcceptedOrders = ({ navigation,route }) => {
     // const isFocused = useIsFocused();
     const accessToken = useSelector((state) => state.counter);
 
-    // useFocusEffect(
-    //     useCallback(() => {
-    //         // Functions to run when the screen is focused
-    //         const getdata = async () => {
-    //             await fetchData();
-    //         };
+    useFocusEffect(
+        useCallback(() => {
+            // Functions to run when the screen is focused
+            const getdata = async () => {
+                await fetchData();
+            };
 
-    //         getdata();
+            getdata();
 
-    //         // Cleanup function (if needed) to run when the screen is unfocused
-    //         return () => {
-    //             console.log('Screen is unfocused');
-    //         };
-    //     }, [])
-    // );
+            // Cleanup function (if needed) to run when the screen is unfocused
+            return () => {
+                console.log('Screen is unfocused');
+            };
+        }, [])
+    );
 
     useEffect(() => {
        const getdata = async () => {
@@ -45,36 +45,12 @@ const AcceptedOrders = ({ navigation,route }) => {
         getdata();
     },[])
 
-    
-    // const getUserData = async () => {
-
-    //     try {
-    //         const userData = await AsyncStorage.getItem("userData");
-    //         if (userData) {
-    //             const parsedData = JSON.parse(userData);
-    //             console.log("User ID:", parsedData.userId);
-    //             setUserId(parsedData.userId)
-    //             console.log("Access Token:", parsedData.accessToken);
-    //             setAccessToken(parsedData.accessToken)
-    //         } else {
-    //             console.log("No user data found in AsyncStorage");
-    //         }
-    //     } catch (error) {
-    //         console.error("Error fetching user data:", error);
-    //     }
-    // };
 
 
     const fetchData = async () => {
         try {
             // Fetch user data from AsyncStorage
             const userData = await AsyncStorage.getItem("userData");
-            // if (userData) {
-            //     const parsedData = JSON.parse(userData);
-            //     console.log("User ID:", parsedData.userId);
-            //     setUserId(parsedData.userId);
-            //     console.log("Access Token:", parsedData.accessToken);
-            //     setAccessToken(parsedData.accessToken);
                 setLoader(true)
                 // Call API to fetch all orders
                 const response = await axios.get(
@@ -151,17 +127,6 @@ const AcceptedOrders = ({ navigation,route }) => {
 
     return (
         <View>
-            {/* <View>
-                <TouchableOpacity style={styles.TestUserButton} onPress={()=>setTestUser(!testUser)}>
-                    {
-                        testUser?
-                        <Text style={styles.TestUserText}>Test Users</Text>
-                        
-                        :
-                        <Text style={styles.LiveUserText}>Live Users</Text>
-                    }
-                </TouchableOpacity>
-                </View> */}
             <View>
 {loader==false?
        
@@ -169,11 +134,6 @@ const AcceptedOrders = ({ navigation,route }) => {
                 data={orders}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.orderId.toString()}
-                // ListEmptyComponent={
-                //     <View style={styles.emptyContainer}>
-                //         <Text style={styles.emptyText}>No orders available.</Text>
-                //     </View>
-                // }
                 ListFooterComponentStyle={styles.footerStyle}
                 ListFooterComponent={footer}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}

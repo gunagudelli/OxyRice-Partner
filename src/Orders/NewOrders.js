@@ -55,69 +55,10 @@ const NewOrders = ({ navigation,route }) => {
             };
         }, [])
     );
-    // useEffect(() => {
-    //     fetchData();
-    // }, []); // Ensure this is correct and no unnecessary dependencies are added.
-    
-    // const fetchData = async () => {
-    //     try {
-    //         setLoader(true);
-    //         const response = await axios.get(
-    //             BASE_URL + 'erice-service/order/getAllOrders',
-    //             {
-    //                 headers: {
-    //                     Authorization: `Bearer ${accessToken.token}`,
-    //                 },
-    //             }
-    //         );
-            
-    
-    //         const acceptedOrders = response.data.filter(
-    //             (order) => order && order.orderStatus === "1"
-    //         );
-    //         setLoader(false);
-    //         if (JSON.stringify(orders) !== JSON.stringify(acceptedOrders)) {
-    //             setOrders(acceptedOrders);
-    //         }
-    //     } catch (error) {
-    //         setLoader(false);
-    //         console.error("Error fetching user data or orders:", error);
-    //     }
-    //     finally{
-    //         setLoader(false);
-    //     }
-    // };
-    
-
-    // const getUserData = async () => {
-
-    //     try {
-    //         const userData = await AsyncStorage.getItem("userData");
-    //         if (userData) {
-    //             const parsedData = JSON.parse(userData);
-    //             console.log("User ID:", parsedData.userId);
-    //             setUserId(parsedData.userId)
-    //             console.log("Access Token:", parsedData.accessToken);
-    //             setAccessToken(parsedData.accessToken)
-    //         } else {
-    //             console.log("No user data found in AsyncStorage");
-    //         }
-    //     } catch (error) {
-    //         console.error("Error fetching user data:", error);
-    //     }
-    // };
-
-
     const fetchData = async () => {
         try {
             // Fetch user data from AsyncStorage
             const userData = await AsyncStorage.getItem("userData");
-            // if (userData) {
-            //     const parsedData = JSON.parse(userData);
-            //     console.log("User ID:", parsedData.userId);
-            //     setUserId(parsedData.userId);
-            //     console.log("Access Token:", parsedData.accessToken);
-            //     setAccessToken(parsedData.accessToken);
                 setLoader(true)
                 // Call API to fetch all orders
                 const response = await axios.get(
@@ -197,17 +138,6 @@ const NewOrders = ({ navigation,route }) => {
 
     return (
         <View>
-            {/* <View>
-                <TouchableOpacity style={styles.TestUserButton} onPress={()=>setTestUser(!testUser)}>
-                    {
-                        testUser?
-                        <Text style={styles.TestUserText}>Test Users</Text>
-                        :
-                        <Text style={styles.LiveUserText}>Live Users</Text>
-                    }
-                </TouchableOpacity>
-                    
-                </View> */}
             <View>
 {loader==false?
        
@@ -215,11 +145,6 @@ const NewOrders = ({ navigation,route }) => {
                 data={orders}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.orderId.toString()}
-                // ListEmptyComponent={
-                //     <View style={styles.emptyContainer}>
-                //         <Text style={styles.emptyText}>No orders available.</Text>
-                //     </View>
-                // }
                 ListFooterComponentStyle={styles.footerStyle}
                 ListFooterComponent={footer}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
