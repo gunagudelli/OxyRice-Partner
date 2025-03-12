@@ -17,14 +17,16 @@ import { TextInput } from "react-native-paper";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch } from "react-redux";
-import { AccessToken } from "../../Redux/action/index";
-import BASE_URL from "../../config";
+import { AccessToken, UserID } from "../../Redux/action/index";
+import BASE_URL, { userStage } from "../../config";
 import Icon from "react-native-vector-icons/Ionicons";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
+import { Dropdown } from "react-native-element-dropdown";
 
 const { height, width } = Dimensions.get("window");
 
 const LoginWithPassword = () => {
+  // console.log({userStage})
   const [formData, setFormData] = useState({
     email: "",
     email_error: false,
@@ -38,11 +40,24 @@ const LoginWithPassword = () => {
   const [showOtp, setShowOtp] = useState(false);
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const[secureText,setSecureText]=useState(true)
+  const [secureText, setSecureText] = useState(true);
+  const toggleSecureText = () => {
+    setSecureText(!secureText);
+  };
 
-  const toggleSecureText=()=>{
-    setSecureText(!secureText)
-  }
+  const data = [
+    { label: "Choose", value: "" },
+    { label: "Live", value: "Live" },
+    { label: "Test", value: "Test" },
+  ];
+
+  const [selectedValue, setSelectedValue] = useState("");
+  const [selected_error, setSelectedError] = useState(false);
+  const [dropLoading, setDropLoading] = useState(false);
+  const BASE_URL =
+    selectedValue === "Live"
+      ? "https://meta.oxyloans.com/api/"
+      : "https://meta.oxyglobal.tech/api/";
 
   const checkAutoLogin = async () => {
     try {
@@ -51,12 +66,10 @@ const LoginWithPassword = () => {
       if (token) {
         dispatch(AccessToken(JSON.parse(token)));
         navigation.navigate("Home");
-      }
-      else{
-
+      } else {
       }
     } catch (error) {
-      console.error(error); 
+      console.error(error);
     }
   };
 
@@ -64,9 +77,12 @@ const LoginWithPassword = () => {
   useEffect(() => {
     checkAutoLogin();
   }, []);
-  
 
   const handleLogin = async () => {
+    if (selectedValue == "") {
+      setSelectedError(true);
+      return false;
+    }
     if (formData.email == "" || formData.email == null) {
       setFormData({ ...formData, email_error: true });
       return false;
@@ -81,29 +97,47 @@ const LoginWithPassword = () => {
       return false;
     }
     setFormData({ ...formData, loading: true });
-    try {
-      const response = await axios.post(
-        `${BASE_URL}erice-service/user/userEmailPassword`,
-        {
-          email: formData.email,
-          password: formData.password,
+
+    console.log("formData details", formData.email, formData.password);
+    console.log(BASE_URL + "user-service/userEmailPassword");
+    axios({
+      method: "post",
+      url: BASE_URL + "user-service/userEmailPassword",
+      data: {
+        email: formData.email,
+        password: formData.password,
+      },
+    })
+      .then((response) => {
+        console.log(response);
+        setFormData({ ...formData, loading: false });
+
+        if (response.data.accessToken != null) {
+          console.log("response", response.data);
+          // await AsyncStorage.setItem("accessToken",JSON.stringify(response.data));
+          // await AsyncStorage.setItem("email", formData.email);
+          // await AsyncStorage.setItem("password", formData.password);
+          dispatch(AccessToken(response.data));
+          dispatch(UserID(selectedValue));
+
+          Alert.alert("Success", response.data.status, [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.navigate("Home");
+              },
+            },
+          ]);
+          // navigation.navigate("Home");
+        } else {
+          Alert.alert("Error", "Invalid credentials. Please try again.");
         }
-      );
-      if (response.data.token) {
-        await AsyncStorage.setItem("accessToken",JSON.stringify(response.data));
-        await AsyncStorage.setItem("email", formData.email);
-        await AsyncStorage.setItem("password", formData.password);
-        dispatch(AccessToken(response.data));
-        Alert.alert("Success", response.data.status);
-        navigation.navigate("Home");
-      } else {
-        Alert.alert("Error", "Invalid credentials. Please try again.");
-      }
-    } catch (error) {
-      Alert.alert("Login Failed", error.response?.data?.message || "Invalid credentials. Please try again.");
-    } finally {
-      setFormData({ ...formData, loading: false });
-    }
+      })
+      .catch((error) => {
+        setFormData({ ...formData, loading: false });
+        Alert.alert("Failed", error.response.data.message);
+        console.log(error.response);
+      });
   };
 
   return (
@@ -144,19 +178,59 @@ const LoginWithPassword = () => {
             </View>
           </View>
 
-{/* Login Section */}
-<View style={styles.logingreenView}>
+          {/* Login Section */}
+          <View style={styles.logingreenView}>
             {/* <Image
               source={require("../../assets/green.png")}
               style={styles.riceImage}
             /> */}
             <Text style={styles.loginTxt}>LOGIN</Text>
             <View style={{ marginTop: 10 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "white" }}>Select Environment</Text>
+                <Dropdown
+                  style={styles.dropdown}
+                  data={data}
+                  labelField="label"
+                  valueField="value"
+                  placeholder="Select an option"
+                  value={selectedValue}
+                  onChange={(item) => {
+                    setSelectedValue(item.value),
+                      async () => {
+                        await AsyncStorage.setItem("userStage", item.value);
+                      };
+                  }}
+                />
+              </View>
+              {selected_error ? (
+                <Text
+                  style={{
+                    color: "red",
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    alignSelf: "center",
+                  }}
+                >
+                  Please select an environment
+                </Text>
+              ) : null}
+              {/* {selectedValue && (
+        <Text style={styles.selectedText}>
+          Selected: ${selectedValue}
+        </Text>
+      )} */}
               <TextInput
                 style={styles.input1}
                 placeholder="Enter Email"
                 mode="outlined"
-                value={formData.email.replace(/^\s+|\s+$/g, '')}
+                value={formData.email.replace(/^\s+|\s+$/g, "")}
                 dense={true}
                 placeholderTextColor="#808080"
                 // autoFocus
@@ -171,12 +245,14 @@ const LoginWithPassword = () => {
                     // validNumber_error: false,
                   });
                 }}
-                left={<TextInput.Icon
-                  icon="email"
-                  style={{ opacity: 0.8 }} 
-                  // onPress={toggleSecureText}
-                  // forceTextInputFocus={false} 
-                  />}
+                left={
+                  <TextInput.Icon
+                    icon="email"
+                    style={{ opacity: 0.8 }}
+                    // onPress={toggleSecureText}
+                    // forceTextInputFocus={false}
+                  />
+                }
               />
 
               {formData.email_error ? (
@@ -222,22 +298,26 @@ const LoginWithPassword = () => {
                 style={styles.input1}
                 placeholder="Enter Password"
                 mode="outlined"
-                value={formData.password.replace(/^\s+|\s+$/g, '')}
+                value={formData.password.replace(/^\s+|\s+$/g, "")}
                 dense={true}
                 activeOutlineColor="#f9b91a"
                 secureTextEntry={secureText}
                 placeholderTextColor="#808080"
-                left={<TextInput.Icon
-                  icon="lock"
-                  style={{ opacity: 0.8 }} 
-                  // onPress={toggleSecureText}
-                  // forceTextInputFocus={false} 
-                  />}
-                right={<TextInput.Icon
-                         icon={secureText ? "eye-off" : "eye"}
-                         onPress={toggleSecureText}
-                         forceTextInputFocus={false} 
-                         />}
+                left={
+                  <TextInput.Icon
+                    icon="lock"
+                    style={{ opacity: 0.8 }}
+                    // onPress={toggleSecureText}
+                    // forceTextInputFocus={false}
+                  />
+                }
+                right={
+                  <TextInput.Icon
+                    icon={secureText ? "eye-off" : "eye"}
+                    onPress={toggleSecureText}
+                    forceTextInputFocus={false}
+                  />
+                }
                 onChangeText={(text) => {
                   setFormData({
                     ...formData,
@@ -283,12 +363,9 @@ const LoginWithPassword = () => {
                         />
                     </TouchableOpacity> */}
                 </View>
-                
               </View>
-             
             </View>
           </View>
-
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -327,7 +404,7 @@ const styles = StyleSheet.create({
 
     backgroundColor: "#3d2a71",
     borderTopLeftRadius: 30,
-    borderTopRightRadius:30
+    borderTopRightRadius: 30,
     // height: height/2,
   },
   loginTxt: {
@@ -335,7 +412,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 25,
     marginTop: 60,
-    marginBottom:20,
+    marginBottom: 20,
     alignSelf: "center",
   },
   input1: {
@@ -403,5 +480,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "center",
     margin: 10,
+  },
+  dropdown: {
+    height: 50,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
+    width: width * 0.4,
+    marginLeft: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  selectedText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#333",
   },
 });

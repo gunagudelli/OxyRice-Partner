@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,293 +10,341 @@ import {
   Alert,
   Modal,
   TextInput,
-  Button,
   ActivityIndicator,
-  Switch
-} from 'react-native';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
-import BASE_URL from "../../config";
+  RefreshControl,
+} from "react-native";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { config } from '../../config';
 import { useSelector } from "react-redux";
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
+
+const COLORS = {
+  primary: '#2A4BA0',
+  secondary: '#153075',
+  success: '#28C76F',
+  danger: '#EA1601',
+  background: '#F8F9FB',
+  text: '#1E222B',
+  border: '#EBEBFB',
+  lightGray: '#F0F0F0',
+  textSecondary: '#616161',
+};
 
 const Items = () => {
+  const { BASE_URL,userStage } = config();
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [price, setPrice] = useState();
-  const [mrp ,setMrp]=useState()
-// const [itemprice, setItemprice]=useState('') 
+  const [price, setPrice] = useState('');
+  const [mrp, setMrp] = useState('');
   const [loading, setLoading] = useState(false);
-    const accessToken = useSelector((state) => state.counter);
-  // console.log("Items",accessToken)
-  // const [accessToken, setAccessToken] = useState(null)
-  const [userId, setUserId] = useState(null)
-
-  // useEffect(() => {
-  //   fetchItems();
-  // }, []);
-
-
+  const [refreshing, setRefreshing] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [toggling, setToggling] = useState(false);
+  const [toggleItemId, setToggleItemId] = useState(null);
+  const accessToken = useSelector((state) => state.counter);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredItems, setFilteredItems] = useState([]);
 
   useFocusEffect(
     useCallback(() => {
-        // Functions to run when the screen is focused
-        const getdata = async () => {
-            await fetchItems();
-        };
-
-        getdata();
-        console.log('AccessToken:', accessToken.token);
-
-        // Cleanup function (if needed) to run when the screen is unfocused
-        return () => {
-            console.log('Screen is unfocused');
-        };
+      fetchItems();
     }, [])
-);
+  );
 
-useEffect(()=>{
-  fetchItems()
-},[])
+  useEffect(() => {
+    if (items.length > 0) {
+      filterItems();
+    }
+  }, [searchQuery, items]);
 
+  const filterItems = () => {
+    const filtered = items.filter(item => 
+      item.itemName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredItems(filtered);
+  };
 
   const fetchItems = async () => {
-    setLoading(true);
     try {
-      // const accessToken = await AsyncStorage.getItem('accessToken');
-      const userData = await AsyncStorage.getItem("userData");
-      // if (userData) {
-      //     const parsedData = JSON.parse(userData);
-      //     console.log("User ID:", parsedData.userId);
-      //     setUserId(parsedData.userId);
-      //     console.log("Access Token:", parsedData.accessToken);
-      //     setAccessToken(parsedData.accessToken);
-
+      setLoading(true);
       const response = await axios.get(
-          BASE_URL+`erice-service/selleritems/ItemsGetTotal`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken.token}`,
-          },
-        }
+        `${BASE_URL}product-service/ItemsGetTotal`,
+        { headers: { Authorization: `Bearer ${accessToken.token}` } }
       );
       setItems(response.data);
-      
-    
-      
-    // } 
-    // else{
-    //   console.log("Please check")
-    // }
-  }
-  catch (error) {
-      console.error('Error fetching items:', error.response?.data || error.message);
-      // Alert.alert('Error', 'Failed to fetch items.');
+      setFilteredItems(response.data);
+    } catch (error) {
+      console.error('Error fetching items:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchItems();
   };
 
   const openUpdatePriceModal = (item) => {
     setSelectedItem(item);
+    setMrp(item.itemMrp.toString());
+    setPrice(item.itemPrice.toString());
     setModalVisible(true);
-    setMrp(item.itemMrp);
-    setPrice(item.itemPrice);
-   
-    
   };
 
   const submitUpdatePrice = async () => {
-    try {
-      // const accessToken = await AsyncStorage.getItem('accessToken');
-      if (!price) {
-        Alert.alert('Error', 'Please enter a new price.');
-        return;
-      }
-
-// const userData = await AsyncStorage.getItem("userData");
-// if (userData) {
-//     const parsedData = JSON.parse(userData);
-//     console.log("User ID:", parsedData.userId);
-//     setUserId(parsedData.userId);
-//     console.log("Access Token:", parsedData.accessToken);
-//     setAccessToken(parsedData.accessToken);
-
-    let data={
+    if (!validatePrices()) return;
+    setUpdating(true);
+    
+    const data = {
       sellerId: accessToken.id,
-      itemMrp:  mrp,
+      itemMrp: parseFloat(mrp),
       active: selectedItem.active,
       itemId: selectedItem.itemId,
-      itemPrice:price
-    }
+      itemPrice: parseFloat(price),
+    };
 
-console.log({data})
-      const response = await axios.patch(
-          BASE_URL+'erice-service/selleritems/sellerItemPriceFix',
+    try {
+      await axios.patch(
+        `${BASE_URL}product-service/sellerItemPriceFix`,
         data,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken.token}`,
-            'Content-Type': 'application/json',
-          },
-        }
+        { headers: { Authorization: `Bearer ${accessToken.token}` } }
       );
-    
-      
-      if (response.status === 200) {
-        Alert.alert('Success', 'Price updated successfully!');
-        setModalVisible(false);
-        setPrice('');
-        fetchItems();
-      } else {
-        Alert.alert('Error', `Failed to update price. Status: ${response.status}`);
-      }
-    // }
-    } 
-    catch (error) {
-      console.error('Error updating price:', error.response || error.message);
-      Alert.alert('Error', 'Failed to update price.');
+      Alert.alert('Success', 'Price updated successfully!');
+      setModalVisible(false);
+      fetchItems();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update price');
+      console.error('Error updating price:', error);
+    } finally {
+      setUpdating(false);
     }
   };
 
   const toggleActiveStatus = async (item) => {
+    setToggling(true);
+    setToggleItemId(item.itemId);
     try {
-      // const accessToken = await AsyncStorage.getItem('accessToken');
-
-      const userData = await AsyncStorage.getItem("userData");
-      // if (userData) {
-      //     const parsedData = JSON.parse(userData);
-      //     console.log("User ID:", parsedData.userId);
-      //     setUserId(parsedData.userId);
-      //     console.log("Access Token:", parsedData.accessToken);
-      //     setAccessToken(parsedData.accessToken);
-
-      const newStatus = !item.active;
-      const response = await axios.patch(
-          BASE_URL+'erice-service/selleritems/sellerItemStatusToggle',
-        {
-          sellerId: accessToken.id,
-          itemId: item.itemId,
-          active: newStatus,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken.token}`,
-            'Content-Type': 'application/json',
-          },
-        }
+      await axios.patch(
+        `${BASE_URL}product-service/itemActiveAndInActive`,
+        { itemId: item.itemId, status: !item.active }
       );
-
-      if (response.status === 200) {
-        fetchItems(); // Refresh the list
-      } else {
-        Alert.alert('Error', 'Failed to toggle active status.');
-      }
-    // } 
-  }catch (error) {
-      console.error('Error toggling active status:', error.response?.data || error.message);
-      Alert.alert('Error', 'Failed to toggle active status.');
+      fetchItems();
+    } catch (error) {
+      console.error('Error toggling status:', error);
+    } finally {
+      setToggling(false);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {loading && (
-        <View style={styles.loader}>
-          <ActivityIndicator color="green" size="large" />
-        </View>
-      )}
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.itemId.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.row}>
-              {/* Left: Item Image */}
-              {item.itemImage ? (
-                <Image source={{ uri: item.itemImage }} style={styles.itemImage} resizeMode="cover" />
-              ) : (
-                <View style={styles.placeholderImage} />
-              )}
+  const validatePrices = () => {
+    const priceValue = parseFloat(price);
+    const mrpValue = parseFloat(mrp);
+    
+    if (!price || !mrp || isNaN(priceValue) || isNaN(mrpValue)) {
+      Alert.alert('Error', 'Please enter valid prices');
+      return false;
+    }
+    
+    if (priceValue >= mrpValue) {
+      Alert.alert('Error', 'Price should be less than MRP');
+      return false;
+    }
+    
+    return true;
+  };
 
-              {/* Center: Item Details */}
-              <View style={styles.detailsContainer}>
-                <Text style={styles.itemName}>{item.itemName}</Text>
-                {/* <Text style={styles.itemDescription}>
-                  {item.itemDescription || 'No description available.'}
-                </Text> */}
-                <Text style={styles.itemPrice1}>ItemMrp:<Text style={styles.itemPrice}> ₹{item.itemMrp}</Text></Text>
-                <Text style={styles.itemPrice1}>ItemPrice: ₹{item.itemPrice}</Text>
+  const formatPrice = (price) => parseFloat(price).toFixed(2);
 
-                <Text style={styles.itemQuantity}>
-                  Quantity: {item.quantity} {item.units}
-                </Text>
-              </View>
+  const calcDiscount = (mrp, price) => 
+    Math.round(((mrp - price) / mrp) * 100);
 
-              {/* Right: Active Button */}
-              <View style={styles.actionContainer}>
-                <View style={styles.switchContainer}>
-                  {/* <Text style={styles.switchLabel}>{item.active ? 'Active' : 'Inactive'}</Text> */}
-                  <Switch
-                    value={item.active}
-                    disabled={true}
-                    onValueChange={() => toggleActiveStatus(item)}
-                    thumbColor={item.active ? 'white' : 'white'}
-                    trackColor={{ true: '#28a745', false: 'red' }}
-                  />
-                </View>
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.itemContainer}>
+        <Image
+          source={{ uri: item.itemImage || 'https://via.placeholder.com/70' }}
+          style={styles.itemImage}
+        />
 
-                {/* Update Price Button */}
-                <TouchableOpacity
-                  style={styles.updateButton}
-                  onPress={() => openUpdatePriceModal(item)}
-                >
-                  <Text style={styles.updateButtonText}>Update Price</Text>
-                </TouchableOpacity>
-              </View>
+        <View style={styles.itemDetails}>
+          <Text style={styles.itemName} numberOfLines={2}>
+            {item.itemName}
+
+
+          </Text>
+          
+          <View style={styles.priceRow}>
+            <Text style={styles.priceText}>₹{formatPrice(item.itemPrice)}</Text>
+            <Text style={styles.mrpText}>₹{formatPrice(item.itemMrp)}</Text>
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountText}>
+                {calcDiscount(item.itemMrp, item.itemPrice)}% off
+              </Text>
             </View>
           </View>
+
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Icon name="scale" size={14} color={COLORS.textSecondary} />
+              <Text style={styles.metaText}>
+                {item.weight || 0} {item.units || 'units'}
+              </Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Icon name="layers" size={14} color={COLORS.textSecondary} />
+              <Text style={styles.metaText}>Stock: {item.quantity || 0}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.actionsContainer}>
+          {userStage=="Live"?
+          <TouchableOpacity 
+            onPress={() => toggleActiveStatus(item)}
+            style={[
+              styles.statusButton,
+              { backgroundColor: item.active ? COLORS.success : COLORS.danger }
+            ]}
+            disabled={toggling && toggleItemId === item.itemId}
+          >
+            {toggling && toggleItemId === item.itemId ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.statusText}>
+                {item.active ? 'Active' : 'Inactive'}
+              </Text>
+            )}
+          </TouchableOpacity>
+:
+<View 
+            onPress={() => toggleActiveStatus(item)}
+            style={[
+              styles.statusButton,
+              { backgroundColor: item.active ? COLORS.success : COLORS.danger }
+            ]}
+            disabled={toggling && toggleItemId === item.itemId}
+          >
+            {toggling && toggleItemId === item.itemId ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.statusText}>
+                {item.active ? 'Active' : 'Inactive'}
+              </Text>
+            )}
+          </View>
+}
+          <TouchableOpacity 
+            onPress={() => openUpdatePriceModal(item)}
+            style={styles.editButton}
+          >
+            <Icon name="edit" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <Icon name="search" size={24} color={COLORS.textSecondary} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search items..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor={COLORS.textSecondary}
+        />
+        {searchQuery && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Icon name="close" size={20} color={COLORS.textSecondary} />
+          </TouchableOpacity>
         )}
-      />
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
+      </View>
+
+      {loading ? (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.itemId.toString()}
+          renderItem={renderItem}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[COLORS.primary]}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text>No items found</Text>
+            </View>
+          }
+          contentContainerStyle={styles.listContainer}
+        />
+      )}
+
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Enter New Price</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter new Mrp"
-              keyboardType="numeric"
-              maxLength={5}
-              value={String(mrp)}
-              onChangeText={setMrp}
-            />
-             <TextInput
-              style={styles.input}
-              placeholder="Enter new price"
-              keyboardType="numeric"
-              maxLength={5}
-              value={String(price)}
-              onChangeText={setPrice}
-            />
+            <Text style={styles.modalTitle}>Update Prices</Text>
             
-            <View style={styles.modalButtons}>
-              <Button
-                title="Close"
-                onPress={() => {
-                  setModalVisible(false);
-                  setPrice('');
-                }}
-                color="red"
-              />
-              <Button title="Submit" onPress={submitUpdatePrice} />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>MRP (₹)</Text>
+              <View style={styles.inputWrapper}>
+                <Icon name="currency-rupee" size={20} color={COLORS.text} />
+                <TextInput
+                  style={styles.input}
+                  value={mrp}
+                  onChangeText={setMrp}
+                  keyboardType="numeric"
+                  placeholder="Enter MRP"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Selling Price (₹)</Text>
+              <View style={styles.inputWrapper}>
+                <Icon name="currency-rupee" size={20} color={COLORS.text} />
+                <TextInput
+                  style={styles.input}
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="numeric"
+                  placeholder="Enter selling price"
+                />
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.saveButton]}
+                onPress={submitUpdatePrice}
+                disabled={updating}
+              >
+                {updating ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -308,129 +356,190 @@ console.log({data})
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
     padding: 16,
-    backgroundColor: '#f5f5f5',
   },
-  loader: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    marginHorizontal: 8,
+    fontSize: 16,
   },
   card: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
     backgroundColor: '#fff',
-    marginBottom: 10,
-    padding: 15,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
     elevation: 3,
   },
-  row: {
+  itemContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    justifyContent: 'space-between',
   },
   itemImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 5,
-    marginRight: 10,
-    alignSelf:"center"
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
   },
-  placeholderImage: {
-    width: 70,
-    height: 70,
-    backgroundColor: '#ccc',
-    borderRadius: 5,
-    marginRight: 10,
-  },
-  detailsContainer: {
+  itemDetails: {
     flex: 1,
+    marginRight: 12,
+    maxWidth: width * 0.45,
   },
   itemName: {
     fontSize: 16,
     fontWeight: 'bold',
-    width:width*0.5
+    marginBottom: 8,
+    flexShrink: 1,
   },
-  itemDescription: {
-    color: '#666',
-    marginVertical: 5,
-    width:width*0.5
-  },
-  itemPrice: {
-    fontSize: 14,
-    color: 'red',
-    fontWeight: 'bold',
-    textDecorationLine: 'line-through',
-  },
-  itemPrice1: {
-    fontSize: 14,
-    color: 'green',
-    fontWeight: 'bold',
-    
-  },
-  itemQuantity: {
-    color: '#333',
-    fontWeight: 'bold',
-  },
-  actionContainer: {
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  switchContainer: {
+  priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
-  switchLabel: {
+  priceText: {
     fontSize: 16,
-    marginRight: 10,
-  },
-  updateButton: {
-    backgroundColor: 'orange',
-    paddingVertical: 8,
-    paddingHorizontal:4,
-    borderRadius: 5,
-  },
-  updateButtonText: {
-    color: 'white',
-    textAlign: 'center',
     fontWeight: 'bold',
   },
-  modalContainer: {
+  mrpText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textDecorationLine: 'line-through',
+  },
+  discountBadge: {
+    backgroundColor: '#E6F7EE',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  discountText: {
+    color: COLORS.success,
+    fontSize: 12,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  actionsContainer: {
+    justifyContent: 'space-between',
+    minWidth: 100,
+  },
+  statusButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    alignSelf: 'flex-end',
+  },
+  statusText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  editButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: '#F0F4FF',
+    alignSelf: 'flex-end',
+  },
+  loader: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  empty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  listContainer: {
+    paddingBottom: 20,
+    minHeight: height * 0.7,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    width: 300,
-    padding: 20,
     backgroundColor: '#fff',
-    borderRadius: 10,
-    alignItems: 'center',
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: height * 0.8,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '600',
     marginBottom: 20,
+    textAlign: 'center',
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
   },
   input: {
-    width: '100%',
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 20,
-    paddingLeft: 10,
+    flex: 1,
+    height: 48,
+    paddingLeft: 8,
     fontSize: 16,
   },
-  modalButtons: {
+  modalActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    gap: 12,
+    marginTop: 20,
+  },
+  button: {
+    flex: 1,
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: COLORS.lightGray,
+  },
+  saveButton: {
+    backgroundColor: COLORS.primary,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
   },
 });
 

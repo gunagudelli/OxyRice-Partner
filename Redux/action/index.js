@@ -8,5 +8,5 @@ export const UserID = (id) => {
     return{
      type: 'USER_ID',
      payload: id
-    };
+    }; 
 } ;

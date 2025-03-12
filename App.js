@@ -10,7 +10,9 @@ import HomeScreen from './src/After Login/Home';
 import Orders from './src/Extra Files/Orders';
 import Main from './src/Orders/Main'
 import Items from './src/Items/Items';
+import CategoriesScreen from './src/Items/CategoriesScreen';
 import DeliveryBoys from './src/Delivery Boys/DeliveryBoys';
+import AssignedAndDelivered from './src/Delivery Boys/AssignedAndDelivered';
 import AllOrders from './src/Orders/AllOrders';
 import AddNewItem from './src/Extra Files/AddNewItem';
 import AddDeliveryExecutive from './src/Extra Files/AddDeliveryExecutive';
@@ -20,6 +22,7 @@ import TestAllOrders from './src/Orders/TestAllOrders';
 import Logout from './src/After Login/Logout';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
+import BarCodeScannerScreen from "./src/BarCode"
 
 import allReducers from './Redux/reducers'
 
@@ -53,7 +56,7 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="OrderDetails"
+          name="Order Details"
           component={OrderDetails}
           options={{ headerShown: true }}
         />
@@ -70,7 +73,8 @@ export default function App() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{
+          options={{ headerShown: false ,
+            
             headerRight: () => (
               <Logout />
             )
@@ -92,17 +96,27 @@ export default function App() {
         />
 
         <Stack.Screen
-          name="Items"
+          name="Products"
           component={Items}
          
         />
+         <Stack.Screen
+          name="CategoriesScreen"
+          component={CategoriesScreen}
+         
+        />
         <Stack.Screen
-          name="DeliveryBoys"
+          name="Delivery Boys"
           component={DeliveryBoys}
           
         />
+         <Stack.Screen
+          name="Delivery Boy Orders"
+          component={AssignedAndDelivered}
+          
+        />
         <Stack.Screen
-          name="AllOrders"
+          name="All Orders"
           component={AllOrders}
         
         />

@@ -1,30 +1,52 @@
-import React, { useEffect, useState,useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList, ActivityIndicator, Alert ,Linking} from 'react-native';
+
+import React, { useEffect, useState } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Modal, 
+  TextInput, 
+  FlatList, 
+  ActivityIndicator, 
+  Alert, 
+  Linking, 
+  Dimensions,
+  SafeAreaView,
+  StatusBar,
+  RefreshControl
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import BASE_URL from "../../config";
-import { useFocusEffect } from '@react-navigation/native';
+import { config } from '../../config';
 import { useSelector } from "react-redux";
 
-
+const { width, height } = Dimensions.get('window');
 
 const DeliveryBoys = ({ navigation }) => {
+  const { BASE_URL, userStage } = config(); // Get values
+// console.log({BASE_URL})
   const [deliveryBoys, setDeliveryBoys] = useState([]);
   const [loading, setLoading] = useState(true);
-  const[newload,setNewLoad]=useState(null)
+  const [refreshing, setRefreshing] = useState(false);
+  const [updatingId, setUpdatingId] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState(null);
-  const [userId, setUserId] = useState(null)
+  const [updateLoading, setUpdateLoading] = useState(false);
   const accessToken = useSelector((state) => state.counter);
 
-console.log({accessToken})
   const [formData, setFormData] = useState({
-    deliveryBoyName: '',
-    deliveryBoyMobile: '',
-    deliveryBoyEmail: '',
-    deliveryBoyAddress: '',
-    isActive: false,
+    userFirstName: '',
+    userLastName:'',
+    name_error:false,
+    lastName_error:false,
+    whatsappNumber: '',
+    alterMobileNumber: '',
+    customerEmail: '',
+    email_error:false,
+    id: '',
+    isActive: 'false'
   });
 
   useEffect(() => {
@@ -33,244 +55,262 @@ console.log({accessToken})
 
   const fetchDeliveryBoys = async () => {
     try {
-      // const token = await AsyncStorage.getItem('accessToken');
-
-      // const userData = await AsyncStorage.getItem("userData");
-      // if (userData) {
-      //     const parsedData = JSON.parse(userData);
-      //     console.log("User ID:", parsedData.userId);
-      //     setUserId(parsedData.userId);
-      //     console.log("Access Token:", parsedData.accessToken);
-      //     setAccessToken(parsedData.accessToken);
-
-
-
-      const response = await fetch(BASE_URL+'erice-service/deliveryboy/list', {
+      setLoading(true);
+      const response = await fetch(BASE_URL+'user-service/deliveryBoyList', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken.token}`,
           'Content-Type': 'application/json',
         },
       });
-
+      // console.log("response",response)
       const data = await response.json();
-// console.log("deliveryboy list",data)
+      // console.log("respomnse",data)
+
       if (response.ok) {
-        setDeliveryBoys(data.filter(item => item.deliveryBoyName || item.deliveryBoyMobile));
+        const formattedData = data.map(item => ({
+          id: item.userId,
+          userId: item.userId,
+          deliveryBoyName: item.firstName +" "+ item.lastName || 'N/A',
+          deliveryBoyMobile: item.whatsappNumber || 'N/A',
+          deliveryBoyEmail: item.email || 'N/A',
+          deliveryBoyAddress: item.address || 'N/A',
+          isActive: item.isActive === "true",
+          alterMobileNumber: item.alterMobileNumber || '',
+          lastName: item.lastName || ''
+        }));
+        setDeliveryBoys(formattedData);
       } else {
         throw new Error(data.message || 'Failed to load delivery boys.');
       }
-    // } 
-  }catch (error) {
-      // Alert.alert('Error', error.message || 'Failed to load delivery boys.');
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to load delivery boys.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchDeliveryBoys();
   };
 
   const updateDeliveryBoyStatus = async (id, userId, isActive) => {
-    setNewLoad(id);
+    setUpdatingId(id);
     try {
-      // const token = await AsyncStorage.getItem('accessToken');
-
-      // const userData = await AsyncStorage.getItem("userData");
-      // if (userData) {
-      //     const parsedData = JSON.parse(userData);
-      //     console.log("User ID:", parsedData.userId);
-      //     setUserId(parsedData.userId);
-      //     console.log("Access Token:", parsedData.accessToken);
-      //     setAccessToken(parsedData.accessToken);
-
-
       const response = await axios.patch(
-        BASE_URL+'erice-service/deliveryboy/status',
-        { "id": userId, "isActive": isActive },
-        { headers: { 'Authorization': `Bearer ${accessToken.token}` } }
+        BASE_URL+'user-service/status',
+        {
+          id: id,
+          isActive: isActive.toString()
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken.token}`,
+            'Content-Type': 'application/json'
+          }
+        }
       );
-
+console.log("updateDeliveryBoyStatus",response)
       if (response.status === 200) {
-        setDeliveryBoys(prev => prev.map(boy => boy.id === id ? { ...boy, isActive } : boy));
-        Alert.alert('Success!', 'Deliveryboy status updated successfully.');
+        setDeliveryBoys(prev => 
+          prev.map(boy => boy.id === id ? { ...boy, isActive } : boy)
+        );
+        Alert.alert('Success!', 'Delivery Boy status updated.');
+        await fetchDeliveryBoys();
       } else {
         throw new Error(response.data.message || 'Failed to update status.');
       }
-    // } 
-  }catch (error) {
+    } catch (error) {
       Alert.alert('Error', error.message || 'Failed to update status.');
-    }
-    finally {
-      setNewLoad(null); 
+    } finally {
+      setUpdatingId(null);
     }
   };
 
+  const handleUpdate = (deliveryBoy) => {
+    setIsModalVisible(true);
 
+    console.log("Handle Submit");
+    
+    setSelectedDeliveryBoy(deliveryBoy);
+    setFormData({
+      userFirstName: deliveryBoy.firstName,
+      userLastName: deliveryBoy.lastName,
+      whatsappNumber: deliveryBoy.deliveryBoyMobile,
+      alterMobileNumber: deliveryBoy.alterMobileNumber || '',
+      customerEmail: deliveryBoy.deliveryBoyEmail,
+      id: deliveryBoy.id,
+    });
+  };
+
+  const saveUpdates = async () => { 
+    
+    if(formData.userFirstName=="" || formData.userFirstName==null){
+      setFormData({...formData,name_error:true})
+      return false
+    }
+    if(formData.userLastName=="" || formData.userLastName==null){
+      setFormData({...formData,lastName_error:true})
+      return false
+    }
+    if(formData.customerEmail=="" || formData.customerEmail==null){
+      setFormData({...formData,email_error:true})
+      return false
+    }
+    try {
+      setUpdateLoading(true);
+      const response = await axios.patch(
+        BASE_URL+'user-service/update',
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken.token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      console.log("response",response.data)
+      if (response.status === 200) {
+        Alert.alert('Success', 'Delivery boy details updated successfully');
+        setIsModalVisible(false);
+        await fetchDeliveryBoys();
+      } else {
+        throw new Error('Failed to update delivery boy details');
+      }
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to update delivery boy details');
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
 
   const makeCall = (phoneNumber) => {
-    const phoneUrl = `tel:${phoneNumber}`;
+    const cleanedNumber = phoneNumber.replace(/\D/g, '');
+    const phoneUrl = `tel:${cleanedNumber}`;
+    
     Linking.openURL(phoneUrl)
-      .then(() => {
-        console.log('Dialer opened successfully.');
-      })
       .catch((error) => {
         Alert.alert('Error', 'Failed to open the phone dialer.');
         console.error('Error:', error);
       });
   };
 
-
-  const navigateToEdit = (deliveryBoy) => {
-    setIsModalVisible(true);
-    setSelectedDeliveryBoy(deliveryBoy);
-    setFormData({
-      id: deliveryBoy.userId,
-      deliveryBoyName: deliveryBoy.deliveryBoyName,
-      deliveryBoyMobile: deliveryBoy.deliveryBoyMobile,
-      deliveryBoyEmail: deliveryBoy.deliveryBoyEmail,
-      deliveryBoyAddress: deliveryBoy.deliveryBoyAddress,
-      isActive: deliveryBoy.isActive,
-    });
-  };
-  
-  const validateFormData = () => {
-    const { deliveryBoyName, deliveryBoyMobile, deliveryBoyEmail, deliveryBoyAddress } = formData;
-    if (deliveryBoyMobile.length!=10) {
-      Alert.alert("Error","Mobile Number must be 10 digits...!")
-      return false;
-  }
-    if (!deliveryBoyName || !deliveryBoyMobile || !deliveryBoyEmail || !deliveryBoyAddress ) {
-      Alert.alert('Error', 'All fields are required.');
-      return false;
-    }
-    return true;
-  };
-
-  const handleConvert = async ({userId,testUser}) => {
-    console.log(userId,testUser);
-    const apiUrl = BASE_URL+'erice-service/user/updateTestUsers';
-    const requestBody = {
-      userId: userId,
-      testUser: !testUser,
-    };
-  
-    try {
-      const response = await axios.patch(apiUrl, requestBody, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-  console.log("response",response);
-  
-      if (response.status === 200) {
-        if (testUser) {
-          console.log('User successfully converted:', response.data);
-        Alert.alert('Success','User converted to live User successfully!');
-        } else {
-          Alert.alert('Success','User converted to Test User successfully!');
-        }
-        await fetchDeliveryBoys();
-        
-      } else {
-        console.log('Unexpected response:', response);
-        alert('Failed to convert user.');
-      }
-    } catch (error) {
-      console.error('Error converting user:', error.response);
-      alert('An error occurred. Please try again.');
-    }
-  };
-
-  const saveChanges = async () => {
-    if (!validateFormData()) return;
-
-    // const token = await AsyncStorage.getItem('accessToken');
-    const userData = await AsyncStorage.getItem("userData");
-    // if (userData) {
-    //     const parsedData = JSON.parse(userData);
-    //     console.log("User ID:", parsedData.userId);
-    //     setUserId(parsedData.userId);
-    //     console.log("Access Token:", parsedData.accessToken);
-    //     setAccessToken(parsedData.accessToken);
-    
-    axios({
-      method: "patch",
-      url:BASE_URL+'erice-service/deliveryboy/update',
-      data: formData,
-      headers: {
-        'Authorization': `Bearer ${accessToken.token}`,
-      }
-    })
-      .then((response) => {
-        
-        Alert.alert("Success!",response.data.message);
-        setIsModalVisible(false);
-        // Update the specific delivery boy data in the list
-        setDeliveryBoys(prev => prev.map(boy => boy.userId === formData.id ? { ...boy, ...formData } : boy));
-      })
-      .catch((error) => {
-        Alert.alert(error.response.data.error);
-        setIsModalVisible(false);
-      });
-    // }
-  };
   const renderItem = ({ item }) => (
     <View style={styles.item}>
-      {/* <Text style={styles.itemText}>
-        <Text style={styles.boldText}>Name: </Text>{item.id || 'N/A'}
-      </Text> */}
-      <Text style={styles.itemText}>
-        <Text style={styles.boldText}>Name: </Text>{item.deliveryBoyName || 'N/A'}
-      </Text>
-      <Text style={styles.itemText}>
-        <Text style={styles.boldText}>Mobile: </Text>{item.deliveryBoyMobile || 'N/A'}
-      </Text>
-      <Text style={styles.itemText}>
-        <Text style={styles.boldText}>Email: </Text>{item.deliveryBoyEmail || 'N/A'}
-      </Text>
-      <Text style={styles.itemText}>
-        <Text style={styles.boldText}>Address: </Text>{item.deliveryBoyAddress || 'N/A'}
-      </Text>
-
+      <View style={styles.itemHeader}>
+        <Text style={styles.itemName}>{item.deliveryBoyName} </Text>
+        <View style={styles.itemActions}>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('Delivery Boy Orders', { id: item.userId })}
+          >
+            <Icon name="info-circle" size={24} color="grey" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => handleUpdate(item)}
+          >
+            <Icon name="edit" size={24} color="#FFA500" />
+          </TouchableOpacity>
+        </View>
+      </View>
+      
+      <View style={styles.detailsContainer}>
+        <View style={styles.detailItem}>
+          <Icon name="phone" size={16} color="#555" />
+          <Text style={styles.itemDetail}>{item.deliveryBoyMobile}</Text>
+        </View>
+        
+        <View style={styles.detailItem}>
+          <Icon name="envelope" size={16} color="#555" />
+          <Text style={styles.itemDetail}>{item.deliveryBoyEmail}</Text>
+        </View>
+        
+        {item.deliveryBoyAddress && item.deliveryBoyAddress !== 'N/A' && (
+          <View style={styles.detailItem}>
+            <Icon name="map-marker" size={16} color="#555" />
+            <Text style={styles.itemDetail}>{item.deliveryBoyAddress}</Text>
+          </View>
+        )}
+      </View>
+      
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.statusButton, { backgroundColor: !item.isActive ? '#f44336' : '#4CAF50' },
-            newload===item.id && styles.disabledButton,
+          style={[
+            styles.statusButton, 
+            { backgroundColor: item.isActive ? '#4CAF50' : '#f44336' }
           ]}
           onPress={() => updateDeliveryBoyStatus(item.id, item.userId, !item.isActive)}
+          disabled={updatingId === item.id}
         >
-          {newload===item.id ? <ActivityIndicator color="#fff"/>:<Text style={styles.statusButtonText}>{item.isActive ? 'Activate' : 'Deactivate'}</Text>}
-       
+          {updatingId === item.id ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <Icon 
+                name={item.isActive ? "toggle-on" : "toggle-off"} 
+                size={18} 
+                color="#fff" 
+                style={styles.buttonIcon} 
+              />
+              <Text style={styles.statusButtonText}>
+                {item.isActive ? 'Active' : 'Inactive'}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.statusButton, { backgroundColor: !item.testUser ? '#f44336' : '#4CAF50' }]} onPress={
-          () => handleConvert(item, item.testUser)
-        }>
-                  {item.testUser ? <Text style={styles.convertButtonText}>Convert to Live User</Text> 
-                  : <Text style={styles.convertButtonText}>Convert to Test User</Text>}
-                </TouchableOpacity>
-
+        
         {item.deliveryBoyMobile && (
-          <TouchableOpacity style={styles.callIconContainer} onPress={() => makeCall(item.deliveryBoyMobile)}>
-            <Icon name="phone" size={18} color="#fff" />
+          <TouchableOpacity 
+            style={styles.callButton} 
+            onPress={() => makeCall(item.deliveryBoyMobile)}
+          >
+            <Icon name="phone" size={18} color="#fff" style={styles.buttonIcon} />
+            <Text style={styles.callButtonText}>Call</Text>
           </TouchableOpacity>
         )}
       </View>
+    </View>
+  );
 
-      <TouchableOpacity style={styles.editButton} onPress={() => navigateToEdit(item)}>
-        <Icon name="edit" size={26} color="black" />
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Icon name="users" size={50} color="#ccc" />
+      <Text style={styles.emptyText}>No Delivery Boys available</Text>
+      <TouchableOpacity style={styles.refreshButton} onPress={fetchDeliveryBoys}>
+        <Icon name="refresh" size={16} color="#fff" style={styles.buttonIcon} />
+        <Text style={styles.refreshButtonText}>Refresh</Text>
       </TouchableOpacity>
     </View>
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      {/* <StatusBar backgroundColor="#4CAF50" barStyle="light-content" /> */}
+      
+       
+      
       {loading ? (
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+          <Text style={styles.loadingText}>Loading delivery boys...</Text>
+        </View>
       ) : (
         <FlatList
           data={deliveryBoys}
-          // keyExtractor={item => item.userId.toString()}
           renderItem={renderItem}
-          ListEmptyComponent={<Text style={styles.emptyText}>No Delivery Boys available.</Text>}
+          keyExtractor={(item) => item.userId.toString()}
+          ListEmptyComponent={renderEmptyComponent}
+          contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#4CAF50"]}
+            />
+          }
         />
       )}
 
@@ -282,150 +322,297 @@ console.log({accessToken})
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <TextInput
-              style={styles.input}
-              placeholder="Name"
-              value={formData.deliveryBoyName}
-              onChangeText={text => setFormData({ ...formData, deliveryBoyName: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Mobile"
-              keyboardType="number-pad"
-              maxLength={10}
-              value={formData.deliveryBoyMobile}
-              onChangeText={number => setFormData({ ...formData, deliveryBoyMobile: number })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={formData.deliveryBoyEmail}
-              onChangeText={text => setFormData({ ...formData, deliveryBoyEmail: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Address"
-              value={formData.deliveryBoyAddress}
-              onChangeText={text => setFormData({ ...formData, deliveryBoyAddress: text })}
-            />
+            <Text style={styles.modalTitle}>Update Delivery Boy</Text>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="First Name"
+                value={formData.userFirstName}
+                onChangeText={(text) => setFormData({ ...formData, userFirstName: text,name_error:false })}
+              />
+            </View>
 
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setIsModalVisible(false)}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+            {formData.name_error==true?
+            <Text style={{color:"red",alignSelf:"center"}}>First Name is required</Text>:null}
+
+
+<View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Last name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Last Name"
+                value={formData.userLastName}
+                onChangeText={(text) => setFormData({ ...formData, userLastName: text,lastName_error:false })}
+              />
+            </View>
+
+            {formData.lastName_error==true?
+            <Text style={{color:"red",alignSelf:"center"}}>Last Name is required</Text>:null}
+
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Whatsapp Number</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="WhatsApp Number"
+                value={formData.whatsappNumber}
+                onChangeText={(text) => setFormData({ ...formData, whatsappNumber: text })}
+                keyboardType="phone-pad"
+                editable={false}
+              />
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={formData.customerEmail}
+                onChangeText={(text) => setFormData({ ...formData, customerEmail: text,email_error:false})}
+                keyboardType="email-address"
+              />
+            </View>
+            
+{formData.email_error==true?
+            <Text style={{color:"red",alignSelf:"center"}}>Email is required</Text>:null}
+
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity 
+                style={styles.cancelButton} 
+                onPress={() => setIsModalVisible(false)}
+                disabled={updateLoading}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={saveChanges}>
-                <Text style={styles.saveButtonText}>Save</Text>
+              
+              <TouchableOpacity 
+                style={styles.saveButton} 
+                onPress={()=>saveUpdates()}
+                disabled={updateLoading}
+              >
+                {updateLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.buttonText}>Update</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    elevation: 4,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  listContainer: {
+    padding: 12,
+    paddingBottom: 30,
   },
   item: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    marginBottom: 15,
-    padding: 15,
-    elevation: 5,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginBottom: 12,
+    padding: 16,
+    elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
   },
-  itemText: {
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingBottom: 8,
+  },
+  itemName: {
     fontSize: 18,
-    marginBottom: 4,
+    fontWeight: 'bold',
     color: '#333',
+    width:width*0.7
+  },
+  itemActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    padding: 8,
+    marginLeft: 5,
+  },
+  detailsContainer: {
+    marginBottom: 10,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  itemDetail: {
+    fontSize: 16,
+    color: '#555',
+    marginLeft: 10,
   },
   boldText: {
     fontWeight: 'bold',
   },
   buttonContainer: {
     flexDirection: 'row',
+    marginTop: 10,
     justifyContent: 'space-between',
-    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: 12,
   },
   statusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 5,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 10,
   },
   statusButtonText: {
-    color: '#000',
-    fontSize: 16,
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
-  callIconContainer: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 12,
-    justifyContent: 'center',
+  callButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    backgroundColor: '#4CAF50',
   },
-  editButton: {
-    position: 'absolute',
-    top: 10,
-    right: 18,
+  callButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
-  emptyText: {
-    textAlign: 'center',
-    fontSize: 18,
-    color: '#999',
+  buttonIcon: {
+    marginRight: 6,
   },
-  modalOverlay: {
+  loaderContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 8,
-    width: '80%',
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#555',
   },
-  input: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    marginBottom: 15,
-    paddingLeft: 10,
-    borderRadius: 5,
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
   },
-  buttonContainer: {
+  emptyText: {
+    fontSize: 18,
+    color: '#777',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  refreshButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
   },
-  cancelButton: {
-    backgroundColor: '#FF6347',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 5,
-  },
-  cancelButtonText: {
+  refreshButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 12,
+    width: '90%',
+    maxWidth: 400,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+    fontWeight: '500',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fafafa',
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  cancelButton: {
+    backgroundColor: '#f44336',
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+    marginRight: 10,
+    alignItems: 'center',
   },
   saveButton: {
     backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 5,
+    padding: 12,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
   },
-  saveButtonText: {
-    color: '#fff',
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
     fontSize: 16,
-  },
-  disabledButton: {
-    opacity: 0.6, // Visual indication of disabled state
-  },
+  }
 });
 
-export default DeliveryBoys;
+export default DeliveryBoys

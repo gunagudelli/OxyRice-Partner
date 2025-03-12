@@ -17,7 +17,7 @@ import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/Ionicons";
-import BASE_URL from "../../config";
+import BASE_URL,{userStage} from "../../config";
 import { useDispatch } from 'react-redux';
 import { AccessToken } from '../../Redux/action';
 
@@ -29,6 +29,7 @@ const LoginPage = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
+console.log({userStage})
 
  useEffect(() => {
    const fetchEmail = async () => {
