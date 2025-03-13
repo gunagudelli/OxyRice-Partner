@@ -241,6 +241,7 @@ setAcceptLoader(true)
   const handleAssignedToDB = async () => {
     setAssignLoader(true)
     await getDeliveryBoys();
+
     setIsModalVisible(true);
 
   };
@@ -248,6 +249,8 @@ setAcceptLoader(true)
   const handleReassignedToDB = async () => {
     setAssignLoader(true)
     await getDeliveryBoys();
+    
+
     setIsModalVisible(true);
   };
 
@@ -337,11 +340,12 @@ setSubmitLoader(false)
     return `${formattedDate} ${formattedTime}`;
   };
   const handleConvert = async () => {
-    const apiUrl = BASE_URL + "erice-service/user/updateTestUsers";
+    const apiUrl = BASE_URL + "user-service/updateTestUsers";
     const requestBody = {
-      userId: userId,
+      id: userId,
       testUser: !testUser,
     };
+    console.log({requestBody})
     try {
       const response = await axios.patch(apiUrl, requestBody, {
         headers: {
@@ -350,6 +354,7 @@ setSubmitLoader(false)
       });
 
       if (response.status === 200) {
+        fetchOrderData()
         if (testUser) {
           console.log("User successfully converted:", response.data);
           Alert.alert("Success", "User converted to live User successfully!");
@@ -431,19 +436,20 @@ setSubmitLoader(false)
         }}
       >
         <Text style={styles.heading}>ORDER DETAILS</Text>
-        {userStage !== "test" && (
-          <TouchableOpacity
+        
+      </View>
+
+      <TouchableOpacity
             style={styles.convertButton}
             onPress={handleConvert}
           >
-            {testUser ? (
+            {testUser==false ? (
               <Text style={styles.convertButtonText}>Convert to Live User</Text>
             ) : (
               <Text style={styles.convertButtonText}>Convert to Test User</Text>
             )}
           </TouchableOpacity>
-        )}
-      </View>
+
       <View style={styles.section}>
         <Text style={styles.label}>
           Order Id:{" "}
@@ -459,7 +465,11 @@ setSubmitLoader(false)
         </Text>
         <Text style={styles.label}>
           Customer Mobile:{" "}
-          <Text style={styles.value}>{orderData?.mobileNumber || orderData?.mobileNumber|| "N/A"}</Text>
+          <Text style={styles.value}>{orderData?.mobileNumber || "N/A"}</Text>
+        </Text>
+        <Text style={styles.label}>
+          Alternate Mobile Number:{" "}
+          <Text style={styles.value}>{orderData?.alternativeMobileNumber ||"N/A"}</Text>
         </Text>
         <Text style={styles.label}>
           Customer Name:{" "}
@@ -566,37 +576,40 @@ setSubmitLoader(false)
       ) : (
         ""
       )}
-      <Text style={styles.heading}>Order Summary</Text>
-      <View style={styles.section}>
-        <Text style={styles.label}>
-          SUB TOTAL :{" "}
-          <Text style={styles.value}>Rs {orderData.subTotal || 0}</Text>
-        </Text>
-        <Text style={styles.label}>
-          DELIVERY FEE :{" "}
-          <Text style={styles.value}>Rs +{orderData.deliveryfee || 0}</Text>
-        </Text>
-        {orderData.gstAmount!=0 || orderData.gstAmount!=null?
-        <Text style={styles.label}>
-          GST :{" "}
-          <Text style={styles.value}>Rs +{orderData.gstAmount || 0}</Text>
-        </Text>:null}
-        {orderData.walletAmount!=0 || orderData.walletAmount!=null?
-        <Text style={styles.label}>
-          Wallet Amount :{" "}
-          <Text style={styles.value}>Rs -{orderData.walletAmount || 0}</Text>
-        </Text>:null}
+     <Text style={styles.heading}>Summary Order</Text>
+<View style={styles.section}>
+  <Text style={styles.label}>
+    SUB TOTAL: <Text style={styles.value}>Rs {orderData.subTotal || 0}</Text>
+  </Text>
+  <Text style={styles.label}>
+    DELIVERY FEE: <Text style={styles.value}>Rs :{orderData.deliveryfee || 0}</Text>
+  </Text>
 
-        {orderData.discountAmount!=0 || orderData.discountAmount!=null?
-        <Text style={styles.label}>
-          Coupon Amount :{" "}
-          <Text style={styles.value}>Rs -{orderData.discountAmount|| 0}</Text>
-        </Text>:null}
-        <Text style={styles.label}>
-          GRAND TOTAL :{" "}
-          <Text style={styles.value}>Rs {orderData.grandTotal || 0}</Text>
-        </Text>
-      </View>
+  {/* Show GST only if it's greater than zero */}
+  {orderData.gstAmount > 0 && (
+    <Text style={styles.label}>
+      GST: <Text style={styles.value}>Rs +{orderData.gstAmount}</Text>
+    </Text>
+  )}
+
+  {/* Show Wallet Amount only if it's greater than zero */}
+  {orderData.walletAmount > 0 && (
+    <Text style={styles.label}>
+      Wallet Amount: <Text style={styles.value}>Rs -{orderData.walletAmount}</Text>
+    </Text>
+  )}
+
+  {/* Show Discount Amount only if it's greater than zero */}
+  {orderData.discountAmount > 0 && (
+    <Text style={styles.label}>
+      Coupon Amount: <Text style={styles.value}>Rs -{orderData.discountAmount}</Text>
+    </Text>
+  )}
+
+  <Text style={styles.label}>
+    GRAND TOTAL: <Text style={styles.value}>Rs {orderData.grandTotal || 0}</Text>
+  </Text>
+</View>
 
       {(orderData.orderStatus === "5" || orderData.orderStatus === "6") && (
         <>
@@ -1010,6 +1023,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 5,
+    width: "48%",
+    alignItems: "center",
+    marginBottom: 20,
+    alignSelf:"flex-end"
   },
   convertButtonText: {
     color: "#fff",

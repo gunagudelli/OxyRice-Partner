@@ -187,7 +187,7 @@ const HomeScreen = ({ navigation }) => {
 
            
 
-{/* 
+
           <View style={styles.testButtonsContainer}>
             <TouchableOpacity 
               style={styles.testButton}
@@ -214,7 +214,7 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.testButtonText}>Test AllOrders</Text>
               </LinearGradient>
             </TouchableOpacity>
-          </View> */}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
