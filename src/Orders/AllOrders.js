@@ -180,7 +180,7 @@ const AllOrders = () => {
           <Text style={styles.orderIdLabel}>ORDER ID</Text>
           <Text style={styles.orderId}>
   {item.orderId ? (item.orderId).slice(-4) : "N/A"}
-</Text>
+  </Text>
         </View>
         <View
           style={[

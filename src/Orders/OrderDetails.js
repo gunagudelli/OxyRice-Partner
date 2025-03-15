@@ -454,7 +454,7 @@ setSubmitLoader(false)
         <Text style={styles.label}>
           Order Id:{" "}
           <Text style={styles.value}>
-            {route.params.order.uniqueId || "N/A"}
+            {route.params.order.orderId || "N/A"}
           </Text>
         </Text>
         <Text style={styles.label}>
@@ -464,12 +464,17 @@ setSubmitLoader(false)
           </Text>
         </Text>
         <Text style={styles.label}>
-          Customer Mobile:{" "}
-          <Text style={styles.value}>{orderData?.mobileNumber || "N/A"}</Text>
-        </Text>
+  Mobile Number:{" "}
+  <Text style={styles.value}>
+    {orderData?.mobileNumber?.trim() && orderData?.customerMobile?.trim() && orderData?.mobileNumber !== orderData?.customerMobile
+      ? `${orderData.mobileNumber}, ${orderData.customerMobile}`
+      : orderData?.customerMobile?.trim() || orderData?.mobileNumber?.trim() || "N/A"}
+  </Text>
+</Text>
+
         <Text style={styles.label}>
-          Alternate Mobile Number:{" "}
-          <Text style={styles.value}>{orderData?.alternativeMobileNumber ||"N/A"}</Text>
+          Alternate Mobile Number:{" "} 
+          <Text style={styles.value}>{orderData.alternativeMobileNumber ||"N/A"}</Text>
         </Text>
         <Text style={styles.label}>
           Customer Name:{" "}

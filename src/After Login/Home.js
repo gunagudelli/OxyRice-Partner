@@ -14,11 +14,10 @@ import {
   Animated,
   Platform
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-// import BASE_URL,{userStage} from "../../config"
 import { config } from '../../config';
-
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,7 +25,7 @@ const HomeScreen = ({ navigation }) => {
   const { BASE_URL, userStage } = config(); // Get values
 
   const [scaleAnimation] = useState(new Animated.Value(1));
-  const [headerHeight] = useState(new Animated.Value(height * 0.25));
+  const [headerHeight] = useState(new Animated.Value(height * 0.28)); // Slightly taller header
 
   useFocusEffect(
     useCallback(() => {
@@ -68,7 +67,7 @@ const HomeScreen = ({ navigation }) => {
       title: 'Orders',
       subTitle: 'Manage Orders',
       icon: 'bag-outline',
-      gradient: ['#4CAF50', '#45a049'],
+      gradient: ['#4CAF50', '#2E7D32'],
       onPress: () => navigation.navigate('Orders', { isTestOrder: false })
     },
     {
@@ -76,7 +75,7 @@ const HomeScreen = ({ navigation }) => {
       title: 'Items',
       subTitle: 'View Items',
       icon: 'list-outline',
-      gradient: ['#2196F3', '#1976D2'],
+      gradient: ['#2196F3', '#0D47A1'],
       onPress: () => navigation.navigate('Products')
     },
     {
@@ -84,7 +83,7 @@ const HomeScreen = ({ navigation }) => {
       title: 'Delivery Boys',
       subTitle: 'Track Team',
       icon: 'people-outline',
-      gradient: ['#3F51B5', '#303F9F'],
+      gradient: ['#673AB7', '#4527A0'],
       onPress: () => navigation.navigate('Delivery Boys')
     },
     {
@@ -92,7 +91,7 @@ const HomeScreen = ({ navigation }) => {
       title: 'All Orders',
       subTitle: 'Order History',
       icon: 'albums-outline',
-      gradient: ['#FFC107', '#FFA000'],
+      gradient: ['#FF9800', '#E65100'],
       onPress: () => navigation.navigate('All Orders')
     }
   ];
@@ -102,28 +101,37 @@ const HomeScreen = ({ navigation }) => {
     { useNativeDriver: false }
   );
 
+  // Get current time to display appropriate greeting
+  const getCurrentGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning ☀️ ";
+    if (hour < 18) return "Good Afternoon🌤 ";
+    return "Good Evening 🌙 ";
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar  barStyle="light-content" />
+      <StatusBar barStyle="light-content" />
       
       <Animated.View style={[styles.header, { height: headerHeight }]}>
-       <LinearGradient
-  colors={['#3d2a71', '#5a3ea6', '#3d2a71','#5a3ea6','#3d2a71', '#5a3ea6', '#3d2a71','#5a3ea6']} 
-  style={styles.headerGradient}
-  start={{ x: 0, y: 0,z:0,a:0,b:0,c:0 }}
-  end={{ x: 1, y: 1,z:1,a:1,b:1,c:1 }}  
->
-          <View style={styles.headerContent}>
-            <Text style={styles.welcomeText}>Welcome!</Text>
-            <Text style={styles.partnerName}>AskOxy.AI Partner</Text>
-            <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</Text>
-          </View>
-        </LinearGradient>
-      </Animated.View>
+      <LinearGradient
+          colors={['#3d2a71', '#5a3ea6']}
+          style={styles.headerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+    <View style={styles.headerContent}>
+      <Text style={styles.greetingText}>{getCurrentGreeting()}!</Text>
+      <Text style={styles.welcomeText}>Welcome Back</Text>
+      <Text style={styles.partnerName}>ASKOXY.AI PARTNER</Text>
+      <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric' 
+      })}</Text>
+    </View>
+  </LinearGradient>
+</Animated.View>
 
       <ScrollView 
         contentContainerStyle={styles.scrollContainer}
@@ -162,58 +170,45 @@ const HomeScreen = ({ navigation }) => {
               </Animated.View>
             ))}
           </View>
-        <TouchableOpacity style={{ backgroundColor:'#FF6961',padding:10,alignItems:"center",borderRadius:10,
-
-        }}
-        
-  onPress={() => {
-
-    Alert.alert(
-      "Logout",
-      "🔒 Are you sure you want to log out from Askoxy.AI Partner? 🤔",
-      [
-        { text: "Cancel", style: "cancel" ,   },
-        { text: "OK", onPress: () => navigation.navigate("LoginWithPassword") }
-      ],
-      { cancelable: false }
-    );
-  }}
->
-  
-  <Text style={{
-    fontSize:20,fontWeight:"bold",color:"#fff"
-  }}>Logout</Text>
-</TouchableOpacity>
-
-           
-
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={() => {
+              Alert.alert(
+                "Logout",
+                "🔒 Are you sure you want to log out from Askoxy.AI Partner? 🤔",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { 
+                    text: "OK", 
+                    onPress: async () => {
+                      try {
+                        // Clear the token from AsyncStorage
+                        await AsyncStorage.removeItem("accessToken");
+                        
+                        // Navigate to login screen
+                        navigation.navigate("LoginWithPassword");
+                      } catch (error) {
+                        console.error("Logout error:", error);
+                        Alert.alert("Error", "Failed to logout. Please try again.");
+                      }
+                    }
+                  }
+                ],
+                { cancelable: false }
+              );
+            }}
+          >
+            <LinearGradient
+              colors={['#FF5252', '#D32F2F']}
+              style={styles.logoutGradient}
+            >
+              <Icon name="log-out-outline" size={20} color="#fff" style={styles.logoutIcon} />
+              <Text style={styles.logoutText}>Logout</Text>
+            </LinearGradient>
+          </TouchableOpacity>
 
           <View style={styles.testButtonsContainer}>
-            <TouchableOpacity 
-              style={styles.testButton}
-              onPress={() => navigation.navigate('Orders', { isTestOrder: true })}
-            >
-              <LinearGradient
-                colors={['#f8f9fa', '#e9ecef']}
-                style={styles.testButtonGradient}
-              >
-                <Icon name="flask-outline" size={24} color="#666" />
-                <Text style={styles.testButtonText}>Test Orders</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.testButton}
-              onPress={() => navigation.navigate('TestAllOrders', { isTestOrder: true })}
-            >
-              <LinearGradient
-                colors={['#f8f9fa', '#e9ecef']}
-                style={styles.testButtonGradient}
-              >
-                <Icon name="layers-outline" size={24} color="#666" />
-                <Text style={styles.testButtonText}>Test AllOrders</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            {/* Test buttons commented out in original code */}
           </View>
         </View>
       </ScrollView>
@@ -235,8 +230,8 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
     paddingTop: 20,
     paddingBottom: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
     overflow: 'hidden',
   },
   headerContent: {
@@ -251,25 +246,42 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 100,
   },
-  welcomeText: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  partnerName: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#ffffff',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#ffffff',
-    opacity: 0.8,
-  },
+  // Add these to your StyleSheet:
+
+greetingText: {
+  fontSize: 24,
+  fontWeight: '600',
+  color: '#f8f9fa',
+  marginBottom: 4,
+  textAlign: 'center',
+  textShadowColor: 'rgba(0, 0, 0, 0.2)',
+  textShadowOffset: { width: 1, height: 1 },
+  textShadowRadius: 3,
+},
+welcomeText: {
+  fontSize: 36,
+  fontWeight: '800',
+  color: '#ffffff',
+  marginBottom: 8,
+  textAlign: 'center',
+  textShadowColor: 'rgba(0, 0, 0, 0.3)',
+  textShadowOffset: { width: 1, height: 1 },
+  textShadowRadius: 3,
+},
+partnerName: {
+  fontSize: 28,
+  fontWeight: '700',
+  color: '#e0fbfc',
+  textAlign: 'center',
+  marginBottom: 8,
+},
+dateText: {
+  fontSize: 16,
+  color: '#ffffff',
+  opacity: 0.9,
+  fontWeight: '500',
+  letterSpacing: 0.5,
+},
   mainContent: {
     flex: 1,
     justifyContent: 'space-between',
@@ -278,7 +290,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 20,
   },
   box: {
     backgroundColor: '#ffffff',
@@ -328,6 +340,36 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 15,
     bottom: 15,
+  },
+  logoutButton: {
+    borderRadius: 15,
+    overflow: 'hidden',
+    marginVertical: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  logoutGradient: {
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  logoutText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  logoutIcon: {
+    marginRight: 8,
   },
   testButtonsContainer: {
     flexDirection: 'row',
