@@ -19,13 +19,13 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { config } from '../../config';
+import BASE_URL from '../../config';
 import { useSelector } from "react-redux";
 
 const { width, height } = Dimensions.get('window');
 
 const DeliveryBoys = ({ navigation }) => {
-  const { BASE_URL, userStage } = config(); // Get values
+  //const { BASE_URL, userStage } = config(); // Get values
 // console.log({BASE_URL})
   const [deliveryBoys, setDeliveryBoys] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -445,16 +445,18 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     paddingBottom: 8,
+    
   },
   itemName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    width:width*0.7
+    width:width*0.65
   },
   itemActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingRight:10
   },
   iconButton: {
     padding: 8,

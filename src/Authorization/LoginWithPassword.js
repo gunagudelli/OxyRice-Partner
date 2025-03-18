@@ -19,11 +19,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch } from "react-redux";
 import { AccessToken, UserID } from "../../Redux/action/index";
 import Icon from "react-native-vector-icons/Ionicons";
-
+import BASE_URL from "../../config";
 const { height, width } = Dimensions.get("window");
 
 // Set fixed BASE_URL for Live environment
-const BASE_URL = "https://meta.oxyloans.com/api/";
+// const BASE_URL = "https://meta.oxyloans.com/api/";
 
 const LoginWithPassword = () => {
   const [formData, setFormData] = useState({
@@ -51,7 +51,7 @@ const LoginWithPassword = () => {
       if (token) {
         console.log("Auto login with saved token");
         dispatch(AccessToken(JSON.parse(token)));
-        dispatch(UserID("Live")); // Always set to Live environment
+        dispatch(UserID("Live"));
         navigation.navigate("Home");
       } else {
         console.log("No saved token found");
@@ -63,7 +63,6 @@ const LoginWithPassword = () => {
     }
   };
 
-  // Run checkAutoLogin when the app starts
   useEffect(() => {
     checkAutoLogin();
   }, []);

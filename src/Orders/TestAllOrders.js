@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Alert, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import axios from 'axios';
-import { config } from '../../config';
+import BASE_URL from '../../config';
 import { useSelector } from "react-redux";
 import { Dropdown } from 'react-native-element-dropdown';
 import { Dimensions } from 'react-native';
@@ -18,7 +18,7 @@ const TestAllOrders = () => {
   const [error, setError] = useState(null);
   const [searchText, setSearchText] = useState("");
   const accessToken = useSelector((state) => state.counter);
-  const { BASE_URL, userStage } = config(); // Get values
+  //const { BASE_URL, userStage } = config(); // Get values
 
   const [selectedValue, setSelectedValue] = useState("1");
   const [dropLoading, setDropLoading] = useState(false);

@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { config } from '../../config';
+import BASE_URL from '../../config';
 import { useFocusEffect } from "@react-navigation/native";
 const { height, width } = Dimensions.get("window");
 import { useSelector } from "react-redux";
@@ -31,7 +31,7 @@ const NewOrders = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchError, setSearchError] = useState("");
   const accessToken = useSelector((state) => state.counter);
-  const { BASE_URL, userStage } = config(); // Get values
+  //const { BASE_URL, userStage } = config(); // Get values
 
 
   useFocusEffect(
@@ -58,7 +58,6 @@ const NewOrders = ({ navigation, route }) => {
       const userData = await AsyncStorage.getItem("userData");
       setLoader(true);
       setSearchError("");
-      
       const response = await axios.get(
         // userStage == "test" ?
            BASE_URL + `order-service/getAllOrdersBasedOnStatus?orderStatus=1`, 
@@ -84,7 +83,7 @@ const NewOrders = ({ navigation, route }) => {
       setFilteredOrders(acceptedOrders);
     } catch (error) {
       setLoader(false);
-      console.error("Error fetching user data or orders:", error);
+      console.error("Error fetching user data or orders:", error.response);
     }
   };
 
@@ -114,6 +113,17 @@ const NewOrders = ({ navigation, route }) => {
     }
     
     setFilteredOrders(filtered);
+  };
+
+  const formatPrice = (price) => {
+    if (!price) return "0"; // Handle null or undefined cases
+    const rounded = Math.round(price * 10) / 10; // Round to 1 decimal place
+    const decimalPart = rounded % 1; // Extract decimal part
+  
+    if (decimalPart < 0.5) {
+      return Math.floor(rounded); // Trim to the lower value if < 0.5
+    }
+    return rounded.toFixed(1); 
   };
 
   const clearSearch = () => {
@@ -167,7 +177,7 @@ const NewOrders = ({ navigation, route }) => {
               </View>
               <View>
                 <Text style={styles.orderRupees}>
-                  Rs : <Text style={styles.orderPrice}>{item?.grandTotal}</Text>
+                <Text style={styles.orderPrice}>Rs : {formatPrice(item?.grandTotal)}</Text>
                 </Text>
               </View>
             </View>

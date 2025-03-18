@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity,ActivityIndicator, D
 import axios from 'axios';
 import { useSelector } from "react-redux";
 import { useFocusEffect } from '@react-navigation/native';
-import { config } from '../../config';
+import BASE_URL from '../../config';
 
 const {height,width}=Dimensions.get('window')
 
 
 const AssignedOrders = ({navigation,error,id}) => {
   const accessToken = useSelector((state) => state.counter);
-  const { BASE_URL, userStage } = config(); // Get values
+  // //const { BASE_URL, userStage } = config(); // Get values
 console.log("id",id)
 // console.log({userStage})
 const[assignedData,setAssignedData]=useState([])

@@ -14,7 +14,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import { Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { config } from '../../config';
+import BASE_URL from '../../config';
 
 const { width } = Dimensions.get("window");
 
@@ -25,7 +25,7 @@ const AllOrders = () => {
   const [error, setError] = React.useState(null);
   const [searchText, setSearchText] = React.useState("");
   const accessToken = useSelector((state) => state.counter);
-  const { BASE_URL } = config(); // Get values
+  // const { BASE_URL } = config(); // Get values
 
   // Date range states
   const [startDate, setStartDate] = React.useState(new Date(new Date().setDate(new Date().getDate() - 7))); // Default to 7 days ago

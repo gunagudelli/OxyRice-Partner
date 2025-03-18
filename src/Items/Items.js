@@ -16,7 +16,7 @@ import {
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import { config } from '../../config';
+import BASE_URL,{userStage} from '../../config';
 import { useSelector } from "react-redux";
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -35,7 +35,7 @@ const COLORS = {
 };
 
 const Items = () => {
-  const { BASE_URL,userStage } = config();
+  // const { BASE_URL,userStage } = config();
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);

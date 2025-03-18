@@ -17,12 +17,12 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { config } from '../../config';
+import BASE_URL from '../../config';
 
 const { width, height } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
-  const { BASE_URL, userStage } = config(); // Get values
+  // //const { BASE_URL, userStage } = config(); // Get values
 
   const [scaleAnimation] = useState(new Animated.Value(1));
   const [headerHeight] = useState(new Animated.Value(height * 0.28)); // Slightly taller header

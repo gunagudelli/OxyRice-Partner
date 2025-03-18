@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { config } from '../../config';
+import BASE_URL from '../../config';
 import { useFocusEffect } from "@react-navigation/native";
 const { height, width } = Dimensions.get("window");
 import { useSelector } from "react-redux";
@@ -21,7 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const NewOrders = ({ navigation, route }) => {
   const accessToken = useSelector((state) => state.counter);
-  const { BASE_URL, userStage } = config(); // Get values
+  //const { BASE_URL, userStage } = config(); // Get values
   
   const { isTestOrder } = route.params;
   const [orders, setOrders] = useState([]);

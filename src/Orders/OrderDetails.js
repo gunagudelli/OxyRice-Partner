@@ -15,7 +15,7 @@ import axios from "axios";
 import { TextInput } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import { config } from '../../config';
+import BASE_URL from '../../config';
 import { RadioButton } from "react-native-paper";
 import { useSelector } from "react-redux";
 import BarCodeScannerScreen from "../BarCode";
@@ -28,7 +28,7 @@ const OrderDetails = ({ route }) => {
   const status = route.params.order.orderStatus;
   const customerId = route.params.order.customerId;
   const accessToken = useSelector((state) => state.counter);
-  const { BASE_URL, userStage } = config(); // Get values
+  //const { BASE_URL, userStage } = config(); // Get values
 
   const orderStatusMap = {
     0: "Incomplete",
@@ -337,7 +337,7 @@ setSubmitLoader(false)
     const date = new Date(dateString);
     const formattedDate = date.toISOString().split("T")[0]; // Get "YYYY-MM-DD"
     const formattedTime = date.toTimeString().split(":").slice(0, 2).join(":"); // Get "HH:mm"
-    return `${formattedDate} ${formattedTime}`;
+    return `${formattedDate} ${formattedTime}`; 
   };
   const handleConvert = async () => {
     const apiUrl = BASE_URL + "user-service/updateTestUsers";
@@ -354,7 +354,7 @@ setSubmitLoader(false)
       });
 
       if (response.status === 200) {
-        fetchOrderData()
+        // fetchOrderData()
         if (testUser) {
           console.log("User successfully converted:", response.data);
           Alert.alert("Success", "User converted to live User successfully!");
@@ -362,14 +362,14 @@ setSubmitLoader(false)
           Alert.alert("Success", "User converted to Test User successfully!");
         }
         await fetchOrderData();
-      } else {
+      } else {  
         console.log("Unexpected response:", response);
         alert("Failed to convert user.");
       }
-    } catch (error) {
+    } catch (error) { 
       console.error("Error converting user:", error);
       alert("An error occurred. Please try again.");
-    }
+    } 
   };
   const handlereAcceptPress = async () => {
     try {
@@ -424,6 +424,16 @@ setSubmitLoader(false)
       .replace(/([A-Z])/g, " $1") // Add space before capital letters
       .replace(/^./, (str) => str.toUpperCase()); // Capitalize first letter
   };
+  const formatPrice = (price) => {
+    if (!price) return "0"; // Handle null or undefined cases
+    const rounded = Math.round(price * 10) / 10; // Round to 1 decimal place
+    const decimalPart = rounded % 1; // Extract decimal part
+  
+    if (decimalPart < 0.5) {
+      return Math.floor(rounded); // Trim to the lower value if < 0.5
+    }
+    return rounded.toFixed(1); // Show 1 decimal place
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -443,7 +453,7 @@ setSubmitLoader(false)
             style={styles.convertButton}
             onPress={handleConvert}
           >
-            {testUser==false ? (
+            {testUser==true ? (
               <Text style={styles.convertButtonText}>Convert to Live User</Text>
             ) : (
               <Text style={styles.convertButtonText}>Convert to Test User</Text>
@@ -612,7 +622,7 @@ setSubmitLoader(false)
   )}
 
   <Text style={styles.label}>
-    GRAND TOTAL: <Text style={styles.value}>Rs {orderData.grandTotal || 0}</Text>
+    GRAND TOTAL: <Text style={styles.value}>Rs {formatPrice(orderData.grandTotal) || 0}</Text>
   </Text>
 </View>
 
