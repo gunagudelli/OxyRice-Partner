@@ -63,7 +63,7 @@ const AllOrders = () => {
         }
       );
       
-      console.log("Date range orders response", response);
+      // console.log("Date range orders response", response);
       setOrders(response.data);
     } catch (error) {
       console.error("Error fetching orders by date range:", error);

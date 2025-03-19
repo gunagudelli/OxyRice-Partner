@@ -93,6 +93,22 @@ const HomeScreen = ({ navigation }) => {
       icon: 'albums-outline',
       gradient: ['#FF9800', '#E65100'],
       onPress: () => navigation.navigate('All Orders')
+    },
+    {
+      id: 5,
+      title: 'All Queries',
+      subTitle: 'Raised by users',
+      icon: 'chatbubbles-outline',
+      gradient: ['#00BCD4', '#00838F'], // Cyan to Dark Cyan
+      onPress: () => navigation.navigate('All Orders')
+    },
+    {
+      id: 6,
+      title: 'Split Bags',
+      subTitle: 'Order History',
+      icon: 'cut-outline',
+      gradient: ['#FF4081', '#C2185B'], // Pink to Dark Pink
+      onPress: () => navigation.navigate('Split Bags')
     }
   ];
 
@@ -154,7 +170,7 @@ const HomeScreen = ({ navigation }) => {
                     colors={item.gradient}
                     style={styles.iconContainer}
                   >
-                    <Icon name={item.icon} size={40} color="#fff" />
+                    <Icon name={item.icon} size={30} color="#fff" />
                   </LinearGradient>
                   <View style={styles.textContainer}>
                     <Text style={styles.boxText}>{item.title}</Text>
@@ -170,7 +186,11 @@ const HomeScreen = ({ navigation }) => {
               </Animated.View>
             ))}
           </View>
-          <TouchableOpacity 
+         
+        </View>
+      </ScrollView>
+
+      <TouchableOpacity 
             style={styles.logoutButton}
             onPress={() => {
               Alert.alert(
@@ -210,8 +230,6 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.testButtonsContainer}>
             {/* Test buttons commented out in original code */}
           </View>
-        </View>
-      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -295,11 +313,11 @@ dateText: {
   box: {
     backgroundColor: '#ffffff',
     width: width * 0.42,
-    height: height * 0.22,
+    height: height * 0.1,
     borderRadius: 20,
     padding: 15,
     marginBottom: 20,
-    flexDirection: 'column',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     ...Platform.select({
       ios: {
@@ -314,16 +332,17 @@ dateText: {
     }),
   },
   iconContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
   textContainer: {
     flex: 1,
-    justifyContent: 'center',
+    marginLeft:10
+    // justifyContent: 'center',
   },
   boxText: {
     fontSize: 18,
@@ -342,26 +361,28 @@ dateText: {
     bottom: 15,
   },
   logoutButton: {
+    // flex:3,
     borderRadius: 15,
     overflow: 'hidden',
     marginVertical: 10,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    // ...Platform.select({
+    //   ios: {
+    //     shadowColor: '#000',
+    //     shadowOffset: { width: 0, height: 3 },
+    //     shadowOpacity: 0.2,
+    //     shadowRadius: 5,
+    //   },
+    //   android: {
+    //     elevation: 4,
+    //   },
+    // }),
   },
   logoutGradient: {
     padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    margin:10
   },
   logoutText: {
     fontSize: 18,

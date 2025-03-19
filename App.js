@@ -20,6 +20,7 @@ import UpdateDeliveryBoy from './src/Extra Files/UpdateDeliveryBoy';
 import OrderDetails from './src/Orders/OrderDetails';
 import TestAllOrders from './src/Orders/TestAllOrders';
 import Logout from './src/After Login/Logout';
+import SplitBags from './src/Split Bags/SplitBags';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 import BarCodeScannerScreen from "./src/BarCode"
@@ -37,6 +38,7 @@ export default function App() {
     <Provider store={store}> 
     <NavigationContainer>
       <Stack.Navigator
+      // initialRouteName='Split Bags'
         initialRouteName="LoginWithPassword"
         screenOptions={{
           headerStyle: {
@@ -119,6 +121,10 @@ export default function App() {
           name="All Orders"
           component={AllOrders}
         
+        />
+         <Stack.Screen
+          name="Split Bags"
+          component={SplitBags}
         />
 
 <Stack.Screen
