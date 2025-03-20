@@ -253,30 +253,30 @@ const Userqueries = ({ navigation }) => {
     };
     console.log({data})
 
-    // axios({
-    //   method: "post",
-    //   url: `${BASE_URL}user-service/write/saveData`,
-    //   data: data,
-    //   headers: {
-    //     Authorization: `Bearer ${token}`
-    //   }
-    // })
-    // .then((response) => {
-    //   console.log("Feedback submitted successfully:", response.data);
+    axios({
+      method: "post",
+      url: `${BASE_URL}user-service/write/saveData`,
+      data: data,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    .then((response) => {
+      console.log("Feedback submitted successfully:", response.data);
       
-    //   // Show success message
-    //   setFeedbackSuccess(true);
+      // Show success message
+      setFeedbackSuccess(true);
       
-    //   // Wait 1 second then close modal and refresh tickets
-    //   setTimeout(() => {
-    //     setFeedbackModal(false);
-    //     fetchTickets();
-    //   }, 1000);
-    // })
-    // .catch((error) => {
-    //   console.log("Error submitting feedback:", error);
-    //   setFeedbackError("Failed to submit feedback. Please try again.");
-    // })
+      // Wait 1 second then close modal and refresh tickets
+      setTimeout(() => {
+        setFeedbackModal(false);
+        fetchTickets();
+      }, 1000);
+    })
+    .catch((error) => {
+      console.log("Error submitting feedback:", error);
+      setFeedbackError("Failed to submit feedback. Please try again.");
+    })
    
   };
   

@@ -20,7 +20,10 @@ import UpdateDeliveryBoy from './src/Extra Files/UpdateDeliveryBoy';
 import OrderDetails from './src/Orders/OrderDetails';
 import TestAllOrders from './src/Orders/TestAllOrders';
 import Logout from './src/After Login/Logout';
+
 import SplitBags from './src/Split Bags/SplitBags';
+import AllSplitBags from './src/Split Bags/AllSplitBags';
+
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 import BarCodeScannerScreen from "./src/BarCode"
@@ -130,6 +133,10 @@ export default function App() {
          <Stack.Screen
           name="Split Bags"
           component={SplitBags}
+        />
+          <Stack.Screen
+          name="All Split Bags"
+          component={AllSplitBags}
         />
 
 <Stack.Screen

@@ -319,7 +319,7 @@ dateText: {
   box: {
     backgroundColor: '#ffffff',
     width: width * 0.42,
-    height: height * 0.1,
+    height: height * 0.11,
     borderRadius: 20,
     padding: 15,
     marginBottom: 20,
