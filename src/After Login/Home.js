@@ -100,7 +100,7 @@ const HomeScreen = ({ navigation }) => {
       subTitle: 'Raised by users',
       icon: 'chatbubbles-outline',
       gradient: ['#00BCD4', '#00838F'], // Cyan to Dark Cyan
-      onPress: () => navigation.navigate('All Orders')
+      onPress: () => navigation.navigate('User Queries')
     },
     {
       id: 6,
@@ -109,7 +109,7 @@ const HomeScreen = ({ navigation }) => {
       icon: 'cut-outline',
       gradient: ['#FF4081', '#C2185B'], // Pink to Dark Pink
       onPress: () => navigation.navigate('Split Bags')
-    }
+    },
   ];
 
   const handleScroll = Animated.event(
@@ -152,8 +152,8 @@ const HomeScreen = ({ navigation }) => {
       <ScrollView 
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
+        // onScroll={handleScroll}
+        // scrollEventThrottle={16}
       >
         <View style={styles.mainContent}>
           <View style={styles.gridContainer}>
@@ -242,6 +242,12 @@ const styles = StyleSheet.create({
   header: {
     width: '100%',
     overflow: 'hidden',
+    // width: '100%',
+    // position: 'absolute', // Make header fixed
+    // top: 0,
+    // left: 0,
+    // right: 0,
+    // zIndex: 10,
   },
   headerGradient: {
     flex: 1,

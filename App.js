@@ -25,6 +25,10 @@ import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 import BarCodeScannerScreen from "./src/BarCode"
 
+
+import Userqueries from './src/All Queries/Userqueries';
+import Querycomments from './src/All Queries/Querycomments';
+
 import allReducers from './Redux/reducers'
 
 const Stack = createNativeStackNavigator();
@@ -38,7 +42,7 @@ export default function App() {
     <Provider store={store}> 
     <NavigationContainer>
       <Stack.Navigator
-      // initialRouteName='Split Bags'
+      // initialRouteName='Dashboard'
         initialRouteName="LoginWithPassword"
         screenOptions={{
           headerStyle: {
@@ -62,6 +66,7 @@ export default function App() {
           component={OrderDetails}
           options={{ headerShown: true }}
         />
+       
         <Stack.Screen
           name="Login"
           component={LoginScreen}
@@ -146,6 +151,17 @@ export default function App() {
           name="UpdateDeliveryBoy"
           component={UpdateDeliveryBoy}
          
+        />
+
+<Stack.Screen
+          name="User Queries"
+          component={Userqueries}
+          
+        />
+         <Stack.Screen
+          name="Query Comments" 
+          component={Querycomments}
+          
         />
      
       </Stack.Navigator>

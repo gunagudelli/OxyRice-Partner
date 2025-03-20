@@ -14,6 +14,8 @@ import BarCodeScannerScreen from "./BarCode";
 import Checkbox from "expo-checkbox";
 import axios from "axios";
 import { useSelector } from "react-redux";
+import { Dropdown } from 'react-native-element-dropdown';
+
 import BASE_URL from "../../config";
 
 const { height, width } = Dimensions.get("window");
@@ -27,6 +29,14 @@ const SplitBags = () => {
   const [reason, setReason] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [selectedValue, setSelectedValue] = useState(null);
+
+  const data = [
+    { label: 'Shanthi', value: 'Shanthi' },
+    { label: 'Admin', value: 'Admin' },
+    { label: 'Tester', value: 'Tester' },
+  ];
+
 
   function handleValue(value, itemBarCode) {
     // Alert.alert("Sreeja", value);
@@ -61,6 +71,10 @@ const SplitBags = () => {
       }
     });
 
+    if (!selectedValue || selectedValue.trim() === "") {
+        newErrors.selectedValue = "Role is required!";
+      }
+
     if (!reason || reason.trim() === "") {
       newErrors.reason = "Reason is required!";
     }
@@ -70,11 +84,11 @@ const SplitBags = () => {
   };
 
   const handleSubmit = () => {
-    // if (!validateForm()) {
-    //   // Log each selected item's quantity to different consoles
+    if (!validateForm()) {
+      // Log each selected item's quantity to different consoles
 
-    //   return false;
-    // }
+      return false;
+    }
     if (inputValues["Sample Rice (1kg)"]) {
         console.log("1kg quantity:", inputValues["Sample Rice (1kg)"]);
       }
@@ -88,11 +102,12 @@ const SplitBags = () => {
       }
 
     const data = {
-      barCode: barCode,
+      barcode: barCode,
       oncesCount: inputValues["Sample Rice (1kg)"] || "0",
       fivesCount: inputValues["Sample Rice (5kgs)"] || "0",
       tensCount: inputValues["Sample Rice (10kgs)"] || "0",
       reason: reason,
+      splitedBy: selectedValue,
     };
     console.log({ data });
     setLoading(true);
@@ -105,12 +120,22 @@ const SplitBags = () => {
       .then((response) => {
         setLoading(false);
         console.log(response.data);
-        Alert.alert("Success", "Bags splitted successfully");
+        if(response.data.success==true){
+        Alert.alert("Success", response.data.message);
+            setBarCode(false)
+            setInputValues({})
+            setSelectedOptions({});
+            setReason("");
+            setSelectedValue(null); 
+        }
+        else{
+            Alert.alert("Failed", response.data.message);
+        }
       })
       .catch((error) => {
         setLoading(false);
         console.log(error.response);
-        Alert.alert("Failed", "Failed to split bags");
+        Alert.alert("Failed", error.response.data);
       });
   };
 
@@ -126,23 +151,15 @@ const SplitBags = () => {
   return (
     <View style={{ flex: 1 }}>
       <BarCodeScannerScreen onValue={(value) => handleValue(value)} />
+      <Text style={styles.barCodeTxt}>{barCode}</Text>
 
       {barCode ? (
-        <View style={{ margin: 20 }}>
-          <Text style={styles.barCodeTxt}>{barCode}</Text>
+        <View style={{ margin: 20,marginLeft:30 }}>
           <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 10 }}>
             Select Items:
           </Text>
 
-          {/* {["Sample Rice (1kg)", "Sample Rice (5kgs)", "Sample Rice (10kgs)"].map((item) => (
-          <View key={item} style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-            <Checkbox
-              value={selectedOptions[item] || false}
-              onValueChange={() => handleCheckboxChange(item)}
-            />
-            <Text style={{ marginLeft: 10 }}>{item}</Text>
-          </View>
-        ))} */}
+        
 
           {[
             "Sample Rice (1kg)",
@@ -166,7 +183,7 @@ const SplitBags = () => {
               {selectedOptions[item] && (
                 <View style={{ flex: 1 }}>
                   <TextInput
-                    placeholder={`Count`}
+                    placeholder="Count"
                     style={{
                       borderWidth: 1,
                       borderColor: errors[item] ? "red" : "#ccc",
@@ -184,6 +201,28 @@ const SplitBags = () => {
               )}
             </View>
           ))}
+
+<View style={{flexDirection:"row"}}>
+      <Text style={styles.label}>Select a Role:</Text>
+      <Dropdown
+        style={styles.dropdown}
+        data={data}
+        labelField="label"
+        valueField="value"
+        placeholder="Select Role"
+        value={selectedValue}
+        onChange={(item) => {setSelectedValue(item.value),setErrors((prev) => {
+                    const newErrors = { ...prev };
+                    delete newErrors.selectedValue;
+                    return newErrors;
+                  })}}
+      />
+    </View>
+    {errors.selectedValue && (
+              <Text style={{ color: "red",alignSelf:"center" }}>{errors.selectedValue}</Text>
+            )}
+    {/* {selectedValue && <Text style={styles.selectedText}>Selected: {selectedValue}</Text>} */}
+    
 
           <View style={{ margin: 20 }}>
             <Text
@@ -217,11 +256,11 @@ const SplitBags = () => {
               numberOfLines={3}
             />
             {errors.reason && (
-              <Text style={{ color: "red" }}>{errors.reason}</Text>
+              <Text style={{ color: "red",alignSelf:"center" }}>{errors.reason}</Text>
             )}
           </View>
 
-          {loading ? (
+          {loading==false ? (
             <TouchableOpacity
               style={styles.submitbtn}
               onPress={() => handleSubmit()}
@@ -233,11 +272,13 @@ const SplitBags = () => {
               style={styles.submitbtn}
             //   onPress={() => handleSubmit()}
             >
-              <ActivityIndicator
+              {/* <ActivityIndicator
                 size="medium"
                 color="#0384d5"
                 style={{ marginTop: 20 }}
-              />
+              /> */}
+                            <ActivityIndicator size="small" color="#fff" />
+              
             </TouchableOpacity>
           )}
         </View>
@@ -266,5 +307,25 @@ const styles = StyleSheet.create({
   },
   submitbtnTxt: {
     color: "white",
+  },
+  label: {
+    fontSize: 16,
+    margin: 10,
+  },
+  dropdown: {
+    width: '60%',
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
+    // marginVertical: 10,
+    marginHorizontal: 10,
+  },
+  selectedText: {
+    marginTop: 20,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

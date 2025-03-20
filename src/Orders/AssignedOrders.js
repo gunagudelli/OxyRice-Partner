@@ -155,13 +155,15 @@ const NewOrders = ({ navigation, route }) => {
                       : item.orderStatus == 2
                       ? "Accepted"
                       : item.orderStatus == 3
-                      ? "Picked Up"
+                      ? "Assigned"
                       : item.orderStatus == 4
                       ? "Delivered"
                       : item.orderStatus == 5
                       ? "Rejected"
                       : item.orderStatus == 6
                       ? "Cancelled"
+                      :item.orderStatus == "Pickedup" 
+                      ?"Picked Up"
                       : "Unknown"}
                   </Text>
                 </Text>

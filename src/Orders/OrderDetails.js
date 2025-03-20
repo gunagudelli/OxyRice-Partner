@@ -9,13 +9,13 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  FlatList
+  FlatList,
 } from "react-native";
 import axios from "axios";
 import { TextInput } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import BASE_URL from '../../config';
+import BASE_URL from "../../config";
 import { RadioButton } from "react-native-paper";
 import { useSelector } from "react-redux";
 import BarCodeScannerScreen from "../BarCode";
@@ -38,7 +38,7 @@ const OrderDetails = ({ route }) => {
     4: "Delivered",
     5: "Rejected",
     6: "Cancelled",
-   "Pickedup":"Pickedup"
+    Pickedup: "Pickedup",
   };
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +62,7 @@ const OrderDetails = ({ route }) => {
   const [errormsg, setErrormsg] = useState(false);
   const [loader, setLoader] = useState(false);
   const [acceptLoader, setAcceptLoader] = useState(false);
-  const[assignLoader,setAssignLoader]=useState(false)
+  const [assignLoader, setAssignLoader] = useState(false);
   const [RejectLoader, setRejectLoader] = useState(false);
   const [RejectReason_error, setRejectReason_error] = useState(false);
   useEffect(() => {
@@ -73,9 +73,9 @@ const OrderDetails = ({ route }) => {
   const fetchOrderData = async () => {
     try {
       const response = await axios.post(
-        // userStage == "test"? 
-          BASE_URL + `order-service/assignedOrders`,
-          // : BASE_URL + `erice-service/order/assignedOrders`,
+        // userStage == "test"?
+        BASE_URL + `order-service/assignedOrders`,
+        // : BASE_URL + `erice-service/order/assignedOrders`,
 
         {
           // customerId:customerId,
@@ -119,9 +119,9 @@ const OrderDetails = ({ route }) => {
       method: "post",
       // url:BASE_URL+`erice-service/order/deliveryBoyAssigneData`,
       url:
-        // userStage == "test"? 
-          BASE_URL + `order-service/deliveryBoyAssigneData`,
-          // : "",
+        // userStage == "test"?
+        BASE_URL + `order-service/deliveryBoyAssigneData`,
+      // : "",
       data: data,
       headers: {
         Authorization: `Bearer ${accessToken.token}`,
@@ -137,19 +137,19 @@ const OrderDetails = ({ route }) => {
   }
 
   const handleRejectOrder = async () => {
-    if(rejectReason == "" || rejectReason == null) {
-      setRejectReason_error(true)
+    if (rejectReason == "" || rejectReason == null) {
+      setRejectReason_error(true);
       return;
     }
-    setRejectLoader(true)
+    setRejectLoader(true);
     try {
       const response = await axios.post(
         // BASE_URL+`erice-service/order/reject_order`,
-        // userStage == "test"? 
-          BASE_URL + `order-service/reject_orders`,
-          // : BASE_URL + `erice-service/order/reject_order`,
+        // userStage == "test"?
+        BASE_URL + `order-service/reject_orders`,
+        // : BASE_URL + `erice-service/order/reject_order`,
         { orderId: id, cancelReason: rejectReason },
-         
+
         {
           headers: {
             Authorization: `Bearer ${accessToken.token}`,
@@ -157,19 +157,19 @@ const OrderDetails = ({ route }) => {
         }
       );
       if (response.status === 200) {
-        console.log(response.data)
-        setRejectLoader(false)
+        console.log(response.data);
+        setRejectLoader(false);
         setStatusMessage(response.data.statusMessage);
         setButtonsDisabled(true);
         setIsRejected(false);
-        Alert.alert("Success!" ,"Order Rejected Sucessfully", [
+        Alert.alert("Success!", "Order Rejected Sucessfully", [
           {
             text: "OK",
           },
         ]);
       }
     } catch (error) {
-      setRejectLoader(false)
+      setRejectLoader(false);
       Alert.alert("Error", "Failed to reject the order.");
       console.error("Error rejecting order:", error.response);
       setIsRejected(false);
@@ -178,13 +178,13 @@ const OrderDetails = ({ route }) => {
   const handleAcceptOrder = async () => {
     // const accessToken= await AsyncStorage.getItem('accessToken');
     setButtonsDisabled(true);
-setAcceptLoader(true)
+    setAcceptLoader(true);
     try {
       const response = await axios.post(
         // BASE_URL+`erice-service/order/accept_order1`,
         // userStage == "test"?
-         BASE_URL + `order-service/accept_order1`,
-          // : BASE_URL + `erice-service/order/accept_order1`,
+        BASE_URL + `order-service/accept_order1`,
+        // : BASE_URL + `erice-service/order/accept_order1`,
         { orderId: id },
         {
           headers: {
@@ -194,13 +194,13 @@ setAcceptLoader(true)
       );
       // console.log("Accept Order",response)
       if (response.status === 200) {
-        setAcceptLoader(false)
+        setAcceptLoader(false);
 
         setStatusMessage(response.data.statusMessage);
         Alert.alert("Success", response.data.statusMessage);
       }
     } catch (error) {
-      setAcceptLoader(false)
+      setAcceptLoader(false);
 
       Alert.alert("Error", "Failed to accept the order.");
       console.error("Error accepting order:", error.response);
@@ -211,9 +211,9 @@ setAcceptLoader(true)
     setLoader(true);
     try {
       const url =
-        // userStage === "test" ? 
-          `${BASE_URL}user-service/deliveryBoyList`
-          // : `${BASE_URL}erice-service/deliveryboy/list`;
+        // userStage === "test" ?
+        `${BASE_URL}user-service/deliveryBoyList`;
+      // : `${BASE_URL}erice-service/deliveryboy/list`;
 
       const response = await fetch(url, {
         method: "GET",
@@ -225,31 +225,29 @@ setAcceptLoader(true)
       setLoader(false);
       if (response.status === 200) {
         setButtonsDisabled(true);
-        setAssignLoader(false)
+        setAssignLoader(false);
         const data = await response.json();
         let filteredData = data.filter((item) => item.isActive === "true");
         setDbNames(filteredData);
         console.log("Active Delivery Boys:", filteredData);
       }
     } catch (error) {
-      setAssignLoader(false)
+      setAssignLoader(false);
       setLoader(false);
       console.error("Error fetching delivery boys:", error);
     }
   };
 
   const handleAssignedToDB = async () => {
-    setAssignLoader(true)
+    setAssignLoader(true);
     await getDeliveryBoys();
 
     setIsModalVisible(true);
-
   };
 
   const handleReassignedToDB = async () => {
-    setAssignLoader(true)
+    setAssignLoader(true);
     await getDeliveryBoys();
-    
 
     setIsModalVisible(true);
   };
@@ -262,9 +260,7 @@ setAcceptLoader(true)
       return;
     }
 
-    const filteredData = dbNames.filter(
-      (item) => item.email === selectedDb
-    );
+    const filteredData = dbNames.filter((item) => item.email === selectedDb);
     if (filteredData.length === 0) {
       alert("Selected delivery boy not found.");
       return;
@@ -273,17 +269,19 @@ setAcceptLoader(true)
     const deliveryBoyId = filteredData[0].userId;
     console.log("DeliveryBoy Id:", deliveryBoyId);
 
-    let data =orderData.orderStatus === "2"? 
-        { orderId: id, deliveryBoyId } :
-        {orderId:id,deliverBoyId:deliveryBoyId}
-    console.log({data});
-setSubmitLoader(true)
+    let data =
+      orderData.orderStatus === "2"
+        ? { orderId: id, deliveryBoyId }
+        : { orderId: id, deliverBoyId: deliveryBoyId };
+    console.log({ data });
+    setSubmitLoader(true);
     const orderApiUrl =
-      userStage !== "test"
-        ? orderData.orderStatus === "2"
-          ? `${BASE_URL}order-service/orderIdAndDbId`
-          : `${BASE_URL}order-service/reassignOrderToDb`
-        : orderData.orderStatus === "2"
+      // userStage !== "test"
+      //   ? orderData.orderStatus === "2"
+      //     ? `${BASE_URL}order-service/orderIdAndDbId`
+      //     : `${BASE_URL}order-service/reassignOrderToDb`
+      //   : 
+        orderData.orderStatus === "2"
         ? `${BASE_URL}order-service/orderIdAndDbId`
         : `${BASE_URL}order-service/reassignOrderToDb`;
 
@@ -295,11 +293,11 @@ setSubmitLoader(true)
       });
 
       console.log(`Order ID: ${id}, Delivery Boy ID: ${deliveryBoyId}`);
-      console.log("Assign Order",response)
-setSubmitLoader(false)
+      console.log("Assign Order", response);
+      setSubmitLoader(false);
       if (response.status === 200) {
         setStatusMessage("Order assigned to " + selectedDb);
-        getDeliveryBoyDetails()
+        getDeliveryBoyDetails();
         alert("Order successfully assigned to " + selectedDb, [
           {
             text: "OK",
@@ -311,13 +309,12 @@ setSubmitLoader(false)
         console.log("No user data found in AsyncStorage");
       }
     } catch (error) {
-      setSubmitLoader(false)
+      setSubmitLoader(false);
       console.error("Error assigning order:", error.response);
       alert("Failed to assign order.");
     }
   };
 
- 
   if (loading) {
     return (
       <View style={styles.container}>
@@ -337,7 +334,7 @@ setSubmitLoader(false)
     const date = new Date(dateString);
     const formattedDate = date.toISOString().split("T")[0]; // Get "YYYY-MM-DD"
     const formattedTime = date.toTimeString().split(":").slice(0, 2).join(":"); // Get "HH:mm"
-    return `${formattedDate} ${formattedTime}`; 
+    return `${formattedDate} ${formattedTime}`;
   };
   const handleConvert = async () => {
     const apiUrl = BASE_URL + "user-service/updateTestUsers";
@@ -345,7 +342,7 @@ setSubmitLoader(false)
       id: userId,
       testUser: !testUser,
     };
-    console.log({requestBody})
+    console.log({ requestBody });
     try {
       const response = await axios.patch(apiUrl, requestBody, {
         headers: {
@@ -362,22 +359,22 @@ setSubmitLoader(false)
           Alert.alert("Success", "User converted to Test User successfully!");
         }
         await fetchOrderData();
-      } else {  
+      } else {
         console.log("Unexpected response:", response);
         alert("Failed to convert user.");
       }
-    } catch (error) { 
+    } catch (error) {
       console.error("Error converting user:", error);
       alert("An error occurred. Please try again.");
-    } 
+    }
   };
   const handlereAcceptPress = async () => {
     try {
       const response = await axios.patch(
         // BASE_URL + "erice-service/order/reAcceptedAdmin",
         // userStage == "test"?
-         BASE_URL + `order-service/reAcceptedAdmin`,
-          // : BASE_URL + `erice-service/order/reAcceptedAdmin`,
+        BASE_URL + `order-service/reAcceptedAdmin`,
+        // : BASE_URL + `erice-service/order/reAcceptedAdmin`,
 
         { orderId: id },
         {
@@ -412,7 +409,7 @@ setSubmitLoader(false)
       .then(function (response) {
         // console.log("deliveryBoyAssigneData", response);
         setAssignedDeliveryBoy(response.data[0]);
-        console.log(assignLoader.deliveryBoyName)
+        console.log(assignLoader.deliveryBoyName);
       })
       .catch(function (error) {
         // console.log("deliveryBoyAssigneData", error);
@@ -428,7 +425,7 @@ setSubmitLoader(false)
     if (!price) return "0"; // Handle null or undefined cases
     const rounded = Math.round(price * 10) / 10; // Round to 1 decimal place
     const decimalPart = rounded % 1; // Extract decimal part
-  
+
     if (decimalPart < 0.5) {
       return Math.floor(rounded); // Trim to the lower value if < 0.5
     }
@@ -446,19 +443,15 @@ setSubmitLoader(false)
         }}
       >
         <Text style={styles.heading}>ORDER DETAILS</Text>
-        
       </View>
 
-      <TouchableOpacity
-            style={styles.convertButton}
-            onPress={handleConvert}
-          >
-            {testUser==true ? (
-              <Text style={styles.convertButtonText}>Convert to Live User</Text>
-            ) : (
-              <Text style={styles.convertButtonText}>Convert to Test User</Text>
-            )}
-          </TouchableOpacity>
+      <TouchableOpacity style={styles.convertButton} onPress={handleConvert}>
+        {testUser == true ? (
+          <Text style={styles.convertButtonText}>Convert to Live User</Text>
+        ) : (
+          <Text style={styles.convertButtonText}>Convert to Test User</Text>
+        )}
+      </TouchableOpacity>
 
       <View style={styles.section}>
         <Text style={styles.label}>
@@ -470,25 +463,31 @@ setSubmitLoader(false)
         <Text style={styles.label}>
           Order Date:{" "}
           <Text style={styles.value}>
-            {orderData.orderDate ? formatDate(orderData.orderDate) : "N/A"}
+            {orderData?.orderDate ? formatDate(orderData?.orderDate) : "N/A"}
           </Text>
         </Text>
         <Text style={styles.label}>
-  Mobile Number:{" "}
-  <Text style={styles.value}>
-    {orderData?.mobileNumber?.trim() && orderData?.customerMobile?.trim() && orderData?.mobileNumber !== orderData?.customerMobile
-      ? `${orderData.mobileNumber}, ${orderData.customerMobile}`
-      : orderData?.customerMobile?.trim() || orderData?.mobileNumber?.trim() || "N/A"}
-  </Text>
-</Text>
+          Mobile Number:{" "}
+          <Text style={styles.value}>
+            {orderData?.mobileNumber?.trim() &&
+            orderData?.customerMobile?.trim() &&
+            orderData?.mobileNumber !== orderData?.customerMobile
+              ? `${orderData.mobileNumber}, ${orderData.customerMobile}`
+              : orderData?.customerMobile?.trim() ||
+                orderData?.mobileNumber?.trim() ||
+                "N/A"}
+          </Text>
+        </Text>
 
         <Text style={styles.label}>
-          Alternate Mobile Number:{" "} 
-          <Text style={styles.value}>{orderData.alternativeMobileNumber ||"N/A"}</Text>
+          Alternate Mobile Number:{" "}
+          <Text style={styles.value}>
+            {orderData?.alternativeMobileNumber || "N/A"}
+          </Text>
         </Text>
         <Text style={styles.label}>
           Customer Name:{" "}
-          <Text style={styles.value}>{orderData.customerName || "N/A"}</Text>
+          <Text style={styles.value}>{orderData?.customerName || "N/A"}</Text>
         </Text>
         <Text style={styles.label}>
           Order Status:{" "}
@@ -511,16 +510,28 @@ setSubmitLoader(false)
       <Text style={styles.heading}>DELIVERY ADDRESS</Text>
       <View style={styles.section}>
         <Text style={styles.label}>
-          Flat:<Text style={styles.value}>{orderData.orderAddress.flatNo || "N/A"}</Text> 
+          Flat:
+          <Text style={styles.value}>
+            {orderData?.orderAddress?.flatNo || "N/A"}
+          </Text>
         </Text>
         <Text style={styles.label}>
-          Landmark: <Text style={styles.value}>{orderData.orderAddress.landMark || "N/A"}</Text>
+          Landmark:{" "}
+          <Text style={styles.value}>
+            {orderData?.orderAddress?.landMark || "N/A"}
+          </Text>
         </Text>
         <Text style={styles.label}>
-          Address: <Text style={styles.value}>{orderData.orderAddress.address || "N/A"}</Text>
+          Address:{" "}
+          <Text style={styles.value}>
+            {orderData?.orderAddress?.address || "N/A"}
+          </Text>
         </Text>
         <Text style={styles.label}>
-          PIN: <Text style={styles.value}>{orderData.orderAddress.pincode || "N/A"}</Text>
+          PIN:{" "}
+          <Text style={styles.value}>
+            {orderData?.orderAddress?.pincode || "N/A"}
+          </Text>
         </Text>
       </View>
       <Text style={styles.heading}>ORDER ITEMS</Text>
@@ -529,18 +540,33 @@ setSubmitLoader(false)
           orderData.orderItems.map((item, index) => (
             <View key={index} style={styles.itemContainer}>
               <Text style={styles.label}>
-                Item Name : <Text style={styles.value}>{item.itemName || "N/A"}</Text>
+                Item Name :{" "}
+                <Text style={styles.value}>{item?.itemName || "N/A"}</Text>
               </Text>
               {/* <Text style={styles.label}>
                 SingleItemPrice:  {""}
               </Text> */}
-              <Text style={styles.label}>Weight : <Text style={styles.value}>{item.weight || 0} {item?.weight==1?"Kg":"Kgs"}</Text> </Text>
+              <Text style={styles.label}>
+                Weight :{" "}
+                <Text style={styles.value}>
+                  {item?.weight || 0} {item?.weight == 1 ? "Kg" : "Kgs"}
+                </Text>{" "}
+              </Text>
 
-              <Text style={styles.label}>Quantity : <Text style={styles.value}>{item.quantity || 0}</Text> </Text>
-              <Text style={styles.label}>Single Item Price : <Text style={styles.value}>Rs {item.price}</Text></Text>
-              <Text style={styles.label}>Total : <Text style={styles.value}>Rs {item.itemprice}</Text></Text>
-              {orderData.orderItems.length>1 && <Text>-----------------------------</Text>}
-
+              <Text style={styles.label}>
+                Quantity :{" "}
+                <Text style={styles.value}>{item?.quantity || 0}</Text>{" "}
+              </Text>
+              <Text style={styles.label}>
+                Single Item Price :{" "}
+                <Text style={styles.value}>Rs {item?.price}</Text>
+              </Text>
+              <Text style={styles.label}>
+                Total : <Text style={styles.value}>Rs {item?.itemprice}</Text>
+              </Text>
+              {orderData?.orderItems.length > 1 && (
+                <Text>-----------------------------</Text>
+              )}
             </View>
           ))
         ) : (
@@ -549,28 +575,24 @@ setSubmitLoader(false)
       </View>
       <Text style={styles.heading}>ORDER STATUS UPDATES</Text>
       <View style={styles.section}>
-      <FlatList
-        data={orderData.orderHistoryResponse}
-        keyExtractor={(item, index) => item.orderId + index}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            {/* <Text style={styles.title}>Order ID: {item.orderId}</Text> */}
-            {Object.entries(item)
-              .filter(([key, value]) => value !== null && key !== "orderId")
-              .map(([key, value]) => (
-                <Text key={key} style={styles.value}>
-                  <Text style={styles.label}>{formatFieldName(key)}:</Text> {value}
-                </Text>
-              ))}
-          </View>
-        )}
-      />
+        <FlatList
+          data={orderData.orderHistoryResponse}
+          keyExtractor={(item, index) => item.orderId + index}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              {/* <Text style={styles.title}>Order ID: {item.orderId}</Text> */}
+              {Object.entries(item)
+                .filter(([key, value]) => value !== null && key !== "orderId")
+                .map(([key, value]) => (
+                  <Text key={key} style={styles.value}>
+                    <Text style={styles.label}>{formatFieldName(key)}:</Text>{" "}
+                    {value}
+                  </Text>
+                ))}
+            </View>
+          )}
+        />
       </View>
-
-
-    
-
-
 
       {orderData.orderStatus === "3" ? (
         <>
@@ -580,51 +602,63 @@ setSubmitLoader(false)
                     DeliveryBoy Id: {(orderData.deliveryBoyId).slice(-4) || "N/A"}
                   </Text> */}
             <Text style={styles.label}>
-              Delivery Boy Name : <Text style={styles.value}>{assignedDeliveryBoy.deliveryBoyName || "N/A"}</Text>
+              Delivery Boy Name :{" "}
+              <Text style={styles.value}>
+                {assignedDeliveryBoy.deliveryBoyName || "N/A"}
+              </Text>
             </Text>
             <Text style={styles.label}>
               Delivery Boy Mobile Number :{" "}
-              <Text style={styles.value}>{assignedDeliveryBoy.deliveryBoyMobile || "N/A"}</Text>
+              <Text style={styles.value}>
+                {assignedDeliveryBoy.deliveryBoyMobile || "N/A"}
+              </Text>
             </Text>
           </View>
         </>
       ) : (
         ""
       )}
-     <Text style={styles.heading}>Summary Order</Text>
-<View style={styles.section}>
-  <Text style={styles.label}>
-    SUB TOTAL: <Text style={styles.value}>Rs {orderData.subTotal || 0}</Text>
-  </Text>
-  <Text style={styles.label}>
-    DELIVERY FEE: <Text style={styles.value}>Rs :{orderData.deliveryfee || 0}</Text>
-  </Text>
+      <Text style={styles.heading}>Summary Order</Text>
+      <View style={styles.section}>
+        <Text style={styles.label}>
+          SUB TOTAL:{" "}
+          <Text style={styles.value}>Rs {orderData?.subTotal || 0}</Text>
+        </Text>
+        <Text style={styles.label}>
+          DELIVERY FEE:{" "}
+          <Text style={styles.value}>Rs :{orderData?.deliveryfee || 0}</Text>
+        </Text>
 
-  {/* Show GST only if it's greater than zero */}
-  {orderData.gstAmount > 0 && (
-    <Text style={styles.label}>
-      GST: <Text style={styles.value}>Rs +{orderData.gstAmount}</Text>
-    </Text>
-  )}
+        {/* Show GST only if it's greater than zero */}
+        {orderData.gstAmount > 0 && (
+          <Text style={styles.label}>
+            GST: <Text style={styles.value}>Rs +{orderData?.gstAmount}</Text>
+          </Text>
+        )}
 
-  {/* Show Wallet Amount only if it's greater than zero */}
-  {orderData.walletAmount > 0 && (
-    <Text style={styles.label}>
-      Wallet Amount: <Text style={styles.value}>Rs -{orderData.walletAmount}</Text>
-    </Text>
-  )}
+        {/* Show Wallet Amount only if it's greater than zero */}
+        {orderData.walletAmount > 0 && (
+          <Text style={styles.label}>
+            Wallet Amount:{" "}
+            <Text style={styles.value}>Rs -{orderData?.walletAmount}</Text>
+          </Text>
+        )}
 
-  {/* Show Discount Amount only if it's greater than zero */}
-  {orderData.discountAmount > 0 && (
-    <Text style={styles.label}>
-      Coupon Amount: <Text style={styles.value}>Rs -{orderData.discountAmount}</Text>
-    </Text>
-  )}
+        {/* Show Discount Amount only if it's greater than zero */}
+        {orderData.discountAmount > 0 && (
+          <Text style={styles.label}>
+            Coupon Amount:{" "}
+            <Text style={styles.value}>Rs -{orderData.discountAmount}</Text>
+          </Text>
+        )}
 
-  <Text style={styles.label}>
-    GRAND TOTAL: <Text style={styles.value}>Rs {formatPrice(orderData.grandTotal) || 0}</Text>
-  </Text>
-</View>
+        <Text style={styles.label}>
+          GRAND TOTAL:{" "}
+          <Text style={styles.value}>
+            Rs {formatPrice(orderData?.grandTotal) || 0}
+          </Text>
+        </Text>
+      </View>
 
       {(orderData.orderStatus === "5" || orderData.orderStatus === "6") && (
         <>
@@ -698,44 +732,47 @@ setSubmitLoader(false)
         )}
         {orderData.orderStatus === "2" && (
           <>
-          {assignLoader==false?
-          <TouchableOpacity
-          style={[
-            styles.acceptButton,
-            // buttonsDisabled && styles.disabledButton,
-          ]}            
-          onPress={() => handleAssignedToDB()}
-            // disabled={orderData.orderStatus === "3"?buttonsDisabled:false}
-            
-          >
-            <Text style={styles.acceptButtonText}>ASSIGN TO DB</Text>
-          </TouchableOpacity>
-          :
-          <View style={[styles.acceptButton, disable && styles.disabledButton]}>
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          </View>
-          }
+            {assignLoader == false ? (
+              <TouchableOpacity
+                style={[
+                  styles.acceptButton,
+                  // buttonsDisabled && styles.disabledButton,
+                ]}
+                onPress={() => handleAssignedToDB()}
+                // disabled={orderData.orderStatus === "3"?buttonsDisabled:false}
+              >
+                <Text style={styles.acceptButtonText}>ASSIGN TO DB</Text>
+              </TouchableOpacity>
+            ) : (
+              <View
+                style={[styles.acceptButton, disable && styles.disabledButton]}
+              >
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              </View>
+            )}
           </>
         )}
 
         {orderData.orderStatus === "3" && (
           <>
-          {assignLoader==false?
-          <TouchableOpacity
-            style={[styles.acceptButton, disable && styles.disabledButton]}
-            onPress={handleReassignedToDB}
-            // disabled={disable}
-          >
-            <Text style={styles.acceptButtonText}>RE-ASSIGN TO DB</Text>
-          </TouchableOpacity>
-          :
-          <View style={[styles.acceptButton, disable && styles.disabledButton]}>
-              <ActivityIndicator size="small" color="#FFFFFF" />
-          </View>
-          }
+            {assignLoader == false ? (
+              <TouchableOpacity
+                style={[styles.acceptButton, disable && styles.disabledButton]}
+                onPress={handleReassignedToDB}
+                // disabled={disable}
+              >
+                <Text style={styles.acceptButtonText}>RE-ASSIGN TO DB</Text>
+              </TouchableOpacity>
+            ) : (
+              <View
+                style={[styles.acceptButton, disable && styles.disabledButton]}
+              >
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              </View>
+            )}
           </>
         )}
- {/* Reject Button always visible */}
+        {/* Reject Button always visible */}
         <Modal
           visible={isModalVisible}
           // onRequestClose={handleCancel}
@@ -783,7 +820,7 @@ setSubmitLoader(false)
 
               <View style={styles.modalActions}>
                 <TouchableOpacity
-                  onPress={()=>setIsModalVisible(false)}
+                  onPress={() => setIsModalVisible(false)}
                   style={styles.cancelButton}
                 >
                   <Text style={styles.buttonText}>Cancel</Text>
@@ -830,40 +867,43 @@ setSubmitLoader(false)
                 Are you sure you want to reject this order?
               </Text>
               <View style={styles.inputContainer}>
-
                 <TextInput
                   style={styles.input}
                   placeholder="Reason for rejection"
-                  onChangeText={(text)=>{setRejectReason(text),setRejectReason_error(false)}}
+                  onChangeText={(text) => {
+                    setRejectReason(text), setRejectReason_error(false);
+                  }}
                   value={rejectReason}
                   multiline={true}
                   numberOfLines={4}
                   textAlignVertical="top"
                 />
-                 {RejectReason_error==true ? (
-                  <Text style={{ color: "red" }}>Reason to reject is mandatory</Text>
-                ): null} 
+                {RejectReason_error == true ? (
+                  <Text style={{ color: "red" }}>
+                    Reason to reject is mandatory
+                  </Text>
+                ) : null}
               </View>
 
-                
               <View style={styles.modalActions}>
                 <TouchableOpacity
-                  onPress={()=>setIsRejected(false)}
+                  onPress={() => setIsRejected(false)}
                   style={styles.cancelButton}
                 >
                   <Text style={styles.buttonText}>Cancel</Text>
                 </TouchableOpacity>
-               { RejectLoader == false ? (
-                <TouchableOpacity
-                  onPress={handleRejectOrder}
-                  style={styles.assignButton}
-                >
-                  <Text style={styles.buttonText}>Reject</Text>
-                </TouchableOpacity>):
-                <View style={styles.assignButton}>
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                </View>
-                }
+                {RejectLoader == false ? (
+                  <TouchableOpacity
+                    onPress={handleRejectOrder}
+                    style={styles.assignButton}
+                  >
+                    <Text style={styles.buttonText}>Reject</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.assignButton}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  </View>
+                )}
               </View>
             </View>
           </View>
@@ -933,9 +973,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginVertical: 10,
     color: "#333",
-    backgroundColor:"#c0c0c0",
-    width:width,
-    padding:10,
+    backgroundColor: "#c0c0c0",
+    width: width,
+    padding: 10,
   },
   section: {
     paddingLeft: 15,
@@ -1041,7 +1081,7 @@ const styles = StyleSheet.create({
     width: "48%",
     alignItems: "center",
     marginBottom: 20,
-    alignSelf:"flex-end"
+    alignSelf: "flex-end",
   },
   convertButtonText: {
     color: "#fff",
