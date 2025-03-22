@@ -19,6 +19,7 @@ import AddDeliveryExecutive from './src/Extra Files/AddDeliveryExecutive';
 import UpdateDeliveryBoy from './src/Extra Files/UpdateDeliveryBoy';
 import OrderDetails from './src/Orders/OrderDetails';
 import TestAllOrders from './src/Orders/TestAllOrders';
+import AllSplitBags from './src/Split Bags/AllSplitBags';
 import Logout from './src/After Login/Logout';
 import SplitBags from './src/Split Bags/SplitBags';
 import { Provider } from 'react-redux';
@@ -131,6 +132,11 @@ export default function App() {
           name="Split Bags"
           component={SplitBags}
         />
+         <Stack.Screen
+          name="All Split Bags"
+          component={AllSplitBags}
+        />
+
 
 <Stack.Screen
           name="TestAllOrders"

@@ -20,10 +20,8 @@ import { useSelector } from "react-redux";
 import { Dropdown } from "react-native-element-dropdown";
 import BASE_URL from '../../config';
 import Icon from "react-native-vector-icons/Ionicons";
-// import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from "expo-image-picker";
-import { FormData } from "formdata-node";
-
+// Import Image Picker instead of Document Picker
+import * as ImagePicker from 'expo-image-picker';
 
 const { height, width } = Dimensions.get("window");
 
@@ -52,11 +50,6 @@ const Userqueries = ({ navigation }) => {
   const [resolveSubmission, setResolveSubmission] = useState(false);
   const [feedbackError, setFeedbackError] = useState("");
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
-
-  const [uploadloading, setUploadLoading] = useState(false);
-  const [documentId, setDocumentId] = useState(null);
-  const[documentName,setDocumentName]=useState('')
-  const fd = new FormData();
 
   // Fetch tickets when status changes
   useEffect(() => {
@@ -151,73 +144,37 @@ const Userqueries = ({ navigation }) => {
     setFeedbackSuccess(false);
   };
 
-  // Document picking function
-  const pickDocument = async () => {
-    console.log("sreeja")
+  // Image picking function - Replaced Document Picker with Image Picker
+  const pickImage = async () => {
     try {
-    let result = await ImagePicker.launchImageLibraryAsync({
-          // mediaTypes: ImagePicker.MediaType.Images,
-          type: "*/*",
-          allowsEditing: false,
-          quality: 1,
-        })
-        console.log({result})
-        if (!result.canceled) {
-          const { uri } = result.assets[0];
-          const name = uri.split('/').pop(); // Extract file name from the URI
-          const fileType = name.split('.').pop(); // Extract file extension
-    
-          let fileUri = uri;
-    
-          // Adjust URI for Android platform
-          if (Platform.OS === 'android' && uri[0] === '/') {
-            fileUri = `file://${uri}`;
-            fileUri = fileUri.replace(/%/g, '%25');
-          }
-    
-          const fileToUpload = {
-            name: name,
-            uri: fileUri,
-            type: `image/${fileType}`, // Set correct MIME type
-          };
-          console.log(fileToUpload.type, "...............file");
-          // fd.append("multiPart", fileToUpload);
-          fd.append("file", fileToUpload);
-          fd.append("fileType", "kyc");
-          fd.append("projectType","ASKOXY")
-          // console.log({fileToUpload});
-
-          // console.log("fd",fd._parts);
-          setUploadLoading(true);
-          axios({
-            method: "post",
-            url: BASE_URL+`user-service/write/uploadQueryScreenShot?userId=${currentTicket.userId}`,
-            data:fd,
-            headers: {
-              // accessToken: accessToken.accessToken,
-              "Content-Type": "multipart/form-data",
-            },
-          })
-            .then(function (response) {
-               console.log("response",response.data);
-              setUploadLoading(false);
-              Alert.alert("Success","File uploaded successfully")
-              setDocumentId(response.data.id)
-              setDocumentName(response.data.documentName)
-              // getLicenceDocument()
-            })
-            .catch(function (error) {
-              setUploadLoading(false);
-              console.log("error",error.response);
-              Alert.alert("Failed","Failed to upload file")
-            
-            });
-          // setDocumentId(fileToUpload.uri);
-        }
-      }
-      catch (error) {
+      // Request permission first
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
-      };
+      if (status !== 'granted') {
+        Alert.alert("Permission Denied", "We need permission to access your photos.");
+        return;
+      }
+
+      // Launch the image library
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+      
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedAsset = result.assets[0];
+        setSelectedDocument({
+          uri: selectedAsset.uri,
+          name: selectedAsset.uri.split('/').pop(),
+          type: `image/${selectedAsset.uri.split('.').pop()}`
+        });
+      }
+    } catch (err) {
+      console.log("Image picking error:", err);
+      Alert.alert("Error", "Failed to select image. Please try again.");
+    }
   };
 
   // Submit feedback
@@ -236,7 +193,7 @@ const Userqueries = ({ navigation }) => {
     setFeedbackError("");
 
     const data = {
-      adminDocumentId: documentId || "",
+      adminDocumentId: "",
       id: currentTicket.id,
       askOxyOfers: "FREESAMPLE",
       query: currentTicket.query,
@@ -251,7 +208,6 @@ const Userqueries = ({ navigation }) => {
       status: "",
       userDocumentId: ""
     };
-    console.log({data})
 
     axios({
       method: "post",
@@ -263,7 +219,7 @@ const Userqueries = ({ navigation }) => {
     })
     .then((response) => {
       console.log("Feedback submitted successfully:", response.data);
-      
+      Alert.alert("Success", "Feedback submitted successfully.");
       // Show success message
       setFeedbackSuccess(true);
       
@@ -277,7 +233,10 @@ const Userqueries = ({ navigation }) => {
       console.log("Error submitting feedback:", error);
       setFeedbackError("Failed to submit feedback. Please try again.");
     })
-   
+    .finally(() => {
+      setPendingSubmission(false);
+      setResolveSubmission(false);
+    });
   };
   
   // Toggle search visibility
@@ -577,7 +536,7 @@ const Userqueries = ({ navigation }) => {
         transparent={true}
         visible={feedbackModal}
         onRequestClose={() => {
-          setFeedbackModal(false),setUploadLoading(false),setResolveSubmission(false),setPendingSubmission(false);
+          setFeedbackModal(false);
         }}
       >
         <View style={styles.modalContainer}>
@@ -623,53 +582,32 @@ const Userqueries = ({ navigation }) => {
                   <Text style={styles.errorText}>{feedbackError}</Text>
                 ) : null}
                 
-
-                {uploadloading==false?
                 <View style={styles.uploadSection}>
-                  <Text style={styles.feedbackLabel}>Upload Document (Optional)</Text>
+                  <Text style={styles.feedbackLabel}>Upload Image (Optional)</Text>
                   
                   <TouchableOpacity 
                     style={styles.uploadButton} 
-                    onPress={pickDocument}
+                    onPress={pickImage}
                     disabled={pendingSubmission || resolveSubmission}
-                    accessibilityLabel="Select document to upload"
+                    accessibilityLabel="Select image to upload"
                     accessibilityRole="button"
                   >
-                    <Icon name="cloud-upload-outline" size={20} color="#FFF" />
+                    <Icon name="image-outline" size={20} color="#FFF" />
                     <Text style={styles.uploadButtonText}>
-                      {selectedDocument ? 'Change Document' : 'Select Document'}
+                      {selectedDocument ? 'Change Image' : 'Select Image'}
                     </Text>
                   </TouchableOpacity>
                   
                   {selectedDocument && (
                     <View style={styles.selectedFileContainer}>
-                      <Icon name="document-text-outline" size={16} color="#0384d5" />
+                      <Icon name="image-outline" size={16} color="#0384d5" />
                       <Text style={styles.selectedFileName} numberOfLines={1}>
                         {selectedDocument.name}
                       </Text>
                     </View>
                   )}
-
-
-                  <Text style={{alignSelf:"center",margin:10,width:width*0.8}}>{documentName}</Text>
                 </View>
-                :
-                <TouchableOpacity 
-                    style={styles.uploadButton} 
-                    onPress={pickDocument}
-                    disabled={pendingSubmission || resolveSubmission}
-                    accessibilityLabel="Select document to upload"
-                    accessibilityRole="button"
-                  >
-                    <ActivityIndicator size="small" color="#FFF" />
-                    {/* <Icon name="cloud-upload-outline" size={20} color="#FFF" />
-                    <Text style={styles.uploadButtonText}>
-                      {selectedDocument ? 'Change Document' : 'Select Document'}
-                    </Text> */}
-                  </TouchableOpacity>
                 
-                }
-
                 <View style={styles.divider} />
                 
                 <View style={styles.feedbackActionContainer}>
@@ -717,7 +655,6 @@ const Userqueries = ({ navigation }) => {
 };
 
 export default Userqueries;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -944,8 +881,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    // flex: 1,
-    width:width*0.4
+    width: width * 0.4
   },
   buttonText: {
     color: '#FFFFFF',
@@ -989,29 +925,37 @@ const styles = StyleSheet.create({
     top: 10,
     right: 10,
     padding: 8,
-    zIndex: 10,
   },
   feedbackTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#333333',
     marginBottom: 16,
     textAlign: 'center',
   },
   feedbackLabel: {
     fontSize: 14,
-    color: '#666666',
+    fontWeight: '500',
+    color: '#555555',
     marginBottom: 8,
   },
   feedbackInput: {
-    width: '100%',
-    height: 120,
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
     padding: 12,
+    minHeight: 120,
+    textAlignVertical: 'top',
     fontSize: 14,
     color: '#333333',
-    textAlignVertical: 'top',
+    marginBottom: 16,
+  },
+  inputError: {
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 12,
     marginBottom: 16,
   },
   uploadSection: {
@@ -1019,8 +963,8 @@ const styles = StyleSheet.create({
   },
   uploadButton: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#0384d5',
     borderRadius: 8,
     paddingVertical: 10,
@@ -1035,17 +979,17 @@ const styles = StyleSheet.create({
   selectedFileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: 12,
   },
   selectedFileName: {
-    flex: 1,
     fontSize: 14,
     color: '#333333',
     marginLeft: 8,
+    flex: 1,
   },
   feedbackActionContainer: {
     flexDirection: 'row',
@@ -1053,23 +997,25 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   pendingButton: {
-    flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FF9800',
     borderRadius: 8,
     paddingVertical: 12,
+    paddingHorizontal: 16,
+    flex: 1,
     marginRight: 8,
   },
   resolveButton: {
-    flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#28A745',
     borderRadius: 8,
     paddingVertical: 12,
+    paddingHorizontal: 16,
+    flex: 1,
     marginLeft: 8,
   },
   actionButtonText: {
@@ -1084,43 +1030,31 @@ const styles = StyleSheet.create({
   successContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: 20,
   },
   successText: {
     fontSize: 16,
     color: '#28A745',
-    fontWeight: '600',
+    fontWeight: '500',
     marginTop: 16,
     textAlign: 'center',
   },
-  inputError: {
-    borderWidth: 1,
-    borderColor: '#FF6B6B',
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#FF6B6B',
-    marginTop: -8,
-    marginBottom: 16,
-  },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    justifyContent: 'center',
   },
   emptyText: {
     fontSize: 16,
     color: '#666666',
-    textAlign: 'center',
     marginTop: 16,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   retryButton: {
     backgroundColor: '#0384d5',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
     borderRadius: 8,
-    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   retryButtonText: {
     color: '#FFFFFF',

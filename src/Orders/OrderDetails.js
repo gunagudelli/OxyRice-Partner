@@ -422,14 +422,9 @@ const OrderDetails = ({ route }) => {
       .replace(/^./, (str) => str.toUpperCase()); // Capitalize first letter
   };
   const formatPrice = (price) => {
-    if (!price) return "0"; // Handle null or undefined cases
-    const rounded = Math.round(price * 10) / 10; // Round to 1 decimal place
-    const decimalPart = rounded % 1; // Extract decimal part
-
-    if (decimalPart < 0.5) {
-      return Math.floor(rounded); // Trim to the lower value if < 0.5
-    }
-    return rounded.toFixed(1); // Show 1 decimal place
+    if (price == null) return "0"; // Handle null or undefined
+  
+    return price.toFixed(2); // Ensure two decimal places
   };
 
   return (
@@ -621,25 +616,25 @@ const OrderDetails = ({ route }) => {
       <Text style={styles.heading}>Summary Order</Text>
       <View style={styles.section}>
         <Text style={styles.label}>
-          SUB TOTAL:{" "}
+           SUB TOTAL  : {" "}
           <Text style={styles.value}>Rs {orderData?.subTotal || 0}</Text>
         </Text>
         <Text style={styles.label}>
-          DELIVERY FEE:{" "}
+          DELIVERY FEE  : {" "}
           <Text style={styles.value}>Rs :{orderData?.deliveryfee || 0}</Text>
         </Text>
 
         {/* Show GST only if it's greater than zero */}
         {orderData.gstAmount > 0 && (
           <Text style={styles.label}>
-            GST: <Text style={styles.value}>Rs +{orderData?.gstAmount}</Text>
+            GST  : <Text style={styles.value}>Rs +{orderData?.gstAmount}</Text>
           </Text>
         )}
 
         {/* Show Wallet Amount only if it's greater than zero */}
         {orderData.walletAmount > 0 && (
           <Text style={styles.label}>
-            Wallet Amount:{" "}
+            Wallet Amount  : {" "}
             <Text style={styles.value}>Rs -{orderData?.walletAmount}</Text>
           </Text>
         )}
@@ -655,7 +650,7 @@ const OrderDetails = ({ route }) => {
         <Text style={styles.label}>
           GRAND TOTAL:{" "}
           <Text style={styles.value}>
-            Rs {formatPrice(orderData?.grandTotal) || 0}
+          Rs {formatPrice(orderData?.grandTotal ?? 0)}
           </Text>
         </Text>
       </View>

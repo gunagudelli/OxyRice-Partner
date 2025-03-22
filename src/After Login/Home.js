@@ -195,7 +195,7 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => {
               Alert.alert(
                 "Logout",
-                "🔒 Are you sure you want to log out from Askoxy.AI Partner? 🤔",
+                "🔒 Are you sure you want to log out from ASKОXY.AI PARTNER?? 🤔",
                 [
                   { text: "Cancel", style: "cancel" },
                   { 
@@ -319,7 +319,7 @@ dateText: {
   box: {
     backgroundColor: '#ffffff',
     width: width * 0.42,
-    height: height * 0.1,
+    height: height * 0.11,
     borderRadius: 20,
     padding: 15,
     marginBottom: 20,

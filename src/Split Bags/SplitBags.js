@@ -20,7 +20,7 @@ import BASE_URL from "../../config";
 
 const { height, width } = Dimensions.get("window");
 
-const SplitBags = () => {
+const SplitBags = ({navigation}) => {
   const accessToken = useSelector((state) => state.counter);
   const [barCode, setBarCode] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState({});
@@ -135,7 +135,7 @@ const SplitBags = () => {
       .catch((error) => {
         setLoading(false);
         console.log(error.response);
-        Alert.alert("Failed", error.response.data);
+        Alert.alert("Failed");
       });
   };
 
@@ -150,6 +150,13 @@ const SplitBags = () => {
 
   return (
     <View style={{ flex: 1 }}>
+        
+            {/* Get Split Bags Button */}
+            <TouchableOpacity style={styles.button} onPress={()=>navigation.navigate("All Split Bags")}>
+              <Text style={styles.buttonText}>Get Split Bags</Text>
+            </TouchableOpacity>
+
+
       <BarCodeScannerScreen onValue={(value) => handleValue(value)} />
       <Text style={styles.barCodeTxt}>{barCode}</Text>
 
@@ -328,4 +335,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  button:{
+    backgroundColor:"white",
+    padding:10,
+    width:width*0.4,
+    alignItems:"center",
+    alignSelf:"flex-end",
+    marginTop:20,
+    borderRadius:8,
+    marginHorizontal:45,
+    elevation:10
+  },
+  buttonText:{
+    color:"#0384d5",
+    fontWeight:"bold"
+  }
 });
