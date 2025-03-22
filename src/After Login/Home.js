@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import BASE_URL from '../../config';
-
+// import BarcodeScanner from "../After Login/BarcodeScanner"
 const { width, height } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
@@ -156,6 +156,13 @@ const HomeScreen = ({ navigation }) => {
         // scrollEventThrottle={16}
       >
         <View style={styles.mainContent}>
+        {/* <Text>gadsc</Text> */}
+
+        <TouchableOpacity onPress={() => navigation.navigate('Scan Bar Code')} style={styles.scanButton}>
+          <Text style={styles.buttonText}>Scan Bar Code</Text>
+        </TouchableOpacity>
+
+
           <View style={styles.gridContainer}>
             {menuItems.map((item) => (
               <Animated.View key={item.id} style={{ transform: [{ scale: scaleAnimation }] }}>
@@ -268,7 +275,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     padding: 20,
-    paddingTop: 100,
+    // paddingTop: 100,
   },
   // Add these to your StyleSheet:
 
@@ -307,7 +314,7 @@ dateText: {
   letterSpacing: 0.5,
 },
   mainContent: {
-    flex: 1,
+    // flex: 1,
     justifyContent: 'space-between',
   },
   gridContainer: {
@@ -344,6 +351,26 @@ dateText: {
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  scanButton: {
+    backgroundColor: '#007BFF', // Background color of the button
+    paddingVertical: 12,        // Vertical padding
+    paddingHorizontal: 24,      // Horizontal padding
+    borderRadius: 8,            // Rounded corners
+    alignItems: 'center',       // Center text horizontally
+    alignSelf: 'flex-end',   // Center text vertically
+    elevation: 3,               // Shadow for Android
+    shadowColor: '#000',        // Shadow for iOS
+    shadowOffset: { width: 0, height: 2 }, // Shadow for iOS
+    shadowOpacity: 0.3,         // Shadow for iOS
+    shadowRadius: 3,            // Shadow for iOS
+    marginBottom: 20,           // Bottom
+    width:width*0.4
+  },
+  buttonText: {
+    color: 'white',           // Text color
+    fontSize: 16,               // Text size
+    fontWeight: 'bold',         // Bold text
   },
   textContainer: {
     flex: 1,

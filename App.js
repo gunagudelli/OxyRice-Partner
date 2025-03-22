@@ -24,9 +24,10 @@ import Logout from './src/After Login/Logout';
 import SplitBags from './src/Split Bags/SplitBags';
 import AllSplitBags from './src/Split Bags/AllSplitBags';
 
+import BarcodeScanner from './src/After Login/BarcodeScanner';
+
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
-import BarCodeScannerScreen from "./src/BarCode"
 
 
 import Userqueries from './src/All Queries/Userqueries';
@@ -170,6 +171,8 @@ export default function App() {
           component={Querycomments}
           
         />
+
+        <Stack.Screen name="Scan Bar Code" component={BarcodeScanner}/>
      
       </Stack.Navigator>
       <StatusBar style="auto" />

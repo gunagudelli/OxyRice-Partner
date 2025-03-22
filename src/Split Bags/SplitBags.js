@@ -135,7 +135,7 @@ const SplitBags = ({navigation}) => {
       .catch((error) => {
         setLoading(false);
         console.log(error.response);
-        Alert.alert("Failed", error.response.data);
+        Alert.alert("Failed");
       });
   };
 
