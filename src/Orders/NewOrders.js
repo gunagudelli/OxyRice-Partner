@@ -18,6 +18,7 @@ const { height, width } = Dimensions.get("window");
 import { useSelector } from "react-redux";
 import ModalDropdown from "react-native-modal-dropdown";
 import { Ionicons } from "@expo/vector-icons";
+import { AntDesign } from "react-native-vector-icons/AntDesign";
 
 const NewOrders = ({ navigation, route }) => {
   const { isTestOrder } = route.params;
@@ -181,6 +182,22 @@ const NewOrders = ({ navigation, route }) => {
                 </Text>
               </View>
             </View>
+
+            {item?.dayOfWeek!=""  ?
+            <View style={{backgroundColor:"#f1f1f1", padding:10, borderRadius:10, marginTop:10}}>
+                {/* <AntDesign name="clockcircle" size={15} /> */}
+                <Text style={{fontWeight:"bold"}}> {item?.dayOfWeek} ({item?.timeSlot})</Text>
+            </View>
+            :null}
+
+            {/* <View style={{backgroundColor:"#f1f1f1", padding:10, borderRadius:10, marginTop:10}}>
+  <Text>
+    <AntDesign name="clockcircle" size={15} />
+    <Text style={{fontSize:16, fontWeight:"bold", marginLeft:5}}> {item.dayOfWeek} ({item.timeSlot})</Text>
+  </Text>
+</View> */}
+
+
           </TouchableOpacity>
         ) : null}
       </View>

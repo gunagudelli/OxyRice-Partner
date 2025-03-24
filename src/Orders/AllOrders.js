@@ -45,6 +45,7 @@ const AllOrders = () => {
     "4": "Delivered",
     "5": "Rejected",
     "6": "Cancelled",
+    "PickedUp":"Picked Up"
     
   };
 

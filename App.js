@@ -21,10 +21,13 @@ import OrderDetails from './src/Orders/OrderDetails';
 import TestAllOrders from './src/Orders/TestAllOrders';
 import AllSplitBags from './src/Split Bags/AllSplitBags';
 import Logout from './src/After Login/Logout';
+
 import SplitBags from './src/Split Bags/SplitBags';
+
+import BarcodeScanner from './src/After Login/BarcodeScanner';
+
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
-import BarCodeScannerScreen from "./src/BarCode"
 
 
 import Userqueries from './src/All Queries/Userqueries';
@@ -132,12 +135,14 @@ export default function App() {
           name="Split Bags"
           component={SplitBags}
         />
+
          <Stack.Screen
           name="All Split Bags"
           component={AllSplitBags}
         />
 
 
+        
 <Stack.Screen
           name="TestAllOrders"
           component={TestAllOrders}
@@ -169,6 +174,8 @@ export default function App() {
           component={Querycomments}
           
         />
+
+        <Stack.Screen name="Scan Bar Code" component={BarcodeScanner}/>
      
       </Stack.Navigator>
       <StatusBar style="auto" />

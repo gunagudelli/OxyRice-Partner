@@ -149,6 +149,7 @@ const Userqueries = ({ navigation }) => {
     setSelectedDocument(null);
     setFeedbackError("");
     setFeedbackSuccess(false);
+    setDocumentName('')
   };
 
   // Document picking function
@@ -265,8 +266,15 @@ const Userqueries = ({ navigation }) => {
       console.log("Feedback submitted successfully:", response.data);
       
       // Show success message
-      setFeedbackSuccess(true);
-      
+      // setFeedbackSuccess(true);
+      Alert.alert("Success", "Query submitted successfully");
+      setDocumentId('')
+      setResolveSubmission(false)
+      setPendingSubmission(false)
+      setFeedbackComments("");
+      setSelectedDocument(null);
+      setFeedbackError("");
+
       // Wait 1 second then close modal and refresh tickets
       setTimeout(() => {
         setFeedbackModal(false);

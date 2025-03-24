@@ -7,13 +7,12 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
 
 import BASE_URL from "../../config";
-import { useFocusEffect } from "@react-navigation/native";
 
 const { height, width } = Dimensions.get("window");
 
@@ -26,15 +25,9 @@ const AllSplitBags = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  // useEffect(() => {
-  //   fetchSplitBags(currentPage, pageSize);
-  // }, [currentPage, pageSize]);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchSplitBags(currentPage, pageSize);
-    },[currentPage, pageSize])
-  )
+  useEffect(() => {
+    fetchSplitBags(currentPage, pageSize);
+  }, [currentPage, pageSize]);
 
   const fetchSplitBags = (page, size) => {
     setLoading(true);

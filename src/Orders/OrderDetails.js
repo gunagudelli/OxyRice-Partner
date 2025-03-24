@@ -695,7 +695,7 @@ const OrderDetails = ({ route }) => {
               buttonsDisabled && styles.disabledButton,
             ]}
             onPress={handlereAcceptPress}
-            disabled={buttonsDisabled || userStage !== "test"}
+            // disabled={buttonsDisabled || userStage !== "test"}
           >
             <Text style={styles.rejectButtonText}>Re-Accept</Text>
           </TouchableOpacity>
