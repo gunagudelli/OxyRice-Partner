@@ -23,7 +23,7 @@ import { use } from "react";
 const { width } = Dimensions.get("window");
 const OrderDetails = ({ route }) => {
   const navigation = useNavigation();
-  // console.log("routes",route.params.order.orderId)
+  console.log("routes",route.params.istestUser)
   const id = route.params.order.orderId;
   const status = route.params.order.orderStatus;
   const customerId = route.params.order.customerId;
@@ -49,6 +49,8 @@ const OrderDetails = ({ route }) => {
   const [assignedDeliveryBoy, setAssignedDeliveryBoy] = useState([]);
   const [selectedDb, setSelectedDb] = useState(null); // To track selected delivery boy
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const[dateTimeModalVisible,setDateTimeModalVisible]=useState(false)
+  const [timeSlotData, setTimeSlotData] = useState([]);
   const [dbId, setDbId] = useState();
   const [disable, setDisable] = useState(false);
   // const [accessToken, setAccessToken] = useState(null)
@@ -65,11 +67,150 @@ const OrderDetails = ({ route }) => {
   const [assignLoader, setAssignLoader] = useState(false);
   const [RejectLoader, setRejectLoader] = useState(false);
   const [RejectReason_error, setRejectReason_error] = useState(false);
+  const[selectedSlot,setSelectedSlot]=useState(null)
+  const[timeSlot,setTimeSlot]=useState([])
+  const[selectedTimeslot,setSelectedTimeSlot]=useState(null)
+  const date=new Date();
   useEffect(() => {
     fetchOrderData();
     deliveryBoyDetails();
     getDeliveryBoyDetails();
   }, [id, status]);
+  const getNextThreeDays = () => {
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+  
+    const nextThreeDays = [1, 2, 3, 4, 5, 6, 7].map(offset => {
+      const date = new Date();
+      date.setDate(date.getDate() + offset);
+      // console.log("dates",date)
+      return {
+        dayOfWeek: daysOfWeek[date.getDay()].toUpperCase(),
+        date: `${date.getDate()}-${months[date.getMonth()]}-${date.getFullYear()}`,
+        formattedDay: daysOfWeek[date.getDay()]
+      };
+    });
+  
+    return nextThreeDays;
+  };
+  
+  const fetchTimeSlot = () => {
+    setLoading(true);
+    setError(null);
+    
+    axios({
+      method: "get",
+      url: BASE_URL + `order-service/fetchTimeSlotlist`,
+    })
+    .then((response) => {
+      console.log("Response fetch time slot", response.data);
+      
+      // Get potential days
+      const potentialDays = getNextThreeDays();
+      
+      // Filter slots based on availability
+      const processedData = [];
+      
+      for (let dayInfo of potentialDays) {
+        // Find the corresponding slot for this day
+        const matchingSlot = response.data.find(
+          slot => slot.dayOfWeek === dayInfo.dayOfWeek && slot.isAvailable === false
+        );
+        
+        if (matchingSlot) {
+          const dayEntry = {
+            id: matchingSlot.id,
+            day: dayInfo.formattedDay,
+            date: dayInfo.date,
+            slots: [
+              { id: `${matchingSlot.id}-1`, time: matchingSlot.timeSlot1 },
+              { id: `${matchingSlot.id}-2`, time: matchingSlot.timeSlot2 },
+              { id: `${matchingSlot.id}-3`, time: matchingSlot.timeSlot3 },
+              { id: `${matchingSlot.id}-4`, time: matchingSlot.timeSlot4 }
+            ],
+            isAvailable: matchingSlot.isAvailable
+          };
+          
+          processedData.push(dayEntry);
+          
+          // Stop when we have exactly 3 days
+          if (processedData.length === 3) break;
+        }
+      }
+      
+      // Ensure we always have 3 days
+      while (processedData.length < 3) {
+        console.warn("Not enough days with unavailable slots");
+        // You might want to handle this case, perhaps by adding placeholder days
+        processedData.push({
+          id: null,
+          day: 'No Slot',
+          date: 'N/A',
+          slots: [],
+          isAvailable: true
+        });
+      }
+      
+      setTimeSlotData(processedData);
+      setDateTimeModalVisible(true);
+      setLoading(false);
+    })
+    .catch((error) => {
+      console.error("Error fetching time slots", error);
+      setLoading(false);
+      Alert.alert("Error", "Failed to fetch time slots");
+    });
+  };
+  
+  // Handling slot selection remains the same
+  const handleSlotSelect = (day, date, time) => {
+    const selection = { day, date, time };
+    setSelectedSlot({day,date,time})
+    console.log("Selected delivery slot:", selection);
+    
+    let data = {
+      "dayOfWeek": day.toUpperCase(),
+      "expectedDeliveryDate": date,
+      "orderId": orderData?.orderId,
+      "timeSlot": time,
+      "userId": orderData?.customerId
+    };
+    
+    console.log("Sending data:", data);
+    setLoader(true)
+    axios({
+      method: "patch",
+      url: BASE_URL + `order-service/userSelectedDiffslot`,
+      data: data
+    })
+    .then((response) => {
+      console.log("Update Time Slot", response.data);
+      setDateTimeModalVisible(false);
+      fetchOrderData();
+      setLoader(false)
+      Alert.alert("Success", "Successfully updated time slot");
+    })
+    .catch((error) => {
+      console.log("Update Time Slot Error", error.response);
+      setDateTimeModalVisible(false);
+      setLoader(false)
+      Alert.alert("Error", "Failed to update time slot");
+    });
+  };
+  // Flatten data for ScrollView approach
+  const flattenedData = timeSlotData.flatMap(dateObj => {
+    return [
+      { type: 'header', day: dateObj.day, date: dateObj.date },
+      ...dateObj.slots.map(slot => ({ 
+        type: 'slot', 
+        ...slot, 
+        day: dateObj.day, 
+        date: dateObj.date 
+      }))
+    ];
+  });  
+  
+
   const fetchOrderData = async () => {
     try {
       const response = await axios.post(
@@ -88,7 +229,7 @@ const OrderDetails = ({ route }) => {
           },
         }
       );
-      // console.log("Order Details response", response.data);
+      // console.log("Order Details response", response);
       if (response.status === 200) {
         setOrderData(response.data[0]);
         setTestUser(response.data[0].testUser);
@@ -144,12 +285,8 @@ const OrderDetails = ({ route }) => {
     setRejectLoader(true);
     try {
       const response = await axios.post(
-        // BASE_URL+`erice-service/order/reject_order`,
-        // userStage == "test"?
         BASE_URL + `order-service/reject_orders`,
-        // : BASE_URL + `erice-service/order/reject_order`,
         { orderId: id, cancelReason: rejectReason },
-
         {
           headers: {
             Authorization: `Bearer ${accessToken.token}`,
@@ -340,9 +477,10 @@ const OrderDetails = ({ route }) => {
     const apiUrl = BASE_URL + "user-service/updateTestUsers";
     const requestBody = {
       id: userId,
-      testUser: !testUser,
+      testUser: !route.params.istestUser,
     };
     console.log({ requestBody });
+
     try {
       const response = await axios.patch(apiUrl, requestBody, {
         headers: {
@@ -352,11 +490,17 @@ const OrderDetails = ({ route }) => {
 
       if (response.status === 200) {
         // fetchOrderData()
-        if (testUser) {
+        if (!route.params.istestUser) {
           console.log("User successfully converted:", response.data);
-          Alert.alert("Success", "User converted to live User successfully!");
+          Alert.alert("Success", "User converted to Test User successfully!",[{
+            text:"ok",
+            onPress:()=>navigation.goBack()
+          }]);
         } else {
-          Alert.alert("Success", "User converted to Test User successfully!");
+          Alert.alert("Success", "User converted to Live User successfully!",[{
+            text:"ok",
+            onPress:()=>navigation.goBack()
+          }]);
         }
         await fetchOrderData();
       } else {
@@ -406,7 +550,7 @@ const OrderDetails = ({ route }) => {
         Authorization: `Bearer ${accessToken.accessToken}`,
       },
     })
-      .then(function (response) {
+      .then(function (response) { 
         // console.log("deliveryBoyAssigneData", response);
         setAssignedDeliveryBoy(response.data[0]);
         console.log(assignLoader.deliveryBoyName);
@@ -440,19 +584,22 @@ const OrderDetails = ({ route }) => {
         <Text style={styles.heading}>ORDER DETAILS</Text>
       </View>
 
-      <TouchableOpacity style={styles.convertButton} onPress={handleConvert}>
-        {testUser == true ? (
-          <Text style={styles.convertButtonText}>Convert to Live User</Text>
-        ) : (
-          <Text style={styles.convertButtonText}>Convert to Test User</Text>
-        )}
-      </TouchableOpacity>
+      <TouchableOpacity  style={[
+                  styles.convertButton, 
+                  { backgroundColor: route.params.istestUser ? "#27ae60" : "#3d2a71" } // Green for Live, Red for Test
+                ]}  onPress={()=>handleConvert()}>
+          {route.params.istestUser==true ? (
+            <Text style={styles.convertButtonText}>{route.params.istestUser}Convert to Live User</Text>
+          ) : (
+            <Text style={styles.convertButtonText}>Convert to Test User</Text>
+          )}
+        </TouchableOpacity>
 
       <View style={styles.section}>
         <Text style={styles.label}>
           Order Id:{" "}
           <Text style={styles.value}>
-            {route.params.order.orderId || "N/A"}
+            {orderData?.uniqueId || "N/A"}
           </Text>
         </Text>
         <Text style={styles.label}>
@@ -470,7 +617,7 @@ const OrderDetails = ({ route }) => {
               ? `${orderData.mobileNumber}, ${orderData.customerMobile}`
               : orderData?.customerMobile?.trim() ||
                 orderData?.mobileNumber?.trim() ||
-                "N/A"}
+                "N/A"}  
           </Text>
         </Text>
 
@@ -589,6 +736,18 @@ const OrderDetails = ({ route }) => {
         />
       </View>
 
+      <Text style={styles.heading}>DELIVERY TIME SLOT</Text>
+      <View style={styles.section}>
+          <Text style={styles.label}>
+                Expected Date / Time : <Text style={styles.value}>{orderData?.expectedDeliveryDate} ({orderData?.timeSlot}) </Text>
+          </Text>
+
+          <TouchableOpacity onPress={()=>fetchTimeSlot()}>
+            <Text style={{color:"#0384d5",alignSelf:"flex-end",marginRight:20,fontWeight:"bold",fontSize:18}}>Update Time Slot</Text>
+          </TouchableOpacity>
+      </View>
+
+
       {orderData.orderStatus === "3" ? (
         <>
           <Text style={styles.heading}>Assigned To</Text>
@@ -695,7 +854,7 @@ const OrderDetails = ({ route }) => {
               buttonsDisabled && styles.disabledButton,
             ]}
             onPress={handlereAcceptPress}
-            // disabled={buttonsDisabled || userStage !== "test"}
+            //  disabled={buttonsDisabled || userStage !== "test"}
           >
             <Text style={styles.rejectButtonText}>Re-Accept</Text>
           </TouchableOpacity>
@@ -903,6 +1062,73 @@ const OrderDetails = ({ route }) => {
             </View>
           </View>
         </Modal>
+
+{/* Update Date / Time Slot */}
+<Modal
+      animationType="slide"
+      transparent={true}
+      visible={dateTimeModalVisible}
+      onRequestClose={() => setDateTimeModalVisible(false)}
+    >
+      <View style={styles.modalContainer1}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Delivery time slot</Text>
+            <TouchableOpacity onPress={() => setDateTimeModalVisible(false)}>
+              <Text style={styles.closeButton}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          {loader ? (
+            <View style={styles.loadingOverlay}>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator 
+                size="large" 
+                color="#4CAF50" 
+                style={styles.loadingIndicator}
+              />
+              <Text style={styles.loadingTitle}>Confirming Time Slot</Text>
+              {selectedSlot && (
+                <View style={styles.selectedSlotDetails}>
+                  <Text style={styles.loadingSubtitle}>
+                    {selectedSlot.time} - {selectedSlot.day}, {selectedSlot.date}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : (
+            <ScrollView style={styles.scrollView}>
+              {flattenedData.map((item, index) => {
+                if (item.type === 'header') {
+                  return (
+                    <View key={`header-${index}`} style={styles.sectionHeader}>
+                      <Text style={styles.dayText}>{item.day}</Text>
+                      <Text style={styles.dayText}>{item.date}</Text>
+                    </View>
+                  );
+                } else {
+                  return (
+                    <TouchableOpacity
+                      key={`slot-${item.id}`}
+                      style={styles.timeSlotButton}
+                      onPress={() => handleSlotSelect(item.day, item.date, item.time)}
+                    >
+                      <Text style={styles.timeSlotText}>{item.time}</Text>
+                      <View style={styles.divider} />
+                    </TouchableOpacity>
+                  );
+                }
+              })}
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
       </View>
     </ScrollView>
   );
@@ -1069,14 +1295,56 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   convertButton: {
-    backgroundColor: "#27ae60",
+   
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 5,
     width: "48%",
     alignItems: "center",
-    marginBottom: 20,
+    marginRight: 20,
+    marginBottom:20,
     alignSelf: "flex-end",
+  },
+  loadingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.9)', // Semi-transparent white overlay
+  },
+  loadingContainer: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingIndicator: {
+    marginBottom: 15,
+  },
+  loadingTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  selectedSlotDetails: {
+    backgroundColor: '#F0F0F0',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  loadingSubtitle: {
+    color: '#4CAF50',
+    fontSize: 16,
+    textAlign: 'center',
   },
   convertButtonText: {
     color: "#fff",
@@ -1092,6 +1360,87 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingLeft: 10,
     borderRadius: 5,
+  },
+  modalContainer1: {
+    flex: 1,
+    // backgroundColor:"black",
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    height: '70%',
+    borderRadius: 10,
+    width:width*0.9,
+    alignSelf:"center"
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eeeeee',
+  },
+  modalTitle1: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  closeButton: {
+    fontSize: 24,
+    color: '#333333',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  sectionHeader: {
+    padding: 15,
+    backgroundColor: '#ffffff',
+    flexDirection:"row",
+    justifyContent:"space-between"
+  },
+  dayText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  dateText: {
+    fontSize: 16,
+    color: '#666666',
+    marginTop: 5,
+  },
+  timeSlotButton: {
+    padding: 15,
+    backgroundColor: '#ffffff',
+  },
+  timeSlotText: {
+    fontSize: 16,
+    color: '#333333',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#eeeeee',
+    marginTop: 15,
+  },
+  selectedInfo: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#e6f7ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#91d5ff',
+  },
+  selectedTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333333',
+  },
+  selectedText: {
+    fontSize: 14,
+    color: '#333333',
+    marginBottom: 5,
   },
 });
 

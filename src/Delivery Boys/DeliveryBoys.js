@@ -77,7 +77,8 @@ const DeliveryBoys = ({ navigation }) => {
           deliveryBoyAddress: item.address || 'N/A',
           isActive: item.isActive === "true",
           alterMobileNumber: item.alterMobileNumber || '',
-          lastName: item.lastName || ''
+          lastName: item.lastName || '',
+          firstName:item.firstName || ''
         }));
         setDeliveryBoys(formattedData);
       } else {

@@ -18,12 +18,15 @@ const { height, width } = Dimensions.get("window");
 import { useSelector } from "react-redux";
 import ModalDropdown from "react-native-modal-dropdown";
 import { Ionicons } from "@expo/vector-icons";
+import Icon from "react-native-vector-icons/Ionicons";
 import { AntDesign } from "react-native-vector-icons/AntDesign";
 
 const NewOrders = ({ navigation, route }) => {
+  console.log("NewOrders route", route);
   const { isTestOrder } = route.params;
   const [orders, setOrders] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]); 
+  const[orderAddress,setOrderAddress]=useState()
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,6 +84,7 @@ const NewOrders = ({ navigation, route }) => {
       // console.log("Live users", liveUsers);
 
       setOrders(acceptedOrders);
+      setOrderAddress(acceptedOrders.orderAddress)
       setFilteredOrders(acceptedOrders);
     } catch (error) {
       setLoader(false);
@@ -139,7 +143,7 @@ const NewOrders = ({ navigation, route }) => {
         {item.orderStatus == 1 && item.testUser == isTestOrder ? (
           <TouchableOpacity
             style={styles.orderItem}
-            onPress={() => navigation.navigate("Order Details", { order: item })}
+            onPress={() => navigation.navigate("Order Details", { order: item,istestUser:route.params.isTestOrder })}
           >
             <Text style={styles.orderId}>
               Order Id :{" "}
@@ -149,13 +153,13 @@ const NewOrders = ({ navigation, route }) => {
             <View style={styles.orderRow}>
               <View>
                 <Text style={styles.orderDate}>
-                  Date :{" "}
+                 Order Date :{" "}
                   <Text style={{ fontWeight: "normal" }}>
                     {item?.orderDate.substring(0, 10)}
                   </Text>{" "}
                 </Text>
                 <Text style={styles.orderDate}>
-                  Status :{" "}
+                  Order Status :{" "}
                   <Text style={styles.orderStatus}>
                     {" "}
                     {item?.orderStatus == 0
@@ -175,6 +179,13 @@ const NewOrders = ({ navigation, route }) => {
                       : "Unknown"}
                   </Text>
                 </Text>
+
+                {/* <Text style={styles.orderDate}>
+                 Order Expected Date/Time :{" "}
+                  <Text style={{ fontWeight: "normal",width:width*0.6 }}>
+                  {item?.expectedDeliveryDate} , {item?.dayOfWeek} ({item?.timeSlot})
+                  </Text>{" "}
+                </Text> */}
               </View>
               <View>
                 <Text style={styles.orderRupees}>
@@ -183,20 +194,20 @@ const NewOrders = ({ navigation, route }) => {
               </View>
             </View>
 
-            {item?.dayOfWeek!=""  ?
-            <View style={{backgroundColor:"#f1f1f1", padding:10, borderRadius:10, marginTop:10}}>
+
+            {item?.dayOfWeek!="" ?
+            <View style={{ padding:10}}>
                 {/* <AntDesign name="clockcircle" size={15} /> */}
-                <Text style={{fontWeight:"bold"}}> {item?.dayOfWeek} ({item?.timeSlot})</Text>
+                <Text style={{fontWeight:"bold"}}>Expected Date / Time : <Text style={{fontWeight:"normal"}}>{item?.expectedDeliveryDate} , {item?.dayOfWeek} ({item?.timeSlot})</Text></Text>
             </View>
             :null}
 
-            {/* <View style={{backgroundColor:"#f1f1f1", padding:10, borderRadius:10, marginTop:10}}>
-  <Text>
-    <AntDesign name="clockcircle" size={15} />
-    <Text style={{fontSize:16, fontWeight:"bold", marginLeft:5}}> {item.dayOfWeek} ({item.timeSlot})</Text>
-  </Text>
-</View> */}
-
+{item?.orderAddress!=null ?
+            <View style={{backgroundColor:"#f1f1f1", padding:10, borderRadius:10, marginTop:10,flexDirection:"row"}}>
+              <Icon name="location" size={16} style={{marginRight:15}}/>
+              <Text style={{fontWeight:"bold",width:width*0.8}}>{item?.orderAddress?.flatNo},{item?.orderAddress?.address},{item?.orderAddress?.landMark},{item?.orderAddress?.pincode}</Text>
+            </View>
+            :null}
 
           </TouchableOpacity>
         ) : null}
@@ -373,7 +384,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     width: width - 20,
     alignSelf: "center",
-    marginBottom: 6,
+    // marginBottom: 6,
   },
   orderRow: {
     flexDirection: "row",

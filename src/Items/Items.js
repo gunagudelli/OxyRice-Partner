@@ -36,6 +36,9 @@ const COLORS = {
 
 const Items = () => {
   // const { BASE_URL,userStage } = config();
+
+  const userData = useSelector((state) => state.counter);
+  console.log({userData})
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -101,7 +104,7 @@ const Items = () => {
   const submitUpdatePrice = async () => {
     if (!validatePrices()) return;
     setUpdating(true);
-    
+    // console.log("sregfb")
     const data = {
       sellerId: accessToken.id,
       itemMrp: parseFloat(mrp),
@@ -109,6 +112,8 @@ const Items = () => {
       itemId: selectedItem.itemId,
       itemPrice: parseFloat(price),
     };
+
+    console.log({data})
 
     try {
       await axios.patch(
@@ -330,7 +335,7 @@ const Items = () => {
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
+                onPress={() => {setModalVisible(false),setUpdating(false)}}
               >
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>

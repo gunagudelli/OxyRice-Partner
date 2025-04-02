@@ -2,7 +2,7 @@
   "expo": {
     "name": "ASKOXY.AI_Partner",
     "slug": "Oxyrice_Partner",
-    "version": "1.0.14",
+    "version": "1.0.15",
     "orientation": "portrait",
     "icon": "./assets/askoxy-splash.png",
     "userInterfaceStyle": "light",
@@ -21,7 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.oxyrice.pantner",
-      "versionCode": 16
+      "versionCode": 17
     },
     "web": {
       "favicon": "./assets/iconA.png"
@@ -34,7 +34,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "9001fed8-f738-46b5-8cba-ff1c48b37db7"
+        "projectId": "a13cebf5-bce9-4377-9db0-7ffbfb25e275"
       }
     }
   }

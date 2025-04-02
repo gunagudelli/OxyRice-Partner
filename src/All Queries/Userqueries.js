@@ -38,7 +38,8 @@ const Userqueries = ({ navigation }) => {
   const [ticketId, setTicketId] = useState();
   const [query, setQuery] = useState();
   const userData = useSelector((state) => state.counter);
-  const token = userData.token; // Get token from redux store
+  // console.log({userData})
+  const token = userData.accessToken; // Get token from redux store
   
   // Feedback and search state variables
   const [feedbackModal, setFeedbackModal] = useState(false);
@@ -111,7 +112,7 @@ const Userqueries = ({ navigation }) => {
         setFilteredTickets([]);
         setLoading(false);
       });
-  }, [queryStatus, token]);
+  }, [queryStatus]);
 
   // Filter status options
   const data = [
@@ -258,15 +259,11 @@ const Userqueries = ({ navigation }) => {
       method: "post",
       url: `${BASE_URL}user-service/write/saveData`,
       data: data,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+    
     })
     .then((response) => {
       console.log("Feedback submitted successfully:", response.data);
-      
-      // Show success message
-      // setFeedbackSuccess(true);
+    
       Alert.alert("Success", "Query submitted successfully");
       setDocumentId('')
       setResolveSubmission(false)
@@ -275,7 +272,6 @@ const Userqueries = ({ navigation }) => {
       setSelectedDocument(null);
       setFeedbackError("");
 
-      // Wait 1 second then close modal and refresh tickets
       setTimeout(() => {
         setFeedbackModal(false);
         fetchTickets();
@@ -459,16 +455,20 @@ const Userqueries = ({ navigation }) => {
           <Icon name="create-outline" size={16} color="#FFF" />
           <Text style={styles.buttonText}>Query Comments</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.feedbackButton,{    backgroundColor: '#0384d5',
-          }]}
-          onPress={() => openFeedbackModal(item)}
-          accessibilityLabel="Submit query feedback"
-          accessibilityRole="button"
-        >
-          <Icon name="create-outline" size={16} color="#FFF" />
-          <Text style={styles.buttonText}>Query Feedback</Text>
-        </TouchableOpacity>
+
+        {queryStatus=="PENDING"?
+            <TouchableOpacity
+              style={[styles.feedbackButton,{    backgroundColor: '#0384d5',
+              }]}
+              onPress={() => openFeedbackModal(item)}
+              accessibilityLabel="Submit query feedback"
+              accessibilityRole="button"
+            >
+              <Icon name="create-outline" size={16} color="#FFF" />
+              <Text style={styles.buttonText}>Query Feedback</Text>
+            </TouchableOpacity>
+        :null}
+
       </View>
     </View>
   );

@@ -20,6 +20,7 @@ import { useDispatch } from "react-redux";
 import { AccessToken, UserID } from "../../Redux/action/index";
 import Icon from "react-native-vector-icons/Ionicons";
 import BASE_URL from "../../config";
+import { useSelector } from "react-redux";
 const { height, width } = Dimensions.get("window");
 
 // Set fixed BASE_URL for Live environment
@@ -46,13 +47,15 @@ const LoginWithPassword = () => {
   // Enhanced auto-login check
   const checkAutoLogin = async () => {
     try {
-      const token = await AsyncStorage.getItem("accessToken");
-      
+      const token = await AsyncStorage.getItem("userData");
+
       if (token) {
         console.log("Auto login with saved token");
         dispatch(AccessToken(JSON.parse(token)));
         dispatch(UserID("Live"));
+        // console.log(useSelector((state)=>state.counter))
         navigation.navigate("Home");
+
       } else {
         console.log("No saved token found");
         // Don't attempt auto-login with credentials for now
@@ -105,9 +108,10 @@ const LoginWithPassword = () => {
       console.log("Login response:", response.data);
       
       if (response.data && response.data.accessToken) {
-        await AsyncStorage.setItem("accessToken", JSON.stringify(response.data));
         dispatch(AccessToken(response.data));
         dispatch(UserID("Live"));
+        await AsyncStorage.setItem("userData", JSON.stringify(response.data));
+
         
         // Show success greeting popup
         Alert.alert(
@@ -160,11 +164,11 @@ const LoginWithPassword = () => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#fff" }}
+      style={{ flex: 1,  }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={{ backgroundColor: "#fff", flex: 1 }}>
+        <View style={{  flex: 1 }}>
           {/* Top Images */}
           <View>
             <View>
@@ -281,7 +285,7 @@ const LoginWithPassword = () => {
               ) : (
                 <TouchableOpacity
                   style={styles.otpbtn}
-                  onPress={handleLogin}
+                  onPress={()=>handleLogin()}
                 >
                   <Text style={styles.Otptxt}>Login</Text>
                 </TouchableOpacity>

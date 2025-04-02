@@ -18,6 +18,8 @@ const { height, width } = Dimensions.get("window");
 import { useSelector } from "react-redux";
 import ModalDropdown from "react-native-modal-dropdown";
 import { Ionicons } from "@expo/vector-icons";
+import Icon from "react-native-vector-icons/Ionicons"
+
 
 const NewOrders = ({ navigation, route }) => {
   const accessToken = useSelector((state) => state.counter);
@@ -129,7 +131,7 @@ const NewOrders = ({ navigation, route }) => {
         {item.orderStatus == 3 && item.testUser == isTestOrder ? (
           <TouchableOpacity
             style={styles.orderItem}
-            onPress={() => navigation.navigate("Order Details", { order: item })}
+            onPress={() => navigation.navigate("Order Details", { order: item,istestUser:route.params.isTestOrder })}
           >
             <Text style={styles.orderId}>
               Order Id :{" "}
@@ -175,12 +177,19 @@ const NewOrders = ({ navigation, route }) => {
               </View>
             </View>
 
-             {item?.dayOfWeek!=""  ?
-                        <View style={{backgroundColor:"#f1f1f1", padding:10, borderRadius:10, marginTop:10}}>
-                            {/* <AntDesign name="clockcircle" size={15} /> */}
-                            <Text style={{fontWeight:"bold"}}> {item?.dayOfWeek} ({item?.timeSlot})</Text>
-                        </View>
-                        :null}
+           {item?.dayOfWeek!=""  ?
+                       <View style={{ padding:10,}}>
+                           {/* <AntDesign name="clockcircle" size={15} /> */}
+                           <Text style={{fontWeight:"bold"}}>Expected Date / Time : <Text style={{fontWeight:"normal"}}>{item?.expectedDeliveryDate} , {item?.dayOfWeek} ({item?.timeSlot})</Text></Text>
+                       </View>
+                       :null}
+           
+                       {item?.orderAddress!=null ?
+                                   <View style={{backgroundColor:"#f1f1f1", padding:10, borderRadius:10, marginTop:10,flexDirection:"row"}}>
+                                     <Icon name="location" size={16} style={{marginRight:15}}/>
+                                     <Text style={{fontWeight:"bold",width:width*0.8}}>{item?.orderAddress?.flatNo},{item?.orderAddress?.address},{item?.orderAddress?.landMark},{item?.orderAddress?.pincode}</Text>
+                                   </View>
+                                   :null}
           </TouchableOpacity>
         ) : null}
       </View>

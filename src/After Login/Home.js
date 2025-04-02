@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -18,12 +18,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import BASE_URL from '../../config';
+import { useSelector } from 'react-redux';
 // import BarcodeScanner from "../After Login/BarcodeScanner"
 const { width, height } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
   // //const { BASE_URL, userStage } = config(); // Get values
-
+  const userData = useSelector((state) => state.counter);
+  AsyncStorage.getItem("userData").then((value) => {
+    console.log({value})
+  })
+  console.log({userData})
   const [scaleAnimation] = useState(new Animated.Value(1));
   const [headerHeight] = useState(new Animated.Value(height * 0.28)); // Slightly taller header
 
@@ -110,7 +115,17 @@ const HomeScreen = ({ navigation }) => {
       gradient: ['#FF4081', '#C2185B'], // Pink to Dark Pink
       onPress: () => navigation.navigate('Split Bags')
     },
+    {
+      id: 7,  
+      title: 'Test Orders',  
+      subTitle: 'Order History',  
+      icon: 'file-tray-full-outline',  
+      gradient: ['#4CAF50', '#2E7D32'], // Green shades  
+      onPress: () => navigation.navigate('Orders', { isTestOrder: true })  
+    }
   ];
+
+  
 
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { y: headerHeight } } }],
@@ -183,12 +198,12 @@ const HomeScreen = ({ navigation }) => {
                     <Text style={styles.boxText}>{item.title}</Text>
                     <Text style={styles.subText}>{item.subTitle}</Text>
                   </View>
-                  <Icon 
+                  {/* <Icon 
                     name="chevron-forward" 
                     size={20} 
                     color="#666" 
                     style={styles.arrowIcon}
-                  />
+                  /> */}
                 </TouchableOpacity>
               </Animated.View>
             ))}
@@ -326,7 +341,7 @@ dateText: {
   box: {
     backgroundColor: '#ffffff',
     width: width * 0.42,
-    height: height * 0.11,
+    height: "auto",
     borderRadius: 20,
     padding: 15,
     marginBottom: 20,
@@ -391,7 +406,8 @@ dateText: {
   arrowIcon: {
     position: 'absolute',
     right: 15,
-    bottom: 15,
+    bottom: 20,
+    // marginVertical:15
   },
   logoutButton: {
     // flex:3,

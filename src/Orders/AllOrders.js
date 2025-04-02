@@ -205,7 +205,7 @@ const AllOrders = () => {
       <View style={styles.detailsContainer}>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Order Date</Text>
-          <Text style={styles.detailValue}>{formatOrderDate(item.orderDate)}</Text>
+          <Text style={styles.detailValue}>{formatOrderDate(item.createdAt)}</Text>
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Grand Total</Text>

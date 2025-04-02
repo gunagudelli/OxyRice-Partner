@@ -22,6 +22,7 @@ import TestAllOrders from './src/Orders/TestAllOrders';
 import AllSplitBags from './src/Split Bags/AllSplitBags';
 import Logout from './src/After Login/Logout';
 
+import AppUpdateScreen from './src/After Login/AppUpdateScreen';
 import SplitBags from './src/Split Bags/SplitBags';
 
 import BarcodeScanner from './src/After Login/BarcodeScanner';
@@ -46,8 +47,9 @@ export default function App() {
     <Provider store={store}> 
     <NavigationContainer>
       <Stack.Navigator
+       initialRouteName="App Update"
       // initialRouteName='Dashboard'
-        initialRouteName="LoginWithPassword"
+        // initialRouteName="LoginWithPassword"
         screenOptions={{
           headerStyle: {
             backgroundColor: "#3d2a71"
@@ -81,6 +83,12 @@ export default function App() {
           component={LoginWithPassword}
           options={{ headerShown: false }}
         />
+
+<Stack.Screen
+        name="App Update"
+        component={AppUpdateScreen}
+        options={{ headerShown: false }}
+      />
         <Stack.Screen
           name="Home"
           component={HomeScreen}

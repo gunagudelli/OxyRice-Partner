@@ -7,12 +7,12 @@ const Querycomments = ({route,navigation}) => {
     useEffect(() => {
             setDetails(route.params.details.userPendingQueries);
     },[])
-    // console.log(route.params.details.userPendingQueries[0].resolvedBy);
+    console.log(route.params.details.userPendingQueries[0]);
     
     function handleOpenPath(url) {
       console.log("open path");
       console.log({ url });
-      const fileExtension = url.split(".").pop().toLowerCase();
+      const fileExtension = url;
       const filePath = `${url}`; // Update the base URL to your file storage
         
         if (fileExtension === 'jpg' || fileExtension === 'png' || fileExtension === 'jpeg' || fileExtension === 'svg') {
