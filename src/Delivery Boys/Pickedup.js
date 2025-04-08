@@ -27,15 +27,17 @@ useFocusEffect(
 );
 
 function PickupData(){
+console.log("id",id)
     axios({
       method:"get",
       url:BASE_URL+`order-service/getPickupDataBasedOnId?deliveryBoyId=${id}`,
       headers: {
         Authorization: `Bearer ${accessToken.accessToken}`,
       },
+      
     })
     .then(function(response){
-      // console.log(response.data)
+      console.log(response.data)
       setPickedUpData(response.data)
       setLoading(false)
     })
@@ -69,14 +71,14 @@ function PickupData(){
   // Render each order item
   const renderItem = ({ item }) => (
     <View
-      onPress={() =>
-        navigation.navigate("Order Details", {
-          orderId: item.orderId,
-          orderStatus: item.orderStatus,
-          orderItems:item.orderItems
-        })
-      }
-    >
+    onPress={() =>
+      navigation.navigate("Order Details", {
+        orderId: item.orderId,
+        orderStatus: item.orderStatus,
+        orderItems:item.orderItems
+      })
+    }
+  >
       <View style={styles.orderItem}>
         <View style={styles.orderDetails}>
           <Text style={styles.orderDate}>
@@ -111,7 +113,7 @@ Picked Up              {/* {item?.orderStatus == 0
         </View>
         <View style={styles.orderAmountContainer}>
           <Text style={styles.orderAmount}>
-            Rs.<Text style={{ color: "#28a745" }}>{item.grandTotal}</Text>
+            Rs.<Text style={{ color: "#28a745" }}>{item.totalAmount}</Text>
           </Text>
         </View>
       </View>

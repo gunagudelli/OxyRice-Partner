@@ -21,6 +21,7 @@ import OrderDetails from './src/Orders/OrderDetails';
 import TestAllOrders from './src/Orders/TestAllOrders';
 import AllSplitBags from './src/Split Bags/AllSplitBags';
 import Logout from './src/After Login/Logout';
+import NetworkAlert from './src/After Login/NetworkAlert';
 
 import AppUpdateScreen from './src/After Login/AppUpdateScreen';
 import SplitBags from './src/Split Bags/SplitBags';
@@ -45,6 +46,7 @@ export default function App() {
   
   return (
     <Provider store={store}> 
+    <NetworkAlert/>
     <NavigationContainer>
       <Stack.Navigator
        initialRouteName="App Update"

@@ -156,6 +156,10 @@ console.log("updateDeliveryBoyStatus",response)
       setFormData({...formData,lastName_error:true})
       return false
     }
+    if(formData.whatsappNumber=="" || formData.whatsappNumber==null){
+      setFormData({...formData,whatsappNumber_error:true})
+      return false
+    }
     if(formData.customerEmail=="" || formData.customerEmail==null){
       setFormData({...formData,email_error:true})
       return false
@@ -359,6 +363,7 @@ console.log("updateDeliveryBoyStatus",response)
                 style={styles.input}
                 placeholder="WhatsApp Number"
                 value={formData.whatsappNumber}
+                // onChangeText={(text) => setFormData({ ...formData, whatsappNumber: text,lastName_error:false })}
                 onChangeText={(text) => setFormData({ ...formData, whatsappNumber: text })}
                 keyboardType="phone-pad"
                 editable={false}

@@ -20,7 +20,7 @@ import { RadioButton } from "react-native-paper";
 import { useSelector } from "react-redux";
 import BarCodeScannerScreen from "../BarCode";
 import { use } from "react";
-const { width } = Dimensions.get("window");
+const { width,height } = Dimensions.get("window");
 const OrderDetails = ({ route }) => {
   const navigation = useNavigation();
   console.log("routes",route.params.istestUser)
@@ -772,7 +772,7 @@ const OrderDetails = ({ route }) => {
       ) : (
         ""
       )}
-      <Text style={styles.heading}>Summary Order</Text>
+      <Text style={styles.heading}>Order Summary</Text>
       <View style={styles.section}>
         <Text style={styles.label}>
            SUB TOTAL  : {" "}
@@ -1369,7 +1369,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: 'white',
-    height: '70%',
+    height: height/2,
     borderRadius: 10,
     width:width*0.9,
     alignSelf:"center"

@@ -16,41 +16,41 @@ import {
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import BASE_URL,{userStage} from '../../config';
+import BASE_URL, { userStage } from "../../config";
 import { useSelector } from "react-redux";
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 const { width, height } = Dimensions.get("window");
 
 const COLORS = {
-  primary: '#2A4BA0',
-  secondary: '#153075',
-  success: '#28C76F',
-  danger: '#EA1601',
-  background: '#F8F9FB',
-  text: '#1E222B',
-  border: '#EBEBFB',
-  lightGray: '#F0F0F0',
-  textSecondary: '#616161',
+  primary: "#2A4BA0",
+  secondary: "#153075",
+  success: "#28C76F",
+  danger: "#EA1601",
+  background: "#F8F9FB",
+  text: "#1E222B",
+  border: "#EBEBFB",
+  lightGray: "#F0F0F0",
+  textSecondary: "#616161",
 };
 
 const Items = () => {
   // const { BASE_URL,userStage } = config();
 
   const userData = useSelector((state) => state.counter);
-  console.log({userData})
+  console.log({ userData });
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [price, setPrice] = useState('');
-  const [mrp, setMrp] = useState('');
+  const [price, setPrice] = useState("");
+  const [mrp, setMrp] = useState("");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [toggleItemId, setToggleItemId] = useState(null);
   const accessToken = useSelector((state) => state.counter);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [filteredItems, setFilteredItems] = useState([]);
 
   useFocusEffect(
@@ -66,7 +66,7 @@ const Items = () => {
   }, [searchQuery, items]);
 
   const filterItems = () => {
-    const filtered = items.filter(item => 
+    const filtered = items.filter((item) =>
       item.itemName.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredItems(filtered);
@@ -82,7 +82,7 @@ const Items = () => {
       setItems(response.data);
       setFilteredItems(response.data);
     } catch (error) {
-      console.error('Error fetching items:', error);
+      console.error("Error fetching items:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -113,20 +113,18 @@ const Items = () => {
       itemPrice: parseFloat(price),
     };
 
-    console.log({data})
+    console.log({ data });
 
     try {
-      await axios.patch(
-        `${BASE_URL}product-service/sellerItemPriceFix`,
-        data,
-        { headers: { Authorization: `Bearer ${accessToken.token}` } }
-      );
-      Alert.alert('Success', 'Price updated successfully!');
+      await axios.patch(`${BASE_URL}product-service/sellerItemPriceFix`, data, {
+        headers: { Authorization: `Bearer ${accessToken.token}` },
+      });
+      Alert.alert("Success", "Price updated successfully!");
       setModalVisible(false);
       fetchItems();
     } catch (error) {
-      Alert.alert('Error', 'Failed to update price');
-      console.error('Error updating price:', error);
+      Alert.alert("Error", "Failed to update price");
+      console.error("Error updating price:", error);
     } finally {
       setUpdating(false);
     }
@@ -136,13 +134,13 @@ const Items = () => {
     setToggling(true);
     setToggleItemId(item.itemId);
     try {
-      await axios.patch(
-        `${BASE_URL}product-service/itemActiveAndInActive`,
-        { itemId: item.itemId, status: !item.active }
-      );
+      await axios.patch(`${BASE_URL}product-service/itemActiveAndInActive`, {
+        itemId: item.itemId,
+        status: !item.active,
+      });
       fetchItems();
     } catch (error) {
-      console.error('Error toggling status:', error);
+      console.error("Error toggling status:", error);
     } finally {
       setToggling(false);
     }
@@ -151,40 +149,37 @@ const Items = () => {
   const validatePrices = () => {
     const priceValue = parseFloat(price);
     const mrpValue = parseFloat(mrp);
-    
+
     if (!price || !mrp || isNaN(priceValue) || isNaN(mrpValue)) {
-      Alert.alert('Error', 'Please enter valid prices');
+      Alert.alert("Error", "Please enter valid prices");
       return false;
     }
-    
+
     if (priceValue >= mrpValue) {
-      Alert.alert('Error', 'Price should be less than MRP');
+      Alert.alert("Error", "Price should be less than MRP");
       return false;
     }
-    
+
     return true;
   };
 
   const formatPrice = (price) => parseFloat(price).toFixed(2);
 
-  const calcDiscount = (mrp, price) => 
-    Math.round(((mrp - price) / mrp) * 100);
+  const calcDiscount = (mrp, price) => Math.round(((mrp - price) / mrp) * 100);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.itemContainer}>
         <Image
-          source={{ uri: item.itemImage || 'https://via.placeholder.com/70' }}
+          source={{ uri: item.itemImage || "https://via.placeholder.com/70" }}
           style={styles.itemImage}
         />
 
         <View style={styles.itemDetails}>
           <Text style={styles.itemName} numberOfLines={2}>
             {item.itemName}
-
-
           </Text>
-          
+
           <View style={styles.priceRow}>
             <Text style={styles.priceText}>₹{formatPrice(item.itemPrice)}</Text>
             <Text style={styles.mrpText}>₹{formatPrice(item.itemMrp)}</Text>
@@ -199,7 +194,7 @@ const Items = () => {
             <View style={styles.metaItem}>
               <Icon name="scale" size={14} color={COLORS.textSecondary} />
               <Text style={styles.metaText}>
-                {item.weight || 0} {item.units || 'units'}
+                {item.weight || 0} {item.units || "units"}
               </Text>
             </View>
             <View style={styles.metaItem}>
@@ -210,42 +205,46 @@ const Items = () => {
         </View>
 
         <View style={styles.actionsContainer}>
-          {userStage=="Live"?
-          <TouchableOpacity 
-            onPress={() => toggleActiveStatus(item)}
-            style={[
-              styles.statusButton,
-              { backgroundColor: item.active ? COLORS.success : COLORS.danger }
-            ]}
-            disabled={toggling && toggleItemId === item.itemId}
-          >
-            {toggling && toggleItemId === item.itemId ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.statusText}>
-                {item.active ? 'Active' : 'Inactive'}
-              </Text>
-            )}
-          </TouchableOpacity>
-:
-<View 
-            onPress={() => toggleActiveStatus(item)}
-            style={[
-              styles.statusButton,
-              { backgroundColor: item.active ? COLORS.success : COLORS.danger }
-            ]}
-            disabled={toggling && toggleItemId === item.itemId}
-          >
-            {toggling && toggleItemId === item.itemId ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.statusText}>
-                {item.active ? 'Active' : 'Inactive'}
-              </Text>
-            )}
-          </View>
-}
-          <TouchableOpacity 
+          {userStage == "Live" ? (
+            <TouchableOpacity
+              onPress={() => toggleActiveStatus(item)}
+              style={[
+                styles.statusButton,
+                {
+                  backgroundColor: item.active ? COLORS.success : COLORS.danger,
+                },
+              ]}
+              disabled={toggling && toggleItemId === item.itemId}
+            >
+              {toggling && toggleItemId === item.itemId ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.statusText}>
+                  {item.active ? "Active" : "Inactive"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <View
+              onPress={() => toggleActiveStatus(item)}
+              style={[
+                styles.statusButton,
+                {
+                  backgroundColor: item.active ? COLORS.success : COLORS.danger,
+                },
+              ]}
+              disabled={toggling && toggleItemId === item.itemId}
+            >
+              {toggling && toggleItemId === item.itemId ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.statusText}>
+                  {item.active ? "Active" : "Inactive"}
+                </Text>
+              )}
+            </View>
+          )}
+          <TouchableOpacity
             onPress={() => openUpdatePriceModal(item)}
             style={styles.editButton}
           >
@@ -268,7 +267,7 @@ const Items = () => {
           placeholderTextColor={COLORS.textSecondary}
         />
         {searchQuery && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
+          <TouchableOpacity onPress={() => setSearchQuery("")}>
             <Icon name="close" size={20} color={COLORS.textSecondary} />
           </TouchableOpacity>
         )}
@@ -303,7 +302,7 @@ const Items = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Update Prices</Text>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>MRP (₹)</Text>
               <View style={styles.inputWrapper}>
@@ -335,7 +334,9 @@ const Items = () => {
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
-                onPress={() => {setModalVisible(false),setUpdating(false)}}
+                onPress={() => {
+                  setModalVisible(false), setUpdating(false);
+                }}
               >
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
@@ -365,9 +366,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
@@ -378,19 +379,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
   },
   itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   itemImage: {
     width: 80,
@@ -405,27 +406,27 @@ const styles = StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
     flexShrink: 1,
   },
   priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 8,
   },
   priceText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   mrpText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    textDecorationLine: 'line-through',
+    textDecorationLine: "line-through",
   },
   discountBadge: {
-    backgroundColor: '#E6F7EE',
+    backgroundColor: "#E6F7EE",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -435,12 +436,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   metaRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 16,
   },
   metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   metaText: {
@@ -448,35 +449,35 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   actionsContainer: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     minWidth: 100,
   },
   statusButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
   },
   statusText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
   },
   editButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: '#F0F4FF',
-    alignSelf: 'flex-end',
+    backgroundColor: "#F0F4FF",
+    alignSelf: "flex-end",
   },
   loader: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   empty: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   listContainer: {
@@ -485,23 +486,23 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 16,
     padding: 24,
-    width: '90%',
+    width: "90%",
     maxWidth: 400,
     maxHeight: height * 0.8,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   inputGroup: {
     marginBottom: 16,
@@ -511,8 +512,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 8,
@@ -525,7 +526,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   modalActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 20,
   },
@@ -533,8 +534,8 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   cancelButton: {
     backgroundColor: COLORS.lightGray,
@@ -543,8 +544,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
   },
 });
 
