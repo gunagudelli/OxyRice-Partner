@@ -27,7 +27,7 @@ import AppUpdateScreen from './src/After Login/AppUpdateScreen';
 import SplitBags from './src/Split Bags/SplitBags';
 
 import BarcodeScanner from './src/After Login/BarcodeScanner';
-
+import Barcode from './src/After Login/Barcode';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 
@@ -173,18 +173,25 @@ export default function App() {
           component={UpdateDeliveryBoy}
          
         />
+         <Stack.Screen
+          name="Scan Multiple Barcodes" 
+          component={Barcode}
+          
+        />
+         
 
 <Stack.Screen
           name="User Queries"
           component={Userqueries}
           
         />
+        
          <Stack.Screen
           name="Query Comments" 
           component={Querycomments}
           
         />
-
+         
         <Stack.Screen name="Scan Bar Code" component={BarcodeScanner}/>
      
       </Stack.Navigator>

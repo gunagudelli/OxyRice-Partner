@@ -157,12 +157,12 @@ const AppUpdateScreen = () => {
             let storeUrl = '';
             if (Platform.OS === 'ios') {
               // Using iOS bundle identifier
-              storeUrl = 'https://apps.apple.com/in/app/askoxy-ai-rice-delivery/id6738732000';
+              // storeUrl = 'https://apps.apple.com/in/app/askoxy-ai-rice-delivery/id6738732000';
             } else {
               // Using Android package name
               storeUrl = 'market://details?id=com.oxyrice.oxyrice_customer';
               // Fallback for devices without Play Store
-              const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.oxyrice.oxyrice_customer';
+              const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.oxyrice.pantner';
               
               Linking.canOpenURL(storeUrl).then(supported => {
                 return Linking.openURL(supported ? storeUrl : playStoreUrl);

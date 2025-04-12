@@ -407,9 +407,18 @@ const OrderDetails = ({ route }) => {
     console.log("DeliveryBoy Id:", deliveryBoyId);
 
     let data =
-      orderData.orderStatus === "2"
-        ? { orderId: id, deliveryBoyId }
-        : { orderId: id, deliverBoyId: deliveryBoyId };
+    orderData.orderStatus === "2"
+      ? {
+          orderId: id,
+          deliveryBoyId,
+          customerMobile: orderData.customerMobile || "unknown"
+        }
+      : {
+          orderId: id,
+          deliverBoyId: deliveryBoyId,
+           customerMobile: orderData.customerMobile || "unknown"
+        };
+  
     console.log({ data });
     setSubmitLoader(true);
     const orderApiUrl =
@@ -429,7 +438,8 @@ const OrderDetails = ({ route }) => {
         },
       });
 
-      console.log(`Order ID: ${id}, Delivery Boy ID: ${deliveryBoyId}`);
+      console.log(`Order ID: ${id}, Delivery Boy ID: ${deliveryBoyId}, Customer Mobile: ${orderData.customerMobile}`);
+
       console.log("Assign Order", response);
       setSubmitLoader(false);
       if (response.status === 200) {

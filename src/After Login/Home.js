@@ -172,10 +172,15 @@ const HomeScreen = ({ navigation }) => {
       >
         <View style={styles.mainContent}>
         {/* <Text>gadsc</Text> */}
-
-        <TouchableOpacity onPress={() => navigation.navigate('Scan Bar Code')} style={styles.scanButton}>
+<View style={{flexDirection:"row",justifyContent:"space-between",marginBottom:10}}>
+<TouchableOpacity onPress={() => navigation.navigate('Scan Bar Code')} style={styles.scanButton}>
           <Text style={styles.buttonText}>Scan Bar Code</Text>
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Scan Multiple Barcodes')} style={styles.scanButton}>
+          <Text style={styles.buttonText}>Scan Multiple BarCodes</Text>
+        </TouchableOpacity>
+</View>
+     
 
 
           <View style={styles.gridContainer}>

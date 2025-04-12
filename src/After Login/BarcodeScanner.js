@@ -51,6 +51,8 @@ export default function BarcodeScanner() {
   const [lastScanTime, setLastScanTime] = useState(0);
   const [fromMobileNumber, setFromMobileNumber] = useState("");
   const [fromMobileNumber_error, setFromMobileNumber_error] = useState(false);
+  const[customerName, setCustomerName] = useState("");
+  const [customerName_error, setCustomerName_error] = useState(false);
   const [toMobileNumber, setToMobileNumber] = useState("");
   const [toMobileNumber_error, setToMobileNumber_error] = useState(false);
   const SCAN_COOLDOWN_MS = 2000; // 2 seconds cooldown
@@ -510,6 +512,10 @@ export default function BarcodeScanner() {
 
       if (fromMobileNumber == "" || fromMobileNumber == null) {
         setFromMobileNumber_error(true);
+        return;
+      }
+      if (customerName == "" || customerName == null) {
+        setCustomerName_error(true);
         return;
       }
       if (toMobileNumber == "" || toMobileNumber == null) {
@@ -1034,6 +1040,23 @@ export default function BarcodeScanner() {
                 Please Enter Your Mobile Number
               </Text>
             )}
+
+
+<TextInput
+              style={styles.input}
+              placeholder="Enter Customer Name"
+              value={fromMobileNumber}
+              onChangeText={(text) => {
+                setCustomerName(text);
+                setCustomerName_error(false); // Clears error when user types
+              }}
+            />
+            {customerName_error && (
+              <Text style={styles.errorText}>
+                Please enter customer name
+              </Text>
+            )}
+
 
             <TextInput
               style={styles.input}
