@@ -32,6 +32,7 @@ const AllOrders = () => {
   const [endDate, setEndDate] = React.useState(new Date()); // Default to today
   const [showStartDatePicker, setShowStartDatePicker] = React.useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = React.useState(false);
+  const [initialLoad, setInitialLoad] = React.useState(true); // Added flag for initial load state
 
   const [selectedValue, setSelectedValue] = React.useState("all"); // Default to show all orders
   const [dropLoading, setDropLoading] = React.useState(false);
@@ -51,6 +52,7 @@ const AllOrders = () => {
 
   const fetchOrdersByDateRange = async () => {
     setLoading(true);
+    setInitialLoad(false); // Mark that we've attempted to load data
     try {
       const formattedStartDate = formatDateForApi(startDate);
       const formattedEndDate = formatDateForApi(endDate);
@@ -74,9 +76,10 @@ const AllOrders = () => {
     }
   };
 
-  useEffect(() => {
-    fetchOrdersByDateRange();
-  }, []);
+  // Remove the useEffect that was automatically fetching orders
+  // useEffect(() => {
+  //   fetchOrdersByDateRange();
+  // }, []);
 
   const formatDateForDisplay = (date) => {
     const day = String(date.getDate()).padStart(2, "0");
@@ -180,8 +183,8 @@ const AllOrders = () => {
         <View style={styles.orderIdContainer}>
           <Text style={styles.orderIdLabel}>ORDER ID</Text>
           <Text style={styles.orderId}>
-  {item.orderId ? (item.orderId).slice(-4) : "N/A"}
-  </Text>
+            {item.orderId ? (item.orderId).slice(-4) : "N/A"}
+          </Text>
         </View>
         <View
           style={[
@@ -300,6 +303,10 @@ const AllOrders = () => {
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
+      ) : initialLoad ? (
+        <View style={styles.promptContainer}>
+          <Text style={styles.promptText}>Select a date range and click 'Apply' to view orders</Text>
+        </View>
       ) : (
         <FlatList
           data={filteredOrders}
@@ -331,6 +338,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F4F5F7",
+  },
+  promptContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F4F5F7",
+  },
+  promptText: {
+    fontSize: 16,
+    color: "#42526E",
+    textAlign: "center",
+    padding: 20,
   },
   dateRangeContainer: {
     flexDirection: "row",
@@ -514,8 +533,6 @@ const styles = StyleSheet.create({
 });
 
 export default AllOrders;
-
-
 
 
 
