@@ -137,18 +137,64 @@ const NewOrders = ({ navigation, route }) => {
     setSearchError("");
   };
 
+  const userBgColors = {
+    ERICEUSER: "rgba(255, 182, 193, 0.3)", 
+    NEWUSER: "rgba(144, 238, 144, 0.3)", // light pastel green
+    MOBILE: "rgba(173, 216, 230, 0.3)",
+    android: "rgba(221, 160, 221, 0.3)",
+    WEB:"rgba(240, 230, 140, 0.3)",
+    ios:"rgba(255, 228, 181, 0.3)"
+
+  };
+
   const renderItem = ({ item }) => {
     return (
       <View>
         {item.orderStatus == 5 && item.testUser == isTestOrder ? (
           <TouchableOpacity
             style={styles.orderItem}
-            onPress={() => navigation.navigate("Order Details", { order: item,istestUser:route.params.isTestOrder })}
+            onPress={() => navigation.navigate("Order Details", { orderId: item.orderId,orderStatus:item.orderStatus,istestUser:route.params.isTestOrder })}
           >
-            <Text style={styles.orderId}>
-              Order Id :{" "}
-              <Text styles={{ fontWeight: "normal" }}>{item?.uniqueId}</Text>
-            </Text>
+            <View style={styles.orderRow}>
+              <Text style={styles.orderId1}>
+                Order Id:{" "}
+                <Text style={styles.orderIdValue}>{item?.uniqueId}</Text>
+              </Text>
+              <View style={{ flexDirection: "row", }}>
+                <View style={{marginHorizontal:10}}>
+                  <Text
+                    style={[
+                      {
+                        padding: 5,
+                        borderRadius: 10,
+                        // fallback to a default light color if none matches
+                        backgroundColor:
+                          userBgColors[item?.userType] ??
+                          "rgba(240, 248, 255, 0.3)",
+                      },
+                    ]}
+                  >
+                    {item?.userType}
+                  </Text>
+                </View>
+                {item?.orderFrom!=null?
+                <Text
+                  style={[
+                    {
+                      padding: 5,
+                      borderRadius: 10,
+                      // fallback to a default light color if none matches
+                      backgroundColor:
+                        userBgColors[item?.orderFrom] ??
+                        "rgba(240, 248, 255, 0.3)",
+                    },
+                  ]}
+                >
+                  {item?.orderFrom}
+                </Text>
+                :null}
+              </View>
+            </View>
 
             <View style={styles.orderRow}>
               <View>
@@ -415,8 +461,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   orderStatus: {
-    fontSize: 16,
-    color: "#28a745",
+    fontSize: 14,
+    fomntWeight: "bold",
+    color: "#DE350B",
   },
   footerStyle: {
     marginBottom: 100,

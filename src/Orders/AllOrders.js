@@ -20,15 +20,15 @@ const { width } = Dimensions.get("window");
 
 const AllOrders = () => {
   const navigation = useNavigation();
-  const [orders, setOrders] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
-  const [searchText, setSearchText] = React.useState("");
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] =useState(null);
+  const [searchText, setSearchText] = useState("");
   const accessToken = useSelector((state) => state.counter);
   // const { BASE_URL } = config(); // Get values
 
   // Date range states
-  const [startDate, setStartDate] = React.useState(new Date(new Date().setDate(new Date().getDate() - 7))); // Default to 7 days ago
+  const [startDate, setStartDate] =useState(new Date(new Date().setDate(new Date().getDate() - 7))); // Default to 7 days ago
   const [endDate, setEndDate] = React.useState(new Date()); // Default to today
   const [showStartDatePicker, setShowStartDatePicker] = React.useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = React.useState(false);
@@ -66,7 +66,7 @@ const AllOrders = () => {
         }
       );
       
-      // console.log("Date range orders response", response);
+      console.log("Date range orders response", response.data);
       setOrders(response.data);
     } catch (error) {
       console.error("Error fetching orders by date range:", error);
@@ -177,7 +177,7 @@ const AllOrders = () => {
   const renderOrderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.orderItem}
-      onPress={() => navigation.navigate("Order Details", { order: item })}
+      onPress={() => navigation.navigate("Order Details", { orderId: item.orderId,orderStatus:item.orderStatus })}
     >
       <View style={styles.orderHeader}>
         <View style={styles.orderIdContainer}>

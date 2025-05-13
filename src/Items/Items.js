@@ -55,6 +55,9 @@ const Items = () => {
   const [activeFilter, setActiveFilter] = useState("All");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   
+  // New state for filter loading
+  const [filterLoading, setFilterLoading] = useState(false);
+  
   // Counts for active and inactive items
   const [counts, setCounts] = useState({
     active: 0,
@@ -87,6 +90,8 @@ const Items = () => {
   };
 
   const filterItems = () => {
+    setFilterLoading(true);
+    
     // First filter by search query
     let filtered = items.filter((item) =>
       item.itemName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -100,6 +105,11 @@ const Items = () => {
     }
     
     setFilteredItems(filtered);
+    
+    // Add a slight delay to show the loading state
+    setTimeout(() => {
+      setFilterLoading(false);
+    }, 500);
   };
 
   const fetchItems = async () => {
@@ -122,6 +132,12 @@ const Items = () => {
   const handleRefresh = () => {
     setRefreshing(true);
     fetchItems();
+  };
+
+  const changeFilter = (filter) => {
+    setFilterLoading(true);
+    setActiveFilter(filter);
+    setDropdownVisible(false);
   };
 
   const openUpdatePriceModal = (item) => {
@@ -317,10 +333,7 @@ const Items = () => {
             <View style={styles.dropdownMenu}>
               <TouchableOpacity 
                 style={styles.dropdownItem}
-                onPress={() => {
-                  setActiveFilter("All");
-                  setDropdownVisible(false);
-                }}
+                onPress={() => changeFilter("All")}
               >
                 <Text style={[
                   styles.dropdownItemText,
@@ -330,10 +343,7 @@ const Items = () => {
               
               <TouchableOpacity 
                 style={styles.dropdownItem}
-                onPress={() => {
-                  setActiveFilter("Active");
-                  setDropdownVisible(false);
-                }}
+                onPress={() => changeFilter("Active")}
               >
                 <Text style={[
                   styles.dropdownItemText,
@@ -343,10 +353,7 @@ const Items = () => {
               
               <TouchableOpacity 
                 style={styles.dropdownItem}
-                onPress={() => {
-                  setActiveFilter("Inactive");
-                  setDropdownVisible(false);
-                }}
+                onPress={() => changeFilter("Inactive")}
               >
                 <Text style={[
                   styles.dropdownItemText,
@@ -358,9 +365,12 @@ const Items = () => {
         </View>
       </View>
 
-      {loading ? (
+      {loading || filterLoading ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loaderText}>
+            {loading ? "Loading items..." : "Filtering items..."}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -611,6 +621,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  loaderText: {
+    marginTop: 10,
+    color: COLORS.primary,
+    fontSize: 16,
+  },
   empty: {
     flex: 1,
     justifyContent: "center",
@@ -687,7 +702,6 @@ const styles = StyleSheet.create({
 });
 
 export default Items;
-
 
 
 

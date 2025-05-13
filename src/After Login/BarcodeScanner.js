@@ -256,17 +256,23 @@ export default function BarcodeScanner() {
       return handleContainerScan(cleanBarcode);
     }
   
+    const barcodeLength = cleanBarcode.length;
     const matchingProducts = products.filter((product) => {
-      if (!product.barcode) return false;
+      if (!product.barcode || typeof product.weight !== "number") return false;
   
       const normalizedProductBarcode = product.barcode
         .replace(/\s+/g, "")
         .toUpperCase();
   
-      return (
+      const barcodeMatches =
         cleanBarcode.startsWith(normalizedProductBarcode) ||
-        normalizedProductBarcode.startsWith(cleanBarcode)
-      );
+        normalizedProductBarcode.startsWith(cleanBarcode);
+  
+      const isWeightMatch =
+        (barcodeLength === 12 && product.weight >= 1 && product.weight <= 9) ||
+        (barcodeLength === 13 && product.weight >= 10);
+  
+      return barcodeMatches && isWeightMatch;
     });
   
     if (matchingProducts.length === 1) {
@@ -302,6 +308,7 @@ export default function BarcodeScanner() {
       return false;
     }
   };
+  
   
   // Handle container scanning logic
   const handleContainerScan = (cleanBarcode) => {
@@ -1045,7 +1052,7 @@ export default function BarcodeScanner() {
 <TextInput
               style={styles.input}
               placeholder="Enter Customer Name"
-              value={fromMobileNumber}
+              value={customerName}
               onChangeText={(text) => {
                 setCustomerName(text);
                 setCustomerName_error(false); // Clears error when user types
@@ -1105,7 +1112,7 @@ export default function BarcodeScanner() {
                     {processingPayment ? (
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
-                      <Text style={styles.paymentButtonText}>Su bmit</Text>
+                      <Text style={styles.paymentButtonText}>Submit</Text>
                     )}
                   </TouchableOpacity>
 

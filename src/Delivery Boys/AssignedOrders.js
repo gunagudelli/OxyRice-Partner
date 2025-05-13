@@ -1,27 +1,29 @@
 import React, { useEffect, useState,useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity,ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity,ActivityIndicator, Dimensions ,TextInput} from 'react-native';
 import axios from 'axios';
 import { useSelector } from "react-redux";
 import { useFocusEffect } from '@react-navigation/native';
-import BASE_URL from '../../config';
+import BASE_URL from "../../config"
+import Icon from "react-native-vector-icons/Ionicons"
 
 const {height,width}=Dimensions.get('window')
 
 
 const AssignedOrders = ({navigation,error,id}) => {
   const accessToken = useSelector((state) => state.counter);
-  // //const { BASE_URL, userStage } = config(); // Get values
-console.log("id",id)
+  
 // console.log({userStage})
 const[assignedData,setAssignedData]=useState([])
 const[loading,setLoading]=useState(true)
 const[message,setMessage]=useState('')
+const [searchQuery, setSearchQuery] = useState('');
+const[count,setCount]=useState(0)
 
 useFocusEffect(
   useCallback(() => {
     // Code to run when the screen is focused
-    console.log("HomeScreen is focused");
-    console.log({accessToken})
+    // console.log("HomeScreen is focused");
+    // console.log({accessToken})
     getAllAssignedOrdersfunc()
     // Return a cleanup function if needed
     return () => console.log("HomeScreen is unfocused");
@@ -37,17 +39,14 @@ useFocusEffect(
     console.log({data})
     axios({
       method: "post",
-      url:
-        // userStage == "test1"
-        //   ? BASE_URL + `erice-service/order/getAssignedOrdersToDeliveryBoy`:
-          BASE_URL + `order-service/getAssignedOrdersToDeliveryBoy`,
+      url: BASE_URL + `order-service/getAssignedOrdersToDeliveryBoy`,
       data: data,
       headers: {
         Authorization: `Bearer ${accessToken.accessToken}`,
       },
     })
       .then(function (response) {
-        // console.log("asssigned orders", response.data[0].orderItems);
+        // console.log("asssigned orders", response.data[0].orderAddress);
         // const orders = (response.data);
 
 // Sort the array in ascending order based on OrderDate
@@ -61,10 +60,11 @@ useFocusEffect(
 // });
 // console.log({orders})
         setAssignedData(response.data);
+        setCount(response.data?.length)
         setLoading(false);
       })
       .catch(function (error) {
-        console.log("getAssignedOrdersToDeliveryBoy_error",error.response);
+        // console.log("getAssignedOrdersToDeliveryBoy_error",error.response);
         setLoading(false);
         if (
           error.response.data == "Orders not found" ||
@@ -78,6 +78,7 @@ useFocusEffect(
   useEffect(()=>{
     getAllAssignedOrdersfunc()
   },[])
+
 
 
   if (loading) {
@@ -98,14 +99,14 @@ useFocusEffect(
 
   // Render each order item
   const renderItem = ({ item }) => (
-    <View
-      onPress={() =>
-        navigation.navigate("Order Details", {
-          orderId: item.orderId,
-          orderStatus: item.orderStatus,
-        })
-      }
-    >
+    <TouchableOpacity
+    onPress={() =>
+      navigation.navigate("Order Details", {
+        orderId: item.orderId,
+        orderStatus: item.orderStatus,
+      })
+    }
+  >
       <View style={styles.orderItem}>
         <View style={styles.orderDetails}>
           <Text style={styles.orderDate}>
@@ -120,21 +121,7 @@ useFocusEffect(
           <Text style={styles.orderDate}>
             Status :{" "}
             <Text style={{ color: "#28a745" }}>
-Assigned              {/* {item?.orderStatus == 0
-                ? "Incomplete"
-                : item.orderStatus == 1
-                ? "Placed"
-                : item.orderStatus == 2
-                ? "Accepted"
-                : item.orderStatus == 3
-                ? "Picked Up"
-                : item.orderStatus == 4
-                ? "Delivered"
-                : item.orderStatus == 5
-                ? "Rejected"
-                : item.orderStatus == 6
-                ? "Cancelled"
-                : "Unknown"} */}
+                Assigned             
             </Text>
           </Text>
         </View>
@@ -144,34 +131,75 @@ Assigned              {/* {item?.orderStatus == 0
           </Text>
         </View>
       </View>
-    </View>
+
+
+{item?.dayOfWeek!=null ? 
+      <View style={{paddingLeft: 20,}}>
+          <Text style={{fontWeight:"bold"}}>Expected Date / Time : {" "}
+            <Text style={{fontWeight:"normal"}}>{item?.expectedDeliveryDate} , {item?.dayOfWeek} ({item?.timeSlot})</Text>
+            </Text>
+            </View>
+            :null}
+
+      {item?.orderAddress!=null ?
+            <View style={{backgroundColor:"#f1f1f1", padding:10, borderRadius:10, marginTop:10,flexDirection:"row",width:width*0.9,alignSelf:"center"}}>
+              <Icon name="location" size={16} style={{marginRight:15}}/>
+              <Text style={{fontWeight:"bold",width:width*0.8}}>{item?.orderAddress?.flatNo},{item?.orderAddress?.address},{item?.orderAddress?.landMark},{item?.orderAddress?.pincode}</Text>
+            </View>
+            :null}
+        <View style={{borderBottomWidth:0.3,borderColor:"grey",marginVertical:10}}/>
+      
+    </TouchableOpacity>
   );
 
     function footer() {
         return (
-          <View style={{ alignSelf: "center" }}>
+          <View style={{ alignSelf: "center",marginBottom:100 }}>
             <Text>No More orders Found </Text>
           </View>
         );
       }
   return (
+    <>
+{/* <LocationMap/> */}
+{/* <View style={{alignSelf:"flex-end",marginRight:15}}>
+<Icon name="map" size={20} style={{margin:10}} onPress={()=>navigation.navigate("Location Map")}/>
+</View> */}
     <View style={styles.container}>
-      {/* <TouchableOpacity onPress={() => navigation.navigate("Write a Query")}>
-        <Text>Write to us</Text>
-      </TouchableOpacity> */}
+      <Text style={{fontWeight:"bold",margin:10}}>Count of Assigned Orders : {count}</Text>
+      <TextInput
+        style={{
+          height: 40,
+          borderColor: "gray",
+          borderWidth: 1,
+          borderRadius: 5,
+          marginBottom: 10,
+          paddingHorizontal: 10,
+          width:width*0.9,
+          alignSelf:"center"
+        }}
+        placeholder="Search by Order ID"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
 
       {message == null || message == "" ? (
         <FlatList
-          data={assignedData}
+          // data={assignedData}
+          data={assignedData.filter(order =>
+            order.orderId.toString().toLowerCase().includes(searchQuery.toLowerCase())
+          )}
           keyExtractor={(item) => item.orderId}
           renderItem={renderItem}
           ListFooterComponent={footer}
+          ListEmptyComponent={<Text style={{ textAlign: "center", marginTop: 20 }}>No orderId found</Text>}
           ListFooterComponentStyle={styles.footerStyle}
         />
       ) : (
         <Text style={styles.text}>{message}</Text>
       )}
     </View>
+    </>
   );
 };
 
@@ -185,8 +213,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    // borderBottomWidth: 1,
+    // borderBottomColor: "#e0e0e0",
   },
   orderDetails: {
     flexDirection: "column",
@@ -207,7 +235,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   footerStyle: {
-    marginTop: 500,
+    marginBottom: 1000,
   },
   orderAmount: {
     fontSize: 16,

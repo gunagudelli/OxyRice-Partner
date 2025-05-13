@@ -20,7 +20,7 @@ import ModalDropdown from "react-native-modal-dropdown";
 import { Ionicons } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/Ionicons";
 
-const NewOrders = ({ navigation, route }) => {
+const PickedUp = ({ navigation, route }) => {
   const { isTestOrder } = route.params;
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -59,7 +59,7 @@ const NewOrders = ({ navigation, route }) => {
       setLoader(true);
       setSearchError("");
       const response = await axios.get(
-        BASE_URL + `order-service/getAllOrdersBasedOnStatus?orderStatus=1`,
+        BASE_URL + `order-service/getAllOrdersBasedOnStatus?orderStatus=PickedUp`,
         {
           headers: {
             Authorization: `Bearer ${accessToken.token}`,
@@ -75,6 +75,7 @@ const NewOrders = ({ navigation, route }) => {
           order && order.orderStatus === "PickedUp" && order.testUser === false
       );
 
+      
       setOrders(acceptedOrders);
       setOrderAddress(acceptedOrders.orderAddress);
       setFilteredOrders(acceptedOrders);
@@ -129,17 +130,64 @@ const NewOrders = ({ navigation, route }) => {
     setSearchError("");
   };
 
+  const userBgColors = {
+    ERICEUSER: "rgba(255, 182, 193, 0.3)", 
+    NEWUSER: "rgba(144, 238, 144, 0.3)", // light pastel green
+    MOBILE: "rgba(173, 216, 230, 0.3)",
+    android: "rgba(221, 160, 221, 0.3)",
+    WEB:"rgba(240, 230, 140, 0.3)",
+    ios:"rgba(255, 228, 181, 0.3)"
+
+  };
+
   const renderItem = ({ item }) => {
     return (
       <View>
-        {item.orderStatus == PickedUp && item.testUser == isTestOrder ? (
+        {item.orderStatus === "PickedUp" && item.testUser === isTestOrder ? (
           <TouchableOpacity
             style={styles.orderItem}
-            onPress={() => navigation.navigate("Order Details", { order: item, istestUser: route.params.isTestOrder })}
+            onPress={() => navigation.navigate("Order Details", {orderId: item.orderId,orderStatus:item.orderStatus,istestUser: route.params.isTestOrder })}
           >
-            <Text style={styles.orderId}>
-              Order Id: <Text style={styles.orderIdValue}>{item?.uniqueId}</Text>
-            </Text>
+            <View style={styles.orderRow}>
+              <Text style={styles.orderId1}>
+                Order Id:{" "}
+                <Text style={styles.orderIdValue}>{item?.uniqueId}</Text>
+              </Text>
+              <View style={{ flexDirection: "row", }}>
+                <View style={{marginHorizontal:10}}>
+                  <Text
+                    style={[
+                      {
+                        padding: 5,
+                        borderRadius: 10,
+                        // fallback to a default light color if none matches
+                        backgroundColor:
+                          userBgColors[item?.userType] ??
+                          "rgba(240, 248, 255, 0.3)",
+                      },
+                    ]}
+                  >
+                    {item?.userType}
+                  </Text>
+                </View>
+                {item?.orderFrom!=null?
+                <Text
+                  style={[
+                    {
+                      padding: 5,
+                      borderRadius: 10,
+                      // fallback to a default light color if none matches
+                      backgroundColor:
+                        userBgColors[item?.orderFrom] ??
+                        "rgba(240, 248, 255, 0.3)",
+                    },
+                  ]}
+                >
+                  {item?.orderFrom}
+                </Text>
+                :null}
+              </View>
+            </View>
 
             <View style={styles.orderRow}>
               <View>
@@ -149,19 +197,21 @@ const NewOrders = ({ navigation, route }) => {
                 <Text style={styles.orderDate}>
                   Order Status: 
                   <Text style={styles.orderStatus}>
-                    {item?.orderStatus == 0
+                    {item?.orderStatus === "0"
                       ? " Incomplete"
-                      : item.orderStatus == 1
+                      : item.orderStatus === "1"
                       ? " Placed"
-                      : item.orderStatus == 2
+                      : item.orderStatus === "2"
                       ? " Accepted"
-                      : item.orderStatus == 3
+                      : item.orderStatus === "3"
+                      ? " Assigned"
+                      : item.orderStatus === "PickedUp"
                       ? " Picked Up"
-                      : item.orderStatus == 4
+                      : item.orderStatus === "4"
                       ? " Delivered"
-                      : item.orderStatus == 5
+                      : item.orderStatus === "5"
                       ? " Rejected"
-                      : item.orderStatus == 6
+                      : item.orderStatus === "6"
                       ? " Cancelled"
                       : " Unknown"}
                   </Text>
@@ -279,7 +329,7 @@ const NewOrders = ({ navigation, route }) => {
   );
 };
 
-export default NewOrders;
+export default PickedUp;
 
 const styles = StyleSheet.create({
   screen: {
@@ -389,8 +439,8 @@ const styles = StyleSheet.create({
   },
   orderStatus: {
     fontSize: 14,
-    color: "#28a745",
-    fontWeight: "normal",
+    color: "#403294",
+    fontWeight: "bold",
   },
   orderPrice: {
     fontSize: 16,

@@ -73,9 +73,9 @@ import NewOrders from './NewOrders';
 import AcceptedOrders from './AcceptedOrders';
 import AssignedOrders from './AssignedOrders';
 import PickedUpOrders from './PickedupOrders';
-import DeliveredOrders from './deliveredOrders';
-import RejectedOrders from './RejectedOrders';
-import CancelledOrders from './CancelledOrders';
+// import DeliveredOrders from './deliveredOrders';
+// import RejectedOrders from './RejectedOrders';
+// import CancelledOrders from './CancelledOrders';
 
 const Tab = createMaterialTopTabNavigator();
 const { width } = Dimensions.get('window');
@@ -126,7 +126,7 @@ export default function DealTabs({ route }) {
           options={{ tabBarLabel: 'Picked Up' }}
           initialParams={{ isTestOrder }}
         />
-        <Tab.Screen
+        {/* <Tab.Screen
           name="Delivered Orders"
           component={DeliveredOrders}
           options={{ tabBarLabel: 'Delivered' }}
@@ -143,7 +143,7 @@ export default function DealTabs({ route }) {
           component={CancelledOrders}
           options={{ tabBarLabel: 'Cancelled' }}
           initialParams={{ isTestOrder }}
-        />
+        /> */}
       </Tab.Navigator>
     </View>
   );

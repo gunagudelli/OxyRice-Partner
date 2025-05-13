@@ -34,6 +34,9 @@ import { createStore } from 'redux';
 
 import Userqueries from './src/All Queries/Userqueries';
 import Querycomments from './src/All Queries/Querycomments';
+import ExchangeOrders from './src/Exchange/ExchangeOrders ';
+
+import ScanExchangeOrders from './src/Exchange/ScanExchangeOrders';
 
 import allReducers from './Redux/reducers'
 
@@ -151,6 +154,11 @@ export default function App() {
           component={AllSplitBags}
         />
 
+<Stack.Screen
+          name="Exchange Orders"
+          component={ExchangeOrders}
+          
+        />
 
         
 <Stack.Screen
@@ -193,6 +201,8 @@ export default function App() {
         />
          
         <Stack.Screen name="Scan Bar Code" component={BarcodeScanner}/>
+
+        <Stack.Screen name="Stock Exchange" component={ScanExchangeOrders}/>
      
       </Stack.Navigator>
       <StatusBar style="auto" />

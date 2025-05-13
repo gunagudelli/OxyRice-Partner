@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, Button, TouchableOpacity, Dimensions ,Modal,Ale
 import { CameraView, Camera } from "expo-camera";
 import Icon from "react-native-vector-icons/Ionicons"
 const{height,width}=Dimensions.get('window')
-
+ 
 export default function BarCodeScannerScreen({ onValue }) {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);

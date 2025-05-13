@@ -20,13 +20,13 @@ import { RadioButton } from "react-native-paper";
 import { useSelector } from "react-redux";
 import BarCodeScannerScreen from "../BarCode";
 import { use } from "react";
-const { width,height } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 const OrderDetails = ({ route }) => {
   const navigation = useNavigation();
-  console.log("routes",route.params.istestUser)
-  const id = route.params.order.orderId;
-  const status = route.params.order.orderStatus;
-  const customerId = route.params.order.customerId;
+  console.log("routes", route.params);
+  const id = route.params.orderId;
+  const status = route?.params?.orderStatus;
+  // const customerId = route.params.order.customerId;
   const accessToken = useSelector((state) => state.counter);
   //const { BASE_URL, userStage } = config(); // Get values
 
@@ -38,7 +38,7 @@ const OrderDetails = ({ route }) => {
     4: "Delivered",
     5: "Rejected",
     6: "Cancelled",
-    Pickedup: "Pickedup",
+    PickedUp: "Pickedup",
   };
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +49,7 @@ const OrderDetails = ({ route }) => {
   const [assignedDeliveryBoy, setAssignedDeliveryBoy] = useState([]);
   const [selectedDb, setSelectedDb] = useState(null); // To track selected delivery boy
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const[dateTimeModalVisible,setDateTimeModalVisible]=useState(false)
+  const [dateTimeModalVisible, setDateTimeModalVisible] = useState(false);
   const [timeSlotData, setTimeSlotData] = useState([]);
   const [dbId, setDbId] = useState();
   const [disable, setDisable] = useState(false);
@@ -67,23 +67,35 @@ const OrderDetails = ({ route }) => {
   const [assignLoader, setAssignLoader] = useState(false);
   const [RejectLoader, setRejectLoader] = useState(false);
   const [RejectReason_error, setRejectReason_error] = useState(false);
-  const[selectedSlot,setSelectedSlot]=useState(null)
-  const[timeSlot,setTimeSlot]=useState([])
-  const[selectedTimeslot,setSelectedTimeSlot]=useState(null)
-  const date=new Date();
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [timeSlot, setTimeSlot] = useState([]);
+  const [showContainerButton, setShowContainerButton] = useState(false);
+  const [containerButtonLabel, setContainerButtonLabel] = useState("Add");
+  const [selectedContainerItem, setSelectedContainerItem] = useState(null);
+  const [containerLoader, setContainerLoader] = useState(false);
+  const [selectedTimeslot, setSelectedTimeSlot] = useState(null);
+  const date = new Date();
   useEffect(() => {
     fetchOrderData();
     deliveryBoyDetails();
     getDeliveryBoyDetails();
   }, [id, status]);
-  const getNextThreeDays = () => {
+  const getNextSevenDays = () => {
+    const today = new Date();
+    
+    // Always start from tomorrow
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() + 1);
+  
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
   
-    const nextThreeDays = [1, 2, 3, 4, 5, 6, 7].map(offset => {
-      const date = new Date();
-      date.setDate(date.getDate() + offset);
-      // console.log("dates",date)
+    // Get next 7 days starting from tomorrow
+    // This gives us more days to choose from if some are unavailable
+    const nextSevenDays = [0, 1, 2, 3, 4, 5, 6].map(offset => {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + offset);
+      
       return {
         dayOfWeek: daysOfWeek[date.getDay()].toUpperCase(),
         date: `${date.getDate()}-${months[date.getMonth()]}-${date.getFullYear()}`,
@@ -91,67 +103,92 @@ const OrderDetails = ({ route }) => {
       };
     });
   
-    return nextThreeDays;
+    return nextSevenDays;
   };
   
   const fetchTimeSlot = () => {
     setLoading(true);
-    setError(null);
+    // setError(null);
     
     axios({
       method: "get",
-      url: BASE_URL + `order-service/fetchTimeSlotlist`,
+      url: `${BASE_URL}order-service/fetchTimeSlotlist`,
     })
     .then((response) => {
-      console.log("Response fetch time slot", response.data);
+      // console.log("Response fetch time slot", response.data);
       
-      // Get potential days
-      const potentialDays = getNextThreeDays();
+      // Get the next seven days starting from tomorrow to have more options
+      const nextSevenDays = getNextSevenDays();
       
-      // Filter slots based on availability
-      const processedData = [];
-      
-      for (let dayInfo of potentialDays) {
+      // Process all seven days
+      const allProcessedDays = nextSevenDays.map(dayInfo => {
         // Find the corresponding slot for this day
         const matchingSlot = response.data.find(
-          slot => slot.dayOfWeek === dayInfo.dayOfWeek && slot.isAvailable === false
+          slot => slot.dayOfWeek === dayInfo.dayOfWeek
         );
         
-        if (matchingSlot) {
-          const dayEntry = {
+        // If day has slots and is not marked as unavailable (isAvailable = false means it's actually available)
+        if (matchingSlot && !matchingSlot.isAvailable) {
+          // Create arrays of slots and their statuses
+          const timeSlots = [
+            { id: 1, time: matchingSlot.timeSlot1, status: matchingSlot.slot1Status },
+            { id: 2, time: matchingSlot.timeSlot2, status: matchingSlot.slot2Status },
+            { id: 3, time: matchingSlot.timeSlot3, status: matchingSlot.slot3Status },
+            { id: 4, time: matchingSlot.timeSlot4, status: matchingSlot.slot4Status }
+          ];
+          
+          // Filter to only include available slots (status is false)
+          const availableSlots = timeSlots.filter(slot => !slot.status);
+          
+          // Group slots by time value to consolidate identical times
+          const slotsByTime = {};
+          availableSlots.forEach(slot => {
+            if (!slotsByTime[slot.time]) {
+              slotsByTime[slot.time] = [];
+            }
+            slotsByTime[slot.time].push(slot);
+          });
+          
+          // Create consolidated slot objects
+          const slotObjects = Object.keys(slotsByTime).map(time => {
+            // Use the ID of the first slot in each group
+            const firstSlotInGroup = slotsByTime[time][0];
+            return {
+              id: `${matchingSlot.id}-${firstSlotInGroup.id}`,
+              time: time,
+              isAvailable: true,
+              originalSlots: slotsByTime[time] // Store original slots for reference if needed
+            };
+          });
+          
+          return {
             id: matchingSlot.id,
             day: dayInfo.formattedDay,
             date: dayInfo.date,
-            slots: [
-              { id: `${matchingSlot.id}-1`, time: matchingSlot.timeSlot1 },
-              { id: `${matchingSlot.id}-2`, time: matchingSlot.timeSlot2 },
-              { id: `${matchingSlot.id}-3`, time: matchingSlot.timeSlot3 },
-              { id: `${matchingSlot.id}-4`, time: matchingSlot.timeSlot4 }
-            ],
-            isAvailable: matchingSlot.isAvailable
+            slots: slotObjects,
+            isAvailable: matchingSlot.isAvailable,
+            hasAvailableSlots: slotObjects.length > 0 // Mark if this day has any available slots
           };
-          
-          processedData.push(dayEntry);
-          
-          // Stop when we have exactly 3 days
-          if (processedData.length === 3) break;
         }
-      }
-      
-      // Ensure we always have 3 days
-      while (processedData.length < 3) {
-        console.warn("Not enough days with unavailable slots");
-        // You might want to handle this case, perhaps by adding placeholder days
-        processedData.push({
+        
+        // Fallback if no matching slot is found or if isAvailable is true (which means unavailable)
+        return {
           id: null,
-          day: 'No Slot',
-          date: 'N/A',
+          day: dayInfo.formattedDay,
+          date: dayInfo.date,
           slots: [],
-          isAvailable: true
-        });
-      }
+          isAvailable: true,
+          hasAvailableSlots: false
+        };
+      });
       
-      setTimeSlotData(processedData);
+      // Filter to only include days that have available slots
+      const daysWithSlots = allProcessedDays.filter(day => day.hasAvailableSlots);
+      
+      // Take only the first 3 days that have available slots
+      const firstThreeAvailableDays = daysWithSlots.slice(0, 3);
+      
+      setTimeSlotData(firstThreeAvailableDays);
       setDateTimeModalVisible(true);
       setLoading(false);
     })
@@ -162,32 +199,32 @@ const OrderDetails = ({ route }) => {
     });
   };
   
-  // Handling slot selection remains the same
   const handleSlotSelect = (day, date, time) => {
     const selection = { day, date, time };
-    setSelectedSlot({day,date,time})
-    console.log("Selected delivery slot:", selection);
+    setSelectedSlot({ day, date, time });
     
-    let data = {
+    // console.log("Selected delivery slot:", selection);
+    setLoader(true)
+    let requestBody = {
       "dayOfWeek": day.toUpperCase(),
       "expectedDeliveryDate": date,
-      "orderId": orderData?.orderId,
+      "orderId": route.params.orderId,
       "timeSlot": time,
-      "userId": orderData?.customerId
+      "userId": data?.customerId
     };
     
-    console.log("Sending data:", data);
-    setLoader(true)
+    // console.log("Sending data:", requestBody);
+    
     axios({
       method: "patch",
-      url: BASE_URL + `order-service/userSelectedDiffslot`,
-      data: data
+      url: `${BASE_URL}order-service/userSelectedDiffslot`,
+      data: requestBody
     })
     .then((response) => {
       console.log("Update Time Slot", response.data);
       setDateTimeModalVisible(false);
-      fetchOrderData();
       setLoader(false)
+      getsingleOrderDetailsfunc()
       Alert.alert("Success", "Successfully updated time slot");
     })
     .catch((error) => {
@@ -197,6 +234,7 @@ const OrderDetails = ({ route }) => {
       Alert.alert("Error", "Failed to update time slot");
     });
   };
+  
   // Flatten data for ScrollView approach
   const flattenedData = timeSlotData.flatMap(dateObj => {
     return [
@@ -208,47 +246,187 @@ const OrderDetails = ({ route }) => {
         date: dateObj.date 
       }))
     ];
-  });  
-  
+  });
+  useEffect(() => {
+    if (orderData) {
+      fetchContainerStatus();
+    }
+  }, [orderData]);
 
-  const fetchOrderData = async () => {
+  const fetchContainerStatus = async () => {
     try {
-      const response = await axios.post(
-        // userStage == "test"?
-        BASE_URL + `order-service/assignedOrders`,
-        // : BASE_URL + `erice-service/order/assignedOrders`,
-
-        {
-          // customerId:customerId,
-          orderId: id,
-          orderStatus: status,
-        },
+      setContainerLoader(true);
+      const response = await axios.get(
+        `${BASE_URL}cart-service/cart/ContainerInterested/${orderData?.customerId}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken.token}`,
           },
         }
       );
-      // console.log("Order Details response", response);
-      if (response.status === 200) {
+      console.log("Container API response:", response.data);
+      console.log("Free Container Status:", response.data?.freeContainerStatus);
+      console.log("Order items:", orderData.orderItems);
+      const status = response.data?.freeContainerStatus;
+
+      // Check if there's a steel container in the order items
+      const steelItem = orderData.orderItems?.find(
+        (item) =>
+          item.itemName?.toLowerCase().includes("steel") ||
+          item.itemName?.toLowerCase().includes("container")
+      );
+
+      if (status !== null && steelItem) {
+        // User already has a container, show Remove option
+        setContainerButtonLabel("Remove");
+        setShowContainerButton(true);
+        setSelectedContainerItem(steelItem);
+      } else {
+        // Check if user has eligible items for container
+        const eligibleItem = orderData.orderItems?.find(
+          (item) => item.weight === 10 || item.weight === 26
+        );
+
+        if (eligibleItem) {
+          setContainerButtonLabel("Add");
+          setShowContainerButton(true);
+          setSelectedContainerItem(eligibleItem);
+        } else {
+          setShowContainerButton(false);
+        }
+      }
+      setContainerLoader(false);
+    } catch (error) {
+      console.log("Error fetching container status:", error);
+      setShowContainerButton(false);
+      setContainerLoader(false);
+    }
+  };
+
+  // Add this function to handle the add/remove container action
+  const handleAddOrRemoveContainer = () => {
+    if (!selectedContainerItem) {
+      Alert.alert("Error", "No item selected");
+      return;
+    }
+
+    const isAdd = containerButtonLabel === "Add";
+    let itemName = "";
+
+    if (isAdd) {
+      if (selectedContainerItem.weight === 10) {
+        itemName = "Premium Container";
+      } else if (selectedContainerItem.weight === 26) {
+        itemName = "Steel Container";
+      } else {
+        Alert.alert("Error", "Invalid item weight for adding container");
+        return;
+      }
+
+      Alert.alert(
+        "Confirmation",
+        `Are you sure you want to add the ${itemName}?`,
+        [
+          { text: "Cancel" },
+          { text: "OK", onPress: () => proceedWithContainerAction(true) },
+        ]
+      );
+    } else {
+      Alert.alert(
+        "Confirmation",
+        "Are you sure you want to remove the container?",
+        [
+          { text: "Cancel" },
+          { text: "OK", onPress: () => proceedWithContainerAction(false) },
+        ]
+      );
+    }
+  };
+
+  // Add this function to process the container action
+  const proceedWithContainerAction = async (isAdd) => {
+    setContainerLoader(true);
+    let payload;
+
+    if (isAdd) {
+      let itemId = "";
+      let itemName = "";
+
+      if (selectedContainerItem.weight === 10) {
+        itemId = "2312431235";
+        itemName = "Premium Container";
+      } else if (selectedContainerItem.weight === 26) {
+        itemId = "09350823499";
+        itemName = "Steel Container";
+      } else {
+        Alert.alert("Error", "Invalid item weight for adding container");
+        setContainerLoader(false);
+        return;
+      }
+
+      payload = {
+        itemId,
+        itemName,
+        orderId: id,
+        status: "ADD",
+      };
+    } else {
+      payload = {
+        itemId: selectedContainerItem.itemId,
+        orderId: id,
+        status: "REMOVE",
+      };
+    }
+
+    try {
+      await axios.post(`${BASE_URL}order-service/containerAddForSt`, payload, {
+        headers: {
+          Authorization: `Bearer ${accessToken.token}`,
+        },
+      });
+
+      Alert.alert(
+        "Success",
+        isAdd
+          ? "Container added successfully"
+          : "Container removed successfully",
+        [{ text: "OK", onPress: () => fetchOrderData() }]
+      );
+      setContainerLoader(false);
+    } catch (error) {
+      console.log("Error in containerAddForStore:", error);
+      Alert.alert("Error", "Something went wrong, please try again");
+      setContainerLoader(false);
+    }
+  };
+
+  const fetchOrderData = async () => {
+    let requestBody = {
+      // customerId:customerId,
+      orderId: id,
+      orderStatus: status,
+    };
+    console.log({ requestBody });
+    axios({
+      method: "post",
+      url: BASE_URL + `order-service/assignedOrders`,
+      data: requestBody,
+      headers: {
+        Authorization: `Bearer ${accessToken.token}`,
+      },
+    })
+      .then((response) => {
+        console.log("Order Details", response.data[0]);
         setOrderData(response.data[0]);
         setTestUser(response.data[0].testUser);
         setUserId(response.data[0].customerId);
         setOrderItems(response.data[0].orderItems);
-        console.log(response.data[0]);
-        console.log(customerId);
-        console.log(testUser);
-      }
-      // }
-      // else {
-      //     console.log("No user data found in AsyncStorage");
-      // }
-    } catch (err) {
-      setError("Failed to load order details");
-      console.error("Error fetching data:", err.response);
-    } finally {
-      setLoading(false);
-    }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.log("Error fetching order data", error.response);
+        setLoading(false);
+      });
   };
 
   function deliveryBoyDetails() {
@@ -407,18 +585,18 @@ const OrderDetails = ({ route }) => {
     console.log("DeliveryBoy Id:", deliveryBoyId);
 
     let data =
-    orderData.orderStatus === "2"
-      ? {
-          orderId: id,
-          deliveryBoyId,
-          customerMobile: orderData.customerMobile || "unknown"
-        }
-      : {
-          orderId: id,
-          deliverBoyId: deliveryBoyId,
-           customerMobile: orderData.customerMobile || "unknown"
-        };
-  
+      status === "2"
+        ? {
+            orderId: id,
+            deliveryBoyId,
+            customerMobile: orderData.customerMobile || "unknown",
+          }
+        : {
+            orderId: id,
+            deliverBoyId: deliveryBoyId,
+            customerMobile: orderData.customerMobile || "unknown",
+          };
+
     console.log({ data });
     setSubmitLoader(true);
     const orderApiUrl =
@@ -426,8 +604,8 @@ const OrderDetails = ({ route }) => {
       //   ? orderData.orderStatus === "2"
       //     ? `${BASE_URL}order-service/orderIdAndDbId`
       //     : `${BASE_URL}order-service/reassignOrderToDb`
-      //   : 
-        orderData.orderStatus === "2"
+      //   :
+      status === "2"
         ? `${BASE_URL}order-service/orderIdAndDbId`
         : `${BASE_URL}order-service/reassignOrderToDb`;
 
@@ -438,7 +616,9 @@ const OrderDetails = ({ route }) => {
         },
       });
 
-      console.log(`Order ID: ${id}, Delivery Boy ID: ${deliveryBoyId}, Customer Mobile: ${orderData.customerMobile}`);
+      console.log(
+        `Order ID: ${id}, Delivery Boy ID: ${deliveryBoyId}, Customer Mobile: ${orderData.customerMobile}`
+      );
 
       console.log("Assign Order", response);
       setSubmitLoader(false);
@@ -502,15 +682,19 @@ const OrderDetails = ({ route }) => {
         // fetchOrderData()
         if (!route.params.istestUser) {
           console.log("User successfully converted:", response.data);
-          Alert.alert("Success", "User converted to Test User successfully!",[{
-            text:"ok",
-            onPress:()=>navigation.goBack()
-          }]);
+          Alert.alert("Success", "User converted to Test User successfully!", [
+            {
+              text: "ok",
+              onPress: () => navigation.goBack(),
+            },
+          ]);
         } else {
-          Alert.alert("Success", "User converted to Live User successfully!",[{
-            text:"ok",
-            onPress:()=>navigation.goBack()
-          }]);
+          Alert.alert("Success", "User converted to Live User successfully!", [
+            {
+              text: "ok",
+              onPress: () => navigation.goBack(),
+            },
+          ]);
         }
         await fetchOrderData();
       } else {
@@ -560,7 +744,7 @@ const OrderDetails = ({ route }) => {
         Authorization: `Bearer ${accessToken.accessToken}`,
       },
     })
-      .then(function (response) { 
+      .then(function (response) {
         // console.log("deliveryBoyAssigneData", response);
         setAssignedDeliveryBoy(response.data[0]);
         console.log(assignLoader.deliveryBoyName);
@@ -577,7 +761,7 @@ const OrderDetails = ({ route }) => {
   };
   const formatPrice = (price) => {
     if (price == null) return "0"; // Handle null or undefined
-  
+
     return price.toFixed(2); // Ensure two decimal places
   };
 
@@ -594,23 +778,26 @@ const OrderDetails = ({ route }) => {
         <Text style={styles.heading}>ORDER DETAILS</Text>
       </View>
 
-      <TouchableOpacity  style={[
-                  styles.convertButton, 
-                  { backgroundColor: route.params.istestUser ? "#27ae60" : "#3d2a71" } // Green for Live, Red for Test
-                ]}  onPress={()=>handleConvert()}>
-          {route.params.istestUser==true ? (
-            <Text style={styles.convertButtonText}>{route.params.istestUser}Convert to Live User</Text>
-          ) : (
-            <Text style={styles.convertButtonText}>Convert to Test User</Text>
-          )}
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.convertButton,
+          { backgroundColor: route.params.istestUser ? "#27ae60" : "#3d2a71" }, // Green for Live, Red for Test
+        ]}
+        onPress={() => handleConvert()}
+      >
+        {route.params.istestUser == true ? (
+          <Text style={styles.convertButtonText}>
+            {route.params.istestUser}Convert to Live User
+          </Text>
+        ) : (
+          <Text style={styles.convertButtonText}>Convert to Test User</Text>
+        )}
+      </TouchableOpacity>
 
       <View style={styles.section}>
         <Text style={styles.label}>
           Order Id:{" "}
-          <Text style={styles.value}>
-            {orderData?.uniqueId || "N/A"}
-          </Text>
+          <Text style={styles.value}>{orderData?.uniqueId || "N/A"}</Text>
         </Text>
         <Text style={styles.label}>
           Order Date:{" "}
@@ -627,7 +814,7 @@ const OrderDetails = ({ route }) => {
               ? `${orderData.mobileNumber}, ${orderData.customerMobile}`
               : orderData?.customerMobile?.trim() ||
                 orderData?.mobileNumber?.trim() ||
-                "N/A"}  
+                "N/A"}
           </Text>
         </Text>
 
@@ -746,19 +933,73 @@ const OrderDetails = ({ route }) => {
         />
       </View>
 
+      {showContainerButton &&
+        (status === "1" || status === "2" || status === "3") && (
+          <>
+            <Text style={styles.heading}>CONTAINER MANAGEMENT</Text>
+            <View style={styles.section}>
+              <Text style={styles.label}>
+                Container Status:{" "}
+                <Text style={styles.value}>
+                  {containerButtonLabel === "Add"
+                    ? "Eligible for free container"
+                    : "Has container"}
+                </Text>
+              </Text>
+
+              {containerLoader ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#3d2a71"
+                  style={{ marginVertical: 10 }}
+                />
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.containerButton,
+                    {
+                      backgroundColor:
+                        containerButtonLabel === "Add" ? "#27ae60" : "#e74c3c",
+                    },
+                  ]}
+                  onPress={handleAddOrRemoveContainer}
+                >
+                  <Text style={styles.containerButtonText}>
+                    {containerButtonLabel} Container
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </>
+        )}
+
       <Text style={styles.heading}>DELIVERY TIME SLOT</Text>
       <View style={styles.section}>
-          <Text style={styles.label}>
-                Expected Date / Time : <Text style={styles.value}>{orderData?.expectedDeliveryDate} ({orderData?.timeSlot}) </Text>
+        <Text style={styles.label}>
+          Expected Date / Time :{" "}
+          <Text style={styles.value}>
+            {orderData?.expectedDeliveryDate} ({orderData?.timeSlot}){" "}
           </Text>
+        </Text>
 
-          <TouchableOpacity onPress={()=>fetchTimeSlot()}>
-            <Text style={{color:"#0384d5",alignSelf:"flex-end",marginRight:20,fontWeight:"bold",fontSize:18}}>Update Time Slot</Text>
-          </TouchableOpacity>
+        {status != "4" || status!="5" ?
+        <TouchableOpacity onPress={() => fetchTimeSlot()}>
+          <Text
+            style={{
+              color: "#0384d5",
+              alignSelf: "flex-end",
+              marginRight: 20,
+              fontWeight: "bold",
+              fontSize: 18,
+            }}
+          >
+            Update Time Slot
+          </Text>
+        </TouchableOpacity>
+        :null}
       </View>
 
-
-      {orderData.orderStatus === "3" ? (
+      {status === "3" ? (
         <>
           <Text style={styles.heading}>Assigned To</Text>
           <View style={styles.section}>
@@ -785,25 +1026,25 @@ const OrderDetails = ({ route }) => {
       <Text style={styles.heading}>Order Summary</Text>
       <View style={styles.section}>
         <Text style={styles.label}>
-           SUB TOTAL  : {" "}
+          SUB TOTAL :{" "}
           <Text style={styles.value}>Rs {orderData?.subTotal || 0}</Text>
         </Text>
         <Text style={styles.label}>
-          DELIVERY FEE  : {" "}
+          DELIVERY FEE :{" "}
           <Text style={styles.value}>Rs :{orderData?.deliveryfee || 0}</Text>
         </Text>
 
         {/* Show GST only if it's greater than zero */}
         {orderData.gstAmount > 0 && (
           <Text style={styles.label}>
-            GST  : <Text style={styles.value}>Rs +{orderData?.gstAmount}</Text>
+            GST : <Text style={styles.value}>Rs +{orderData?.gstAmount}</Text>
           </Text>
         )}
 
         {/* Show Wallet Amount only if it's greater than zero */}
         {orderData.walletAmount > 0 && (
           <Text style={styles.label}>
-            Wallet Amount  : {" "}
+            Wallet Amount :{" "}
             <Text style={styles.value}>Rs -{orderData?.walletAmount}</Text>
           </Text>
         )}
@@ -819,12 +1060,12 @@ const OrderDetails = ({ route }) => {
         <Text style={styles.label}>
           GRAND TOTAL:{" "}
           <Text style={styles.value}>
-          Rs {formatPrice(orderData?.grandTotal ?? 0)}
+            Rs {formatPrice(orderData?.grandTotal ?? 0)}
           </Text>
         </Text>
       </View>
 
-      {(orderData.orderStatus === "5" || orderData.orderStatus === "6") && (
+      {(status === "5" || status === "6") && (
         <>
           <Text style={styles.heading}>Reason</Text>
           <View style={styles.section}>
@@ -842,10 +1083,19 @@ const OrderDetails = ({ route }) => {
         </View>
       )}
 
+      <View>
+      {(status === "4" ) && (
+            <View style={{backgroundColor:"green",padding:10,margin:10,borderRadius:10,alignItems:"center"}}>
+            <Text style={{color:"white",fontSize:17,fontWeight:"bold"}}>Order Delivered Successfully</Text>
+            </View>
+          )}
+      </View>
+
       <View style={styles.actionButtons}>
-        {(orderData.orderStatus === "1" ||
-          orderData.orderStatus === "2" ||
-          orderData.orderStatus === "3") && (
+        {(status === "1" ||
+          status === "2" ||
+          status === "3" ||
+          status === "Picked up") && (
           <TouchableOpacity
             style={[
               styles.rejectButton,
@@ -857,7 +1107,7 @@ const OrderDetails = ({ route }) => {
             <Text style={styles.rejectButtonText}>REJECT</Text>
           </TouchableOpacity>
         )}
-        {orderData.orderStatus === "5" && (
+        {status === "5" && (
           <TouchableOpacity
             style={[
               styles.ReAccpetButton,
@@ -869,7 +1119,7 @@ const OrderDetails = ({ route }) => {
             <Text style={styles.rejectButtonText}>Re-Accept</Text>
           </TouchableOpacity>
         )}
-        {orderData.orderStatus === "1" && (
+        {status === "1" && (
           <>
             {acceptLoader == false ? (
               <TouchableOpacity
@@ -894,7 +1144,7 @@ const OrderDetails = ({ route }) => {
             )}
           </>
         )}
-        {orderData.orderStatus === "2" && (
+        {status === "2" && (
           <>
             {assignLoader == false ? (
               <TouchableOpacity
@@ -917,7 +1167,7 @@ const OrderDetails = ({ route }) => {
           </>
         )}
 
-        {orderData.orderStatus === "3" && (
+        {status === "3" && (
           <>
             {assignLoader == false ? (
               <TouchableOpacity
@@ -995,7 +1245,7 @@ const OrderDetails = ({ route }) => {
                     style={styles.assignButton}
                   >
                     <Text style={styles.buttonText}>
-                      {orderData.orderStatus === "2" ? "Assign" : "Re-Assign"}
+                      {status === "2" ? "Assign" : "Re-Assign"}
                     </Text>
                   </TouchableOpacity>
                 ) : (
@@ -1073,72 +1323,82 @@ const OrderDetails = ({ route }) => {
           </View>
         </Modal>
 
-{/* Update Date / Time Slot */}
-<Modal
-      animationType="slide"
-      transparent={true}
-      visible={dateTimeModalVisible}
-      onRequestClose={() => setDateTimeModalVisible(false)}
-    >
-      <View style={styles.modalContainer1}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Delivery time slot</Text>
-            <TouchableOpacity onPress={() => setDateTimeModalVisible(false)}>
-              <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Update Date / Time Slot */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={dateTimeModalVisible}
+          onRequestClose={() => setDateTimeModalVisible(false)}
+        >
+          <View style={styles.modalContainer1}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Delivery time slot</Text>
+                <TouchableOpacity
+                  onPress={() => setDateTimeModalVisible(false)}
+                >
+                  <Text style={styles.closeButton}>✕</Text>
+                </TouchableOpacity>
+              </View>
 
-          {loader ? (
-            <View style={styles.loadingOverlay}>
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator 
-                size="large" 
-                color="#4CAF50" 
-                style={styles.loadingIndicator}
-              />
-              <Text style={styles.loadingTitle}>Confirming Time Slot</Text>
-              {selectedSlot && (
-                <View style={styles.selectedSlotDetails}>
-                  <Text style={styles.loadingSubtitle}>
-                    {selectedSlot.time} - {selectedSlot.day}, {selectedSlot.date}
-                  </Text>
+              {loader ? (
+                <View style={styles.loadingOverlay}>
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator
+                      size="large"
+                      color="#4CAF50"
+                      style={styles.loadingIndicator}
+                    />
+                    <Text style={styles.loadingTitle}>
+                      Confirming Time Slot
+                    </Text>
+                    {selectedSlot && (
+                      <View style={styles.selectedSlotDetails}>
+                        <Text style={styles.loadingSubtitle}>
+                          {selectedSlot.time} - {selectedSlot.day},{" "}
+                          {selectedSlot.date}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
+              ) : error ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : (
+                <ScrollView style={styles.scrollView}>
+                  {flattenedData.map((item, index) => {
+                    if (item.type === "header") {
+                      return (
+                        <View
+                          key={`header-${index}`}
+                          style={styles.sectionHeader}
+                        >
+                          <Text style={styles.dayText}>{item.day}</Text>
+                          <Text style={styles.dayText}>{item.date}</Text>
+                        </View>
+                      );
+                    } else {
+                      return (
+                        <TouchableOpacity
+                          key={`slot-${item.id}`}
+                          style={styles.timeSlotButton}
+                          onPress={() =>
+                            handleSlotSelect(item.day, item.date, item.time)
+                          }
+                        >
+                          <Text style={styles.timeSlotText}>{item.time}</Text>
+                          <View style={styles.divider} />
+                        </TouchableOpacity>
+                      );
+                    }
+                  })}
+                </ScrollView>
               )}
             </View>
           </View>
-          ) : error ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : (
-            <ScrollView style={styles.scrollView}>
-              {flattenedData.map((item, index) => {
-                if (item.type === 'header') {
-                  return (
-                    <View key={`header-${index}`} style={styles.sectionHeader}>
-                      <Text style={styles.dayText}>{item.day}</Text>
-                      <Text style={styles.dayText}>{item.date}</Text>
-                    </View>
-                  );
-                } else {
-                  return (
-                    <TouchableOpacity
-                      key={`slot-${item.id}`}
-                      style={styles.timeSlotButton}
-                      onPress={() => handleSlotSelect(item.day, item.date, item.time)}
-                    >
-                      <Text style={styles.timeSlotText}>{item.time}</Text>
-                      <View style={styles.divider} />
-                    </TouchableOpacity>
-                  );
-                }
-              })}
-            </ScrollView>
-          )}
-        </View>
-      </View>
-    </Modal>
+        </Modal>
       </View>
     </ScrollView>
   );
@@ -1305,29 +1565,28 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   convertButton: {
-   
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 5,
     width: "48%",
     alignItems: "center",
     marginRight: 20,
-    marginBottom:20,
+    marginBottom: 20,
     alignSelf: "flex-end",
   },
   loadingOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)', // Semi-transparent white overlay
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.9)", // Semi-transparent white overlay
   },
   loadingContainer: {
-    width: '80%',
-    backgroundColor: 'white',
+    width: "80%",
+    backgroundColor: "white",
     borderRadius: 15,
     padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1341,20 +1600,20 @@ const styles = StyleSheet.create({
   },
   loadingTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 10,
   },
   selectedSlotDetails: {
-    backgroundColor: '#F0F0F0',
+    backgroundColor: "#F0F0F0",
     padding: 10,
     borderRadius: 8,
     marginTop: 10,
   },
   loadingSubtitle: {
-    color: '#4CAF50',
+    color: "#4CAF50",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   convertButtonText: {
     color: "#fff",
@@ -1374,82 +1633,96 @@ const styles = StyleSheet.create({
   modalContainer1: {
     flex: 1,
     // backgroundColor:"black",
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: 'white',
-    height: height/2,
+    backgroundColor: "white",
+    height: height / 2,
     borderRadius: 10,
-    width:width*0.9,
-    alignSelf:"center"
+    width: width * 0.9,
+    alignSelf: "center",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eeeeee',
+    borderBottomColor: "#eeeeee",
   },
   modalTitle1: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: "bold",
+    color: "#333333",
   },
   closeButton: {
     fontSize: 24,
-    color: '#333333',
+    color: "#333333",
   },
   scrollView: {
     flex: 1,
   },
   sectionHeader: {
     padding: 15,
-    backgroundColor: '#ffffff',
-    flexDirection:"row",
-    justifyContent:"space-between"
+    backgroundColor: "#ffffff",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   dayText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: "bold",
+    color: "#333333",
   },
   dateText: {
     fontSize: 16,
-    color: '#666666',
+    color: "#666666",
     marginTop: 5,
   },
   timeSlotButton: {
     padding: 15,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
   timeSlotText: {
     fontSize: 16,
-    color: '#333333',
+    color: "#333333",
   },
   divider: {
     height: 1,
-    backgroundColor: '#eeeeee',
+    backgroundColor: "#eeeeee",
     marginTop: 15,
   },
   selectedInfo: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: '#e6f7ff',
+    backgroundColor: "#e6f7ff",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#91d5ff',
+    borderColor: "#91d5ff",
   },
   selectedTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    color: '#333333',
+    color: "#333333",
+  },
+  containerButton: {
+    backgroundColor: "#27ae60",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    alignSelf: "flex-start",
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  containerButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
   },
   selectedText: {
     fontSize: 14,
-    color: '#333333',
+    color: "#333333",
     marginBottom: 5,
   },
 });

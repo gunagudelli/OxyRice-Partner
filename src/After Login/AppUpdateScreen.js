@@ -160,7 +160,7 @@ const AppUpdateScreen = () => {
               // storeUrl = 'https://apps.apple.com/in/app/askoxy-ai-rice-delivery/id6738732000';
             } else {
               // Using Android package name
-              storeUrl = 'market://details?id=com.oxyrice.oxyrice_customer';
+              storeUrl = 'market://details?id=com.oxyrice.pantner';
               // Fallback for devices without Play Store
               const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.oxyrice.pantner';
               

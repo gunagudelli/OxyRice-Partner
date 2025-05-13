@@ -3,9 +3,13 @@ import React, { useEffect, useState, useRef } from "react";
 import { View, Text, StyleSheet, FlatList, Alert, TouchableOpacity, ActivityIndicator, SafeAreaView, StatusBar, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { CameraView, Camera } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
 import BASE_URL from "../../config";
+import { useSelector } from "react-redux";
 
-export default function Barcode() {
+export default function ScanExchangeOrders() {
+const userDetails = useSelector((state) => state.counter); // Get userStage from Redux
+// console.log("userDetails",userDetails)
   const [hasPermission, setHasPermission] = useState(null);
   const [barcodes, setBarcodes] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
@@ -14,10 +18,12 @@ export default function Barcode() {
   const [apiResponse, setApiResponse] = useState(null);
   const [responseItems, setResponseItems] = useState([]);
   const [showCamera, setShowCamera] = useState(true);
-  
+//   console.log({BASE_URL})
   // User and store info input fields
   const [scanedBy, setScanedBy] = useState("");
   const [storeName, setStoreName] = useState("");
+  const [vendorName, setVendorName] = useState("");
+  const [reason, setReason] = useState("");
   const [detailsSubmitted, setDetailsSubmitted] = useState(false);
   
   // Track if a barcode is being processed to prevent duplicates
@@ -83,7 +89,7 @@ export default function Barcode() {
     setDetailsSubmitted(true);
     setIsScanning(true);
     setShowCamera(true);
-    Alert.alert("Success", "Details saved successfully. Camera is now ready for scanning.");
+    // Alert.alert("Success", "Details saved successfully. Camera is now ready for scanning.");
   };
 
   const handleBarCodeScanned = ({ data }) => {
@@ -97,7 +103,7 @@ export default function Barcode() {
     // Add to scan log for debugging
     addToScanLog(data, "SCANNED");
     
-    // Check if barcode format is valid (6 letters followed by digits)
+    // Check if barcode f//ormat is valid (6 letters followed by digits)
     if (!isValidBarcodeFormat(data)) {
       console.log(`Invalid barcode format rejected: ${data}`);
       addToScanLog(data, "INVALID_FORMAT");
@@ -148,83 +154,44 @@ export default function Barcode() {
       console.log(`${index + 1}. ${code}`);
     });
     
-    setIsSending(true);
-    try {
       // Make a copy of the barcodes array to prevent any unexpected modifications
       const barcodesToSend = [...barcodes];
       
       // Format the request exactly as required
-      const requestBody = {
-        barcodeValue: barcodesToSend,
-        scanedBy: scanedBy,
-        storeName: storeName
-      };
-      
-      // Log the complete request body to the console in the exact format required
-      console.log("REQUEST PAYLOAD:", JSON.stringify(requestBody, null, 2));
-      
-      const response = await fetch(BASE_URL+"product-service/scanBarCount", {
-        method: "POST",
-        headers: {
-          "Accept": "*/*",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (response.ok) {
-        const responseData = await response.json();
-        setApiResponse(responseData);
-        
-        // Log the API response in the exact format requested
-        console.log("API RESPONSE:", JSON.stringify(responseData, null, 2));
-        
-        // Process response for display
-        if (responseData && responseData.barcodeResponse) {
-          setResponseItems(responseData.barcodeResponse.map(item => ({
-            barcode: item.barcode,
-            status: item.status
-          })));
-        } else if (responseData && responseData.groupCounts) {
-          // Handle the specific response format with group counts
-          const groupItems = Object.entries(responseData.groupCounts).map(([code, count]) => ({
-            barcode: code,
-            status: `Count: ${count}`
-          }));
-          setResponseItems(groupItems);
-        }
-        
-        Alert.alert(
-          "Success", 
-          "Barcodes sent successfully!",
-          [
-            { text: "OK", onPress: () => {
-              // Clear previous scan data and reopen camera
-              setBarcodes([]);
-              setIsScanning(true);
-              setScanSuccess(false);
-              setShowCamera(true);
-              // Clear scan log
-              barcodeScanLog.current = [];
-            }}
-          ]
-        );
-      } else {
-        Alert.alert("Error", `Failed to send barcodes. Status: ${response.status}`);
-        console.log("API Error Status:", response.status);
-        try {
-          const errorText = await response.text();
-          console.log("API Error Response:", errorText);
-        } catch (e) {
-          console.log("Could not read error response");
-        }
+      const requestBody =
+      {
+        "adminName": scanedBy,
+        "barcodes":barcodesToSend,
+        "reason": reason,
+        "storeName": storeName,
+        "vendorName": vendorName
       }
-    } catch (err) {
-      Alert.alert("Error", err.message);
-      console.log("API Request Error:", err.message);
-    } finally {
-      setIsSending(false);
-    }
+      console.log({requestBody})
+      setIsSending(true);
+
+      // Log the complete request body to the console in the exact format required
+      
+     axios.post(BASE_URL+`product-service/vendorExhange`,requestBody, {
+        headers: {
+         accessToken:`Bearer ${userDetails.accessToken}`,
+        },
+      })
+      .then((response) => {
+        setIsSending(false)
+            console.log("API Response:", response.data);
+            Alert.alert("Success",  response.data);
+            setDetailsSubmitted(true)
+        })
+        .catch((error) => {
+            setIsSending(false)
+            console.log(error.response.status)
+            if(error.response.status === 404){
+              Alert.alert("Error", error.response.data);
+            }else{
+              console.log("API Error:", error.response.data);
+              Alert.alert("Error",  error.response.data.error);
+            }
+  })
   };
 
   const clearBarcodes = () => {
@@ -326,17 +293,16 @@ export default function Barcode() {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
         
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Barcode Scanner</Text>
-          <Text style={styles.headerSubtitle}>Please enter your details</Text>
-        </View>
+        {/* <View style={styles.header}>
+          <Text style={styles.headerTitle}>Scan Exchanged Bar Codes</Text>
+        </View> */}
         
         <KeyboardAvoidingView 
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.formContainer}
         >
           <View style={styles.formCard}>
-            <Text style={styles.inputLabel1}>Enter Your Name and Store Details</Text>
+            {/* <Text style={styles.inputLabel1}>Enter Your Name and Store Details</Text> */}
             
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Scanned By:</Text>
@@ -359,14 +325,38 @@ export default function Barcode() {
                 placeholderTextColor="#999"
               />
             </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Vendor Name:</Text>
+              <TextInput
+                style={styles.input}
+                value={vendorName}
+                onChangeText={setVendorName}
+                placeholder="Enter Vendor name"
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Reason:</Text>
+              <TextInput
+                style={styles.input}
+                value={reason}
+                onChangeText={setReason}
+                placeholder="Enter Reason"
+                placeholderTextColor="#999"
+                multiline={true}
+                numberOfLines={4}
+              />
+            </View>
             
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                { backgroundColor: (!scanedBy.trim() || !storeName.trim()) ? "#ccc" : "#4a6aff" }
+                { backgroundColor: (!scanedBy.trim() || !storeName.trim() || !vendorName.trim() || !reason.trim()) ? "#ccc" : "#4a6aff" }
               ]}
               onPress={handleDetailsSubmit}
-              disabled={!scanedBy.trim() || !storeName.trim()}
+              disabled={!scanedBy.trim() || !storeName.trim() || !vendorName.trim() || !reason.trim()}
             >
               <Text style={styles.buttonText}>Start Scanning</Text>
             </TouchableOpacity>
@@ -445,12 +435,12 @@ export default function Barcode() {
               )}
               {barcodes.length > 0 && !responseItems.length && (
                 <>
-                  <TouchableOpacity onPress={printDebugInfo} style={styles.actionButton}>
+                  {/* <TouchableOpacity onPress={printDebugInfo} style={styles.actionButton}>
                     <Ionicons name="bug-outline" size={22} color="#7e57c2" />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={logAllBarcodes} style={styles.actionButton}>
+                  </TouchableOpacity> */}
+                  {/* <TouchableOpacity onPress={logAllBarcodes} style={styles.actionButton}>
                     <Ionicons name="list-outline" size={22} color="#4a6aff" />
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                   <TouchableOpacity onPress={clearBarcodes} style={styles.actionButton}>
                     <Ionicons name="trash-outline" size={22} color="#ff6347" />
                   </TouchableOpacity>
@@ -640,7 +630,7 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   formContainer: {
-    flex: 1,
+    // flex: 1,
     padding: 20,
     justifyContent: "center",
   },
