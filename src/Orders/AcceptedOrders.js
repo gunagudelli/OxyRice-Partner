@@ -20,7 +20,7 @@ import ModalDropdown from "react-native-modal-dropdown";
 import { Ionicons } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/Ionicons"
 
-const NewOrders = ({ navigation, route }) => {
+const acceptedOrders = ({ navigation, route }) => {
   const { isTestOrder } = route.params;
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -324,7 +324,7 @@ const NewOrders = ({ navigation, route }) => {
   );
 };
 
-export default NewOrders;
+export default  acceptedOrders;
 
 const styles = StyleSheet.create({
   screen: {

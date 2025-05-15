@@ -9,6 +9,7 @@ import LoginWithPassword from './src/Authorization/LoginWithPassword';
 import HomeScreen from './src/After Login/Home';
 import Orders from './src/Extra Files/Orders';
 import Main from './src/Orders/Main'
+import ExchangeMain from './src/Exchange/ExchangeMain';
 import Items from './src/Items/Items';
 import CategoriesScreen from './src/Items/CategoriesScreen';
 import DeliveryBoys from './src/Delivery Boys/DeliveryBoys';
@@ -22,9 +23,13 @@ import TestAllOrders from './src/Orders/TestAllOrders';
 import AllSplitBags from './src/Split Bags/AllSplitBags';
 import Logout from './src/After Login/Logout';
 import NetworkAlert from './src/After Login/NetworkAlert';
+import CustomerFeedback from './src/Feedback/CustomerFeedback';
 
 import AppUpdateScreen from './src/After Login/AppUpdateScreen';
 import SplitBags from './src/Split Bags/SplitBags';
+import PaymentStatusScreen from './src/Payment/PaymentStatusScreen ';
+import ImageUploader from './src/ImageUpload/ImageUploader';
+import OfferImagesScreen from './src/ImageUpload/OfferImagesScreen ';
 
 import BarcodeScanner from './src/After Login/BarcodeScanner';
 import Barcode from './src/After Login/Barcode';
@@ -39,6 +44,7 @@ import ExchangeOrders from './src/Exchange/ExchangeOrders ';
 import ScanExchangeOrders from './src/Exchange/ScanExchangeOrders';
 
 import allReducers from './Redux/reducers'
+ 
 
 const Stack = createNativeStackNavigator();
 const store = createStore(
@@ -118,6 +124,11 @@ export default function App() {
         name="Orders" 
         component={Main}
         />
+         <Stack.Screen 
+        name="Exchange" 
+        component={ExchangeMain}
+        />
+        
 
         <Stack.Screen
           name="Products"
@@ -159,7 +170,25 @@ export default function App() {
           component={ExchangeOrders}
           
         />
-
+        <Stack.Screen
+          name="Customer Feedback"
+          component={CustomerFeedback}
+        />
+         <Stack.Screen 
+          name="PaymentStatusScreen" 
+          component={PaymentStatusScreen}
+        
+        />
+       <Stack.Screen 
+          name="ImageUploader" 
+          component={ImageUploader}
+        
+        />
+        <Stack.Screen 
+          name="OfferImagesScreen" 
+          component={OfferImagesScreen}
+        
+        />
         
 <Stack.Screen
           name="TestAllOrders"

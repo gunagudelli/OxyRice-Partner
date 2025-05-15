@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 
 
 const config=(value)=>{
-  var userStage="Live1"
+  var userStage="Live"
 	var BASE_URL;
  if(userStage=="Live"){
 	//Live	
@@ -20,7 +20,7 @@ const config=(value)=>{
 
 export default config();    
 
-export const userStage="Live1" // Test or Live
+export const userStage="Live" // Test or Live
 
 
 

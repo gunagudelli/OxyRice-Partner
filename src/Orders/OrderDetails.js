@@ -82,169 +82,210 @@ const OrderDetails = ({ route }) => {
   }, [id, status]);
   const getNextSevenDays = () => {
     const today = new Date();
-    
+
     // Always start from tomorrow
     const startDate = new Date(today);
     startDate.setDate(today.getDate() + 1);
-  
-    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-  
+
+    const daysOfWeek = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    const months = [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "11",
+      "12",
+    ];
+
     // Get next 7 days starting from tomorrow
     // This gives us more days to choose from if some are unavailable
-    const nextSevenDays = [0, 1, 2, 3, 4, 5, 6].map(offset => {
+    const nextSevenDays = [0, 1, 2, 3, 4, 5, 6].map((offset) => {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + offset);
-      
+
       return {
         dayOfWeek: daysOfWeek[date.getDay()].toUpperCase(),
-        date: `${date.getDate()}-${months[date.getMonth()]}-${date.getFullYear()}`,
-        formattedDay: daysOfWeek[date.getDay()]
+        date: `${date.getDate()}-${
+          months[date.getMonth()]
+        }-${date.getFullYear()}`,
+        formattedDay: daysOfWeek[date.getDay()],
       };
     });
-  
+
     return nextSevenDays;
   };
-  
+
   const fetchTimeSlot = () => {
     setLoading(true);
     // setError(null);
-    
+
     axios({
       method: "get",
       url: `${BASE_URL}order-service/fetchTimeSlotlist`,
     })
-    .then((response) => {
-      // console.log("Response fetch time slot", response.data);
-      
-      // Get the next seven days starting from tomorrow to have more options
-      const nextSevenDays = getNextSevenDays();
-      
-      // Process all seven days
-      const allProcessedDays = nextSevenDays.map(dayInfo => {
-        // Find the corresponding slot for this day
-        const matchingSlot = response.data.find(
-          slot => slot.dayOfWeek === dayInfo.dayOfWeek
-        );
-        
-        // If day has slots and is not marked as unavailable (isAvailable = false means it's actually available)
-        if (matchingSlot && !matchingSlot.isAvailable) {
-          // Create arrays of slots and their statuses
-          const timeSlots = [
-            { id: 1, time: matchingSlot.timeSlot1, status: matchingSlot.slot1Status },
-            { id: 2, time: matchingSlot.timeSlot2, status: matchingSlot.slot2Status },
-            { id: 3, time: matchingSlot.timeSlot3, status: matchingSlot.slot3Status },
-            { id: 4, time: matchingSlot.timeSlot4, status: matchingSlot.slot4Status }
-          ];
-          
-          // Filter to only include available slots (status is false)
-          const availableSlots = timeSlots.filter(slot => !slot.status);
-          
-          // Group slots by time value to consolidate identical times
-          const slotsByTime = {};
-          availableSlots.forEach(slot => {
-            if (!slotsByTime[slot.time]) {
-              slotsByTime[slot.time] = [];
-            }
-            slotsByTime[slot.time].push(slot);
-          });
-          
-          // Create consolidated slot objects
-          const slotObjects = Object.keys(slotsByTime).map(time => {
-            // Use the ID of the first slot in each group
-            const firstSlotInGroup = slotsByTime[time][0];
+      .then((response) => {
+        // console.log("Response fetch time slot", response.data);
+
+        // Get the next seven days starting from tomorrow to have more options
+        const nextSevenDays = getNextSevenDays();
+
+        // Process all seven days
+        const allProcessedDays = nextSevenDays.map((dayInfo) => {
+          // Find the corresponding slot for this day
+          const matchingSlot = response.data.find(
+            (slot) => slot.dayOfWeek === dayInfo.dayOfWeek
+          );
+
+          // If day has slots and is not marked as unavailable (isAvailable = false means it's actually available)
+          if (matchingSlot && !matchingSlot.isAvailable) {
+            // Create arrays of slots and their statuses
+            const timeSlots = [
+              {
+                id: 1,
+                time: matchingSlot.timeSlot1,
+                status: matchingSlot.slot1Status,
+              },
+              {
+                id: 2,
+                time: matchingSlot.timeSlot2,
+                status: matchingSlot.slot2Status,
+              },
+              {
+                id: 3,
+                time: matchingSlot.timeSlot3,
+                status: matchingSlot.slot3Status,
+              },
+              {
+                id: 4,
+                time: matchingSlot.timeSlot4,
+                status: matchingSlot.slot4Status,
+              },
+            ];
+
+            // Filter to only include available slots (status is false)
+            const availableSlots = timeSlots.filter((slot) => !slot.status);
+
+            // Group slots by time value to consolidate identical times
+            const slotsByTime = {};
+            availableSlots.forEach((slot) => {
+              if (!slotsByTime[slot.time]) {
+                slotsByTime[slot.time] = [];
+              }
+              slotsByTime[slot.time].push(slot);
+            });
+
+            // Create consolidated slot objects
+            const slotObjects = Object.keys(slotsByTime).map((time) => {
+              // Use the ID of the first slot in each group
+              const firstSlotInGroup = slotsByTime[time][0];
+              return {
+                id: `${matchingSlot.id}-${firstSlotInGroup.id}`,
+                time: time,
+                isAvailable: true,
+                originalSlots: slotsByTime[time], // Store original slots for reference if needed
+              };
+            });
+
             return {
-              id: `${matchingSlot.id}-${firstSlotInGroup.id}`,
-              time: time,
-              isAvailable: true,
-              originalSlots: slotsByTime[time] // Store original slots for reference if needed
+              id: matchingSlot.id,
+              day: dayInfo.formattedDay,
+              date: dayInfo.date,
+              slots: slotObjects,
+              isAvailable: matchingSlot.isAvailable,
+              hasAvailableSlots: slotObjects.length > 0, // Mark if this day has any available slots
             };
-          });
-          
+          }
+
+          // Fallback if no matching slot is found or if isAvailable is true (which means unavailable)
           return {
-            id: matchingSlot.id,
+            id: null,
             day: dayInfo.formattedDay,
             date: dayInfo.date,
-            slots: slotObjects,
-            isAvailable: matchingSlot.isAvailable,
-            hasAvailableSlots: slotObjects.length > 0 // Mark if this day has any available slots
+            slots: [],
+            isAvailable: true,
+            hasAvailableSlots: false,
           };
-        }
-        
-        // Fallback if no matching slot is found or if isAvailable is true (which means unavailable)
-        return {
-          id: null,
-          day: dayInfo.formattedDay,
-          date: dayInfo.date,
-          slots: [],
-          isAvailable: true,
-          hasAvailableSlots: false
-        };
+        });
+
+        // Filter to only include days that have available slots
+        const daysWithSlots = allProcessedDays.filter(
+          (day) => day.hasAvailableSlots
+        );
+
+        // Take only the first 3 days that have available slots
+        const firstThreeAvailableDays = daysWithSlots.slice(0, 3);
+
+        setTimeSlotData(firstThreeAvailableDays);
+        setDateTimeModalVisible(true);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching time slots", error);
+        setLoading(false);
+        Alert.alert("Error", "Failed to fetch time slots");
       });
-      
-      // Filter to only include days that have available slots
-      const daysWithSlots = allProcessedDays.filter(day => day.hasAvailableSlots);
-      
-      // Take only the first 3 days that have available slots
-      const firstThreeAvailableDays = daysWithSlots.slice(0, 3);
-      
-      setTimeSlotData(firstThreeAvailableDays);
-      setDateTimeModalVisible(true);
-      setLoading(false);
-    })
-    .catch((error) => {
-      console.error("Error fetching time slots", error);
-      setLoading(false);
-      Alert.alert("Error", "Failed to fetch time slots");
-    });
   };
-  
+
   const handleSlotSelect = (day, date, time) => {
     const selection = { day, date, time };
     setSelectedSlot({ day, date, time });
-    
+
     // console.log("Selected delivery slot:", selection);
-    setLoader(true)
+    setLoader(true);
     let requestBody = {
-      "dayOfWeek": day.toUpperCase(),
-      "expectedDeliveryDate": date,
-      "orderId": route.params.orderId,
-      "timeSlot": time,
-      "userId": data?.customerId
+      dayOfWeek: day.toUpperCase(),
+      expectedDeliveryDate: date,
+      orderId: route.params.orderId,
+      timeSlot: time,
+      userId: data?.customerId,
     };
-    
+
     // console.log("Sending data:", requestBody);
-    
+
     axios({
       method: "patch",
       url: `${BASE_URL}order-service/userSelectedDiffslot`,
-      data: requestBody
+      data: requestBody,
     })
-    .then((response) => {
-      console.log("Update Time Slot", response.data);
-      setDateTimeModalVisible(false);
-      setLoader(false)
-      getsingleOrderDetailsfunc()
-      Alert.alert("Success", "Successfully updated time slot");
-    })
-    .catch((error) => {
-      console.log("Update Time Slot Error", error.response);
-      setDateTimeModalVisible(false);
-      setLoader(false)
-      Alert.alert("Error", "Failed to update time slot");
-    });
+      .then((response) => {
+        console.log("Update Time Slot", response.data);
+        setDateTimeModalVisible(false);
+        setLoader(false);
+        getsingleOrderDetailsfunc();
+        Alert.alert("Success", "Successfully updated time slot");
+      })
+      .catch((error) => {
+        console.log("Update Time Slot Error", error.response);
+        setDateTimeModalVisible(false);
+        setLoader(false);
+        Alert.alert("Error", "Failed to update time slot");
+      });
   };
-  
+
   // Flatten data for ScrollView approach
-  const flattenedData = timeSlotData.flatMap(dateObj => {
+  const flattenedData = timeSlotData.flatMap((dateObj) => {
     return [
-      { type: 'header', day: dateObj.day, date: dateObj.date },
-      ...dateObj.slots.map(slot => ({ 
-        type: 'slot', 
-        ...slot, 
-        day: dateObj.day, 
-        date: dateObj.date 
-      }))
+      { type: "header", day: dateObj.day, date: dateObj.date },
+      ...dateObj.slots.map((slot) => ({
+        type: "slot",
+        ...slot,
+        day: dateObj.day,
+        date: dateObj.date,
+      })),
     ];
   });
   useEffect(() => {
@@ -982,21 +1023,21 @@ const OrderDetails = ({ route }) => {
           </Text>
         </Text>
 
-        {status != "4" || status!="5" ?
-        <TouchableOpacity onPress={() => fetchTimeSlot()}>
-          <Text
-            style={{
-              color: "#0384d5",
-              alignSelf: "flex-end",
-              marginRight: 20,
-              fontWeight: "bold",
-              fontSize: 18,
-            }}
-          >
-            Update Time Slot
-          </Text>
-        </TouchableOpacity>
-        :null}
+        {status != "4" || status != "5" ? (
+          <TouchableOpacity onPress={() => fetchTimeSlot()}>
+            <Text
+              style={{
+                color: "#0384d5",
+                alignSelf: "flex-end",
+                marginRight: 20,
+                fontWeight: "bold",
+                fontSize: 18,
+              }}
+            >
+              Update Time Slot
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {status === "3" ? (
@@ -1084,11 +1125,21 @@ const OrderDetails = ({ route }) => {
       )}
 
       <View>
-      {(status === "4" ) && (
-            <View style={{backgroundColor:"green",padding:10,margin:10,borderRadius:10,alignItems:"center"}}>
-            <Text style={{color:"white",fontSize:17,fontWeight:"bold"}}>Order Delivered Successfully</Text>
-            </View>
-          )}
+        {status === "4" && (
+          <View
+            style={{
+              backgroundColor: "green",
+              padding: 10,
+              margin: 10,
+              borderRadius: 10,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 17, fontWeight: "bold" }}>
+              Order Delivered Successfully
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.actionButtons}>
