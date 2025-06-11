@@ -505,7 +505,7 @@ const OrderDetails = ({ route }) => {
     try {
       const response = await axios.post(
         BASE_URL + `order-service/reject_orders`,
-        { orderId: id, cancelReason: rejectReason },
+        {orderId: id, cancelReason: rejectReason },
         {
           headers: {
             Authorization: `Bearer ${accessToken.token}`,
@@ -632,11 +632,17 @@ const OrderDetails = ({ route }) => {
             deliveryBoyId,
             customerMobile: orderData.customerMobile || "unknown",
           }
-        : {
+        :
+        status==="3"? {
             orderId: id,
             deliverBoyId: deliveryBoyId,
             customerMobile: orderData.customerMobile || "unknown",
-          };
+          }:
+          status==="PickeUp"?{
+               "deliveryBoyId":deliveryBoyId,
+              "orderId": id
+          }:null
+
 
     console.log({ data });
     setSubmitLoader(true);
@@ -646,9 +652,9 @@ const OrderDetails = ({ route }) => {
       //     ? `${BASE_URL}order-service/orderIdAndDbId`
       //     : `${BASE_URL}order-service/reassignOrderToDb`
       //   :
-      status === "2"
+     (status === "2" ||  status === "1")
         ? `${BASE_URL}order-service/orderIdAndDbId`
-        : `${BASE_URL}order-service/reassignOrderToDb`;
+        : status==="3"?`${BASE_URL}order-service/reassignOrderToDb`:status==="PickeUp"?`${BASE_URL}order-service/swappingDeliveryBoyIds`:"";
 
     try {
       const response = await axios.post(orderApiUrl, data, {
@@ -1146,7 +1152,7 @@ const OrderDetails = ({ route }) => {
         {(status === "1" ||
           status === "2" ||
           status === "3" ||
-          status === "Picked up") && (
+          status === "PickedUp") && (
           <TouchableOpacity
             style={[
               styles.rejectButton,
@@ -1170,7 +1176,7 @@ const OrderDetails = ({ route }) => {
             <Text style={styles.rejectButtonText}>Re-Accept</Text>
           </TouchableOpacity>
         )}
-        {status === "1" && (
+        {/* {status === "1" && (
           <>
             {acceptLoader == false ? (
               <TouchableOpacity
@@ -1193,9 +1199,9 @@ const OrderDetails = ({ route }) => {
                 <ActivityIndicator size="small" color="#FFFFFF" />
               </View>
             )}
-          </>
-        )}
-        {status === "2" && (
+          </> */}
+        {/* )} */}
+        {status === "1" && (
           <>
             {assignLoader == false ? (
               <TouchableOpacity
@@ -1218,7 +1224,7 @@ const OrderDetails = ({ route }) => {
           </>
         )}
 
-        {status === "3" && (
+        {status === "3" || status==="PickedUp" && (
           <>
             {assignLoader == false ? (
               <TouchableOpacity
@@ -1296,7 +1302,7 @@ const OrderDetails = ({ route }) => {
                     style={styles.assignButton}
                   >
                     <Text style={styles.buttonText}>
-                      {status === "2" ? "Assign" : "Re-Assign"}
+                      {status === "1" ? "Assign" : "Re-Assign"}
                     </Text>
                   </TouchableOpacity>
                 ) : (

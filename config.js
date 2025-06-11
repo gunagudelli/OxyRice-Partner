@@ -20,7 +20,7 @@ const config=(value)=>{
 
 export default config();    
 
-export const userStage="Live" // Test or Live
+export const userStage="Live"
 
 
 

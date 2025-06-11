@@ -94,7 +94,7 @@ const AppUpdateScreen = () => {
         // Parse the server version as integer for proper comparison
         const latestVersionNum = parseInt(latestVersion.version, 10);
         
-        console.log("Latest version from server:", latestVersionNum);
+        // console.log("Latest version from server:", latestVersionNum);
         
         // Convert timestamp to readable date if it exists
         let releaseDate = "Unknown";

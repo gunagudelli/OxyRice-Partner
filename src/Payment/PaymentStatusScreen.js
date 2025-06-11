@@ -15,7 +15,7 @@ import axios from "axios";
 import BASE_URL from "../../config";
 import { useSelector } from "react-redux";
 
-export default function PaymentStatusControlScreen() {
+export default function PaymentStatusScreen () {
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [paymentOptions, setPaymentOptions] = useState([]);
@@ -283,3 +283,15 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
 });
+
+//  import React from "react";
+
+//  const PaymentStatusScreen = () => {
+//   return (
+//     <View>
+//       <Text>Payment Status Screen</Text>
+//     </View>
+//   );
+//  }
+
+//  export default PaymentStatusScreen;

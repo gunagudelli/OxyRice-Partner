@@ -24,7 +24,7 @@ const NetworkAlert = () => {
   
   // Separated network checking logic for better organization and debugging
   const checkNetworkStatus = (state) => {
-    console.log('Network state:', state);
+    // console.log('Network state:', state);
     
     // Update network type (wifi or mobile)
     setNetworkType(state.type);
@@ -59,27 +59,27 @@ const NetworkAlert = () => {
       isSlow = true;
     }
     
-    console.log('Network analysis:', { isDisconnected, isSlow, prevStatus: prevStatusRef.current });
+    // console.log('Network analysis:', { isDisconnected, isSlow, prevStatus: prevStatusRef.current });
     
     const prevStatus = prevStatusRef.current;
 
     if (isDisconnected) {
       if (prevStatus !== 'disconnected') {
-        console.log('Setting status to disconnected');
+        // console.log('Setting status to disconnected');
         setNetworkStatus('disconnected');
         prevStatusRef.current = 'disconnected';
         setModalVisible(true);
       }
     } else if (isSlow) {
       if (prevStatus !== 'slow') {
-        console.log('Setting status to slow');
+        // console.log('Setting status to slow');
         setNetworkStatus('slow');
         prevStatusRef.current = 'slow';
         setModalVisible(true);
       }
     } else if (prevStatus === 'disconnected' || prevStatus === 'slow') {
       // We were offline/slow before, now we're back
-      console.log('Setting status to restored');
+      // console.log('Setting status to restored');
       setNetworkStatus('restored');
       prevStatusRef.current = 'connected';
       setModalVisible(true);

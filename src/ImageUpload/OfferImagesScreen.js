@@ -11,12 +11,12 @@ import {
   FlatList,
   Switch,
   RefreshControl,
-  Clipboard,
   Dimensions,
   Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+// import * as Clipboard from 'expo-clipboard';  
 import BASE_URL from "../../config";
 
 const { width } = Dimensions.get('window');
@@ -75,7 +75,7 @@ const OfferImagesScreen = ({ navigation }) => {
 
   const copyImageUrl = async (url) => {
     try {
-      await Clipboard.setString(url);
+      await Clipboard.setStringAsync(url);
       Alert.alert("Success", "Image URL copied to clipboard!");
     } catch (error) {
       Alert.alert("Error", "Failed to copy URL to clipboard");
@@ -120,12 +120,14 @@ const OfferImagesScreen = ({ navigation }) => {
           onPress={() => openImageModal(item.imageUrl)}
           style={styles.thumbnailContainer}
         >
-          <Image 
-            source={{ uri: item.imageUrl }}
-            style={styles.thumbnail}
-            resizeMode="cover"
-            onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
-          />
+        <Image
+  source={{ uri: item.imageUrl || "https://via.placeholder.com/70" }}
+  style={styles.thumbnail}
+  resizeMode="cover"
+  onError={(e) => {
+    console.log('Image loading error:', e.nativeEvent.error);
+  }}
+/>
           <View style={styles.previewOverlay}>
             <Ionicons name="eye" size={18} color="#fff" />
             <Text style={styles.previewText}>Preview</Text>
@@ -221,7 +223,7 @@ const OfferImagesScreen = ({ navigation }) => {
             <Ionicons name="close-circle" size={36} color="#fff" />
           </TouchableOpacity>
           {selectedImage && (
-                          <Image
+            <Image
               source={{ uri: selectedImage }}
               style={styles.fullImage}
               resizeMode="contain"
@@ -383,53 +385,48 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
   },
-  imageId: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  idLabel: {
-    color: '#616161',
-    fontWeight: '400',
-  },
-  idValue: {
-    color: '#212121',
-    fontWeight: '700', // Bold for ID value
-  },
   urlPreview: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 6,
-    padding: 8,
+    maxHeight: 40,
+    overflow: 'hidden',
   },
   urlText: {
-    fontSize: 12,
-    color: '#757575',
+    fontSize: 13,
+    color: '#555',
   },
   actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     marginTop: 8,
   },
   copyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
-    borderRadius: 6,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#e0f2f1',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
   },
   actionButtonText: {
-    color: '#4a90e2',
     marginLeft: 6,
+    color: '#00796b',
     fontWeight: '500',
+  },
+  imageId: {
+    fontSize: 14,
+    color: '#444',
+  },
+  idValue: {
+    fontWeight: '700',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: 'rgba(0,0,0,0.9)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   fullImage: {
     width: width * 0.9,
     height: width * 0.9,
+    borderRadius: 12,
   },
   closeButtonContainer: {
     position: 'absolute',

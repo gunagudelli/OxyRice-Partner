@@ -36,12 +36,13 @@ const COLORS = {
 
 const Items = () => {
   const userData = useSelector((state) => state.counter);
-  console.log({ userData });
+  // console.log({ userData });
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [price, setPrice] = useState("");
   const [mrp, setMrp] = useState("");
+  const [buyingPrice, setBuyingPrice] = useState("");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -142,8 +143,9 @@ const Items = () => {
 
   const openUpdatePriceModal = (item) => {
     setSelectedItem(item);
-    setMrp(item.itemMrp.toString());
-    setPrice(item.itemPrice.toString());
+    setMrp(item.itemMrp);
+    setPrice(item.itemPrice);
+    setBuyingPrice(item.itemBuyingPrice);
     setModalVisible(true);
   };
 
@@ -156,6 +158,7 @@ const Items = () => {
       active: selectedItem.active,
       itemId: selectedItem.itemId,
       itemPrice: parseFloat(price),
+      itemBuyingPrice: parseFloat(buyingPrice),
     };
 
     console.log({ data });
@@ -169,7 +172,7 @@ const Items = () => {
       fetchItems();
     } catch (error) {
       Alert.alert("Error", "Failed to update price");
-      console.error("Error updating price:", error);
+      console.error("Error updating price:", error.response);
     } finally {
       setUpdating(false);
     }
@@ -191,22 +194,28 @@ const Items = () => {
     }
   };
 
-  const validatePrices = () => {
-    const priceValue = parseFloat(price);
-    const mrpValue = parseFloat(mrp);
+const validatePrices = () => {
+  const priceValue = parseFloat(price);
+  const mrpValue = parseFloat(mrp);
+  const buyingValue = parseFloat(buyingPrice);
 
-    if (!price || !mrp || isNaN(priceValue) || isNaN(mrpValue)) {
-      Alert.alert("Error", "Please enter valid prices");
-      return false;
-    }
+  if (!price || !mrp || !buyingPrice || isNaN(priceValue) || isNaN(mrpValue) || isNaN(buyingValue)) {
+    Alert.alert("Error", "Please enter valid MRP, Price, and Buying Price");
+    return false;
+  }
 
-    if (priceValue >= mrpValue) {
-      Alert.alert("Error", "Price should be less than MRP");
-      return false;
-    }
+  if (priceValue >= mrpValue) {
+    Alert.alert("Error", "Selling price should be less than MRP");
+    return false;
+  }
 
-    return true;
-  };
+  if (buyingValue > priceValue) {
+    Alert.alert("Error", "Buying price should be less than Selling price");
+    return false;
+  }
+
+  return true;
+};
 
   const formatPrice = (price) => parseFloat(price).toFixed(2);
 
@@ -228,12 +237,18 @@ const Items = () => {
           <View style={styles.priceRow}>
             <Text style={styles.priceText}>₹{formatPrice(item.itemPrice)}</Text>
             <Text style={styles.mrpText}>₹{formatPrice(item.itemMrp)}</Text>
+            
             <View style={styles.discountBadge}>
               <Text style={styles.discountText}>
                 {calcDiscount(item.itemMrp, item.itemPrice)}% off
               </Text>
             </View>
           </View>
+          <View style={styles.priceRow}>
+            <Text style={styles.buyingPriceText}>
+              buyingPrice : ₹ {formatPrice(item.itemBuyingPrice)}
+            </Text>
+            </View>
 
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
@@ -270,13 +285,15 @@ const Items = () => {
               )}
             </TouchableOpacity>
           ) : (
-            <View
+            <TouchableOpacity
               style={[
                 styles.statusButton,
                 {
                   backgroundColor: item.active ? COLORS.success : COLORS.danger,
                 },
               ]}
+                            onPress={() => toggleActiveStatus(item)}
+
             >
               {toggling && toggleItemId === item.itemId ? (
                 <ActivityIndicator color="#fff" size="small" />
@@ -285,7 +302,7 @@ const Items = () => {
                   {item.active ? "Active" : "Inactive"}
                 </Text>
               )}
-            </View>
+            </TouchableOpacity>
           )}
           <TouchableOpacity
             onPress={() => openUpdatePriceModal(item)}
@@ -424,8 +441,21 @@ const Items = () => {
                   placeholder="Enter selling price"
                 />
               </View>
+ 
             </View>
-
+             <View style={styles.inputGroup}>
+              <Text style={styles.label}>buyingPrice(₹)</Text>
+              <View style={styles.inputWrapper}>
+                <Icon name="currency-rupee" size={20} color={COLORS.text} />
+                <TextInput
+                  style={styles.input}
+                  value={buyingPrice}
+                  onChangeText={setBuyingPrice}
+                  keyboardType="numeric"
+                  placeholder="Enter selling price"
+                />
+              </View>
+ </View>
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
@@ -567,10 +597,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  buyingPriceText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: COLORS.textSecondary, 
+  },
   mrpText: {
     fontSize: 14,
     color: COLORS.textSecondary,
     textDecorationLine: "line-through",
+  },
+  buyingPrice: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textDecorationLine: "line-through",
+    marginLeft: 8,
   },
   discountBadge: {
     backgroundColor: "#E6F7EE",

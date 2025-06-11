@@ -82,7 +82,7 @@ const { width } = Dimensions.get('window');
 
 export default function DealTabs({ route }) {
   const { isTestOrder } = route.params;
-  
+
   // Calculate tabBarItemWidth for exactly 3 tabs visible at once
   const tabBarItemWidth = width / 3;
   
