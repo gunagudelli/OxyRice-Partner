@@ -626,7 +626,7 @@ const OrderDetails = ({ route }) => {
     console.log("DeliveryBoy Id:", deliveryBoyId);
 
     let data =
-      status === "2"
+      status === "1" || status === "2"
         ? {
             orderId: id,
             deliveryBoyId,
@@ -652,7 +652,7 @@ const OrderDetails = ({ route }) => {
       //     ? `${BASE_URL}order-service/orderIdAndDbId`
       //     : `${BASE_URL}order-service/reassignOrderToDb`
       //   :
-     (status === "2" ||  status === "1")
+    status === "1"
         ? `${BASE_URL}order-service/orderIdAndDbId`
         : status==="3"?`${BASE_URL}order-service/reassignOrderToDb`:status==="PickeUp"?`${BASE_URL}order-service/swappingDeliveryBoyIds`:"";
 

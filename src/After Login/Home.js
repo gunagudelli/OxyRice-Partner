@@ -32,7 +32,7 @@ const HomeScreen = ({ navigation }) => {
   const [dashboardMetrics, setDashboardMetrics] = useState({
     orders: {
       new: 0,
-      accepted: 0,
+      // accepted: 0,
       assigned: 0,
       pickedUp: 0,
       total: 0,
@@ -61,7 +61,7 @@ const HomeScreen = ({ navigation }) => {
       // Perform parallel API requests using axios
      const [
       newOrdersResponse,
-      acceptedOrdersResponse,
+      // acceptedOrdersResponse,
       assignedOrdersResponse,
       pickedUpOrdersResponse,
       exchangeOrdersResponse, // Fixed variable name (was EXCHANGEREQUESTEDResponse)
@@ -72,10 +72,10 @@ const HomeScreen = ({ navigation }) => {
         `${BASE_URL}order-service/getAllOrdersBasedOnStatus?orderStatus=1`,
         { headers }
       ),
-      axios.get(
-        `${BASE_URL}order-service/getAllOrdersBasedOnStatus?orderStatus=2`,
-        { headers }
-      ),
+      // axios.get(
+      //   `${BASE_URL}order-service/getAllOrdersBasedOnStatus?orderStatus=2`,
+      //   { headers }
+      // ),
       axios.get(
         `${BASE_URL}order-service/getAllOrdersBasedOnStatus?orderStatus=3`,
         { headers }
@@ -118,11 +118,11 @@ const HomeScreen = ({ navigation }) => {
       }
     };
 
-    newMetrics.orders.new = processOrders(newOrdersResponse, "new");
-    newMetrics.orders.assigned += processOrders(
-      acceptedOrdersResponse,
-      "accepted"
-    );
+    // newMetrics.orders.new = processOrders(newOrdersResponse, "new");
+    // newMetrics.orders.assigned += processOrders(
+    //   acceptedOrdersResponse,
+    //   "accepted"
+    // );
     newMetrics.orders.assigned += processOrders(
       assignedOrdersResponse,
       "assigned"
@@ -392,6 +392,21 @@ if (exchangeOrdersResponse.status === "fulfilled") {
         color: "#2196F3",
         onPress: () => navigation.navigate("Products"),
       },
+     
+      // {
+      //   id: 3,
+      //   title: "Categories",
+      //   icon: "pricetags-outline",
+      //   color: "#9C27B0",
+      //   onPress: () => navigation.navigate("CategoriesScreen"),
+      // },
+      // {
+      //   id: 4,
+      //   title: "Image Upload",
+      //   icon: "image-outline",
+      //   color: "#795548",
+      //   onPress: () => navigation.navigate("OfferImagesScreen"),
+      // }
       // {
       //   id: 2,
       //   title: "Split Bags",
@@ -459,6 +474,27 @@ if (exchangeOrdersResponse.status === "fulfilled") {
         color: "#FF4245",
         onPress: () => navigation.navigate("PaymentStatus"),
       },
+        {
+        id: 4,
+        title: "Image Upload",
+        icon: "image-outline",
+        color: "#795548",
+        onPress: () => navigation.navigate("OfferImagesScreen"),
+      },
+       {
+        id: 2,
+        title: "AddstoreScreen",
+        icon: "add-circle-outline",
+        color: "#FF4081",
+        onPress: () => navigation.navigate("Add Store"),
+     },
+     {
+        id: 3,
+        title: "Store Details",
+        icon: "storefront-outline",
+        color: "#9C27B0",
+        onPress: () => navigation.navigate("Store Details"),
+     },
     ],
   };
 
@@ -597,7 +633,7 @@ if (exchangeOrdersResponse.status === "fulfilled") {
                 {isLoadingMetrics ? "-" : dashboardMetrics.orders.new}
               </Text>
             </View>
-            <View style={styles.breakdownItem}>
+            {/* <View style={styles.breakdownItem}>
               <View
                 style={[styles.statusIndicator, { backgroundColor: "#27ae60" }]}
               />
@@ -605,7 +641,7 @@ if (exchangeOrdersResponse.status === "fulfilled") {
               <Text style={styles.statusCount}>
                 {isLoadingMetrics ? "-" : dashboardMetrics.orders.accepted}
               </Text>
-            </View>
+            </View> */}
             <View style={styles.breakdownItem}>
               <View
                 style={[styles.statusIndicator, { backgroundColor: "#f39c12" }]}

@@ -70,7 +70,7 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { Dimensions, StyleSheet, View } from 'react-native';
 // Import all your tab screens here
 import NewOrders from './NewOrders';
-import AcceptedOrders from './AcceptedOrders';
+// import AcceptedOrders from './AcceptedOrders';
 import AssignedOrders from './AssignedOrders';
 import PickedUpOrders from './PickedupOrders';
 // import DeliveredOrders from './deliveredOrders';
@@ -108,12 +108,12 @@ export default function DealTabs({ route }) {
           options={{ tabBarLabel: 'New' }}
           initialParams={{ isTestOrder }}
         />
-        <Tab.Screen
+        {/* <Tab.Screen
           name="Accepted Orders"
           component={AcceptedOrders}
           options={{ tabBarLabel: 'Accepted' }}
           initialParams={{ isTestOrder }}
-        />
+        /> */}
         <Tab.Screen
           name="Assigned Orders"
           component={AssignedOrders}
