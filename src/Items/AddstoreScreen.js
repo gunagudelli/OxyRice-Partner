@@ -19,6 +19,7 @@ import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import BASE_URL from '../../config';
 
+
 const { width, height } = Dimensions.get('window');
 
 const AddstoreScreen = ({ navigation }) => {
@@ -30,6 +31,7 @@ const AddstoreScreen = ({ navigation }) => {
     address: '',
     description: '',
     isavailable: true,
+    register: true,
   });
   
   const [loading, setLoading] = useState(false);
@@ -127,7 +129,9 @@ const AddstoreScreen = ({ navigation }) => {
       data: storeResponse.data,
     });
 
-    if (storeResponse.status === 200 || storeResponse.status === 201) {
+    console.log('Store added successfully:', formData.register);
+
+    if ((storeResponse.status === 200 || storeResponse.status === 201) && formData.register) {
       const registrationApiUrl = `${BASE_URL}user-service/onlineRegistration`;
       const registrationData = {
         mobileNumber: formData.mobileNumber,
@@ -146,6 +150,28 @@ const AddstoreScreen = ({ navigation }) => {
       Alert.alert(
         'Success',
         'Store added and user registered successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setFormData({
+                referBy: '',
+                storeName: '',
+                ownerName: '',
+                mobileNumber: '',
+                address: '',
+                description: '',
+                isavailable: true,
+              });
+              navigation.goBack();
+            },
+          },
+        ]
+      );
+    }else{
+      Alert.alert(
+        'Success',
+        'Store added successfully!',
         [
           {
             text: 'OK',
@@ -348,6 +374,48 @@ const AddstoreScreen = ({ navigation }) => {
                 <Text style={[
                   styles.toggleText,
                   !formData.isavailable && styles.toggleTextActive
+                ]}>
+                  No
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Register or not */}
+
+           <View style={styles.inputContainer}>
+            <Text style={styles.label}>
+              Register Store <Text style={styles.required}>*</Text>
+            </Text>
+            
+            <View style={styles.toggleContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  formData.register && styles.toggleActive
+                ]}
+                onPress={() => handleInputChange('register', true)}
+                disabled={loading}
+              >
+                <Text style={[
+                  styles.toggleText,
+                  formData.register && styles.toggleTextActive
+                ]}>
+                  Yes
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  !formData.register && styles.toggleInactive
+                ]}
+                onPress={() => handleInputChange('register', false)}
+                disabled={loading}
+              >
+                <Text style={[
+                  styles.toggleText,
+                  !formData.register && styles.toggleTextActive
                 ]}>
                   No
                 </Text>

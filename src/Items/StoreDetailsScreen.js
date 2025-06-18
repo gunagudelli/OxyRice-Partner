@@ -80,7 +80,8 @@ const StoreDetailsScreen = ({ navigation }) => {
       };
 
       const response = await axios.get(apiUrl, config);
-
+      console.log("API Response:", response.data);
+      
       debugLog("API Response Success", {
         status: response.status,
         dataLength: response.data?.length || 0,
@@ -161,6 +162,7 @@ const StoreDetailsScreen = ({ navigation }) => {
       storeName: store.storeName,
       customerId: customerId,
       hasCustomerId: !!customerId,
+      address: store.address,
     });
 
     // Check if customerId exists

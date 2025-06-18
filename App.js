@@ -67,8 +67,8 @@ export default function App() {
       <NetworkAlert />
       <NavigationContainer>
         <Stack.Navigator
-          // initialRouteName="App Update"
-          initialRouteName='Store Details'
+          initialRouteName="App Update"
+          // initialRouteName='Store Details'
           // initialRouteName="All Orders"
           screenOptions={{
             headerStyle: {
@@ -142,7 +142,12 @@ export default function App() {
           <Stack.Screen name="PaymentStatus" component={PaymentStatusScreen} />
           <Stack.Screen name="ImageUploader" component={ImageUploader} />
           <Stack.Screen name="Add Store" component={AddstoreScreen} />
-          <Stack.Screen name="Store Details" component={StoreDetailsScreen} />
+          <Stack.Screen name="Store Details" component={StoreDetailsScreen} options={{
+              headerShown: true,
+
+              headerRight: () => <Logout />,
+              headerLeft: () => <></>,
+            }}/>
           <Stack.Screen name="Checkout" component={Checkout}  />
           <Stack.Screen name="Cart" component={CartScreen} />
           <Stack.Screen name="Dashboard" component={DashboardScreen} />

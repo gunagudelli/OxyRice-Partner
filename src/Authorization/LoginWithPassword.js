@@ -57,8 +57,10 @@ const LoginWithPassword = () => {
         if(token.primaryType === "SELLER") {
         navigation.navigate("Home");
         }
-        else{
+        else if(token.primaryType === "SALESEXECUTIVE") {
         navigation.navigate("Weekly Orders", { isTestOrder: false });
+        }else {
+        navigation.navigate("Store Details");
         }
       } else {
         console.log("No saved token found");
@@ -126,8 +128,10 @@ const LoginWithPassword = () => {
               onPress: () => {
                 if (isSeller) {
                   navigation.navigate("Home");
-                } else {
-                  navigation.navigate("Weekly Orders", { isTestOrder: false });
+                }  else if(response.data.primaryType === "SALESEXECUTIVE") {
+                navigation.navigate("Weekly Orders", { isTestOrder: false });
+                }else {
+                navigation.navigate("Store Details");
                 }
               },
             },

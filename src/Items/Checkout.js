@@ -294,12 +294,16 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
+  Modal,
+  Platform
 } from "react-native";
 import axios from "axios";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { useSelector } from "react-redux";
 import BASE_URL from "../../config";
+import encryptEas  from "../component/encryptEas";
+import  decryptEas  from "../component/decryptEas";
 
 const Checkout = ({ route }) => {
   const navigation = useNavigation();
@@ -307,13 +311,14 @@ const Checkout = ({ route }) => {
 
   // Get route params
   const {
-    cartItems = [],
+    // cartItems = [],
     grandTotal = 0,
     storeDetails = {},
     customerId,
     storeId,
     nofDaysAfterMeetAgain = 0,
     userCartInfo = null,
+    address
   } = route.params || {};
 
   // States
@@ -323,14 +328,52 @@ const Checkout = ({ route }) => {
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("COD"); // COD, ONLINE
   const [userInfo, setUserInfo] = useState(null);
+  const [cartItems, setCartItems] = useState()
+  const [subtotal, setSubtotal] = useState(0);
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [tax, setTax] = useState(0);
+  const [totalAmount, setGrandTotal] = useState(0);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const[qrCode,setQrCode]=useState('')
+  const[qrShowModal,setQrShowModal]=useState(false)
+  const [selectedPaymentMode, setSelectedPaymentMode] = useState(null);
+  const [coordinates, setCoordinates] = useState(null);
+  const [transactionId, setTransactionId] = useState();
+  const [paymentId, setPaymentId] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState("1");
+  const [fullAddress, setFullAddress] = useState("");
+  const [pinCode, setPinCode] = useState("");
 
-  useEffect(() => {
-    console.log("Checkout Screen mounted with params:", route.params);
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset state when screen is focused
+      setLoading(false);
+      setOrderProcessing(false);
+      setDeliveryAddress(route.params?.storeDetails?.address || "");
+      setSpecialInstructions("");
+      setPaymentMethod("COD");
+      setUserInfo(null);
+      setCartItems([]);
+      setSubtotal(0);
+      setDeliveryFee(0);
+      setTax(0);
+      setGrandTotal(0);
+      fetchCartItems();
+      fetchUserDetails();
+
+      console.log("route.params", route.params?.storeDetails?.address);
+      
+      
     if (userCartInfo) {
       setUserInfo(userCartInfo);
     }
-    fetchUserDetails();
-  }, []);
+    }, [])
+  );
+
+  useEffect(() => {
+    // Calculate totals when cartItems or userCartInfo changes
+    calculateTotals();
+  }, [subtotal, deliveryFee, tax, cartItems, userCartInfo]);
 
   // Fetch additional user details if needed
   const fetchUserDetails = async () => {
@@ -345,10 +388,30 @@ const Checkout = ({ route }) => {
       setLoading(false);
     }
   };
+const fetchCartItems = async () => {
+    if (!storeId) {
+      console.warn("No storeId provided, cannot fetch cart items.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await axios.get(`${BASE_URL}product-service/getStore/${storeId}`);
+      // console.log("Cart items fetched:", response.data[0].listItems);
+      setCartItems(
+                  (response.data[0].listItems || []).filter(
+                    item => item.status === '' || item.status === 'OPEN'
+                  )
+                );
+    } catch (error) {
+      console.error("Error fetching cart items:", error);
+      Alert.alert("Error", "Failed to fetch cart items. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Calculate totals
   const calculateTotals = async() => {
-    
 
     try {
       const response = await axios.post(`${BASE_URL}cart-service/cart/offlineSales`,{
@@ -357,18 +420,29 @@ const Checkout = ({ route }) => {
       console.log(response.data);
       
       const subtotal = cartItems.reduce((sum, item) => {
-      return sum + (item.effectivePrice * item.cartQuantity);
+        if (!item.offerPrice || !item.qty) {
+          console.warn("Item missing offerPrice or qty:", item);
+          return 
+        }
+        // console.log(sum+ (item.offerPrice * item.qty));
+        const price = sum + (item.offerPrice * item.qty)
+      return price
     }, 0);
-      const deliveryFee = subtotal > 500 ? 0 : 0; // Free delivery above ₹500
-    const tax = response.data.totalGstSum; // 5% tax
+      const deliveryFee = subtotal > 500 ? 50.123654 : 0; // Free delivery above ₹500
+    const tax = response.data.totalGstSum || 0; // 5% tax
     const total = subtotal + deliveryFee + tax;
+      setSubtotal(subtotal);
+      setDeliveryFee(deliveryFee);
+      setTax(tax);
+      setGrandTotal(total);
 
-    return {
-      subtotal,
-      deliveryFee,
-      tax,
-      total,
-    };
+      console.log("Totals calculated:", { 
+        subtotal,
+        deliveryFee,
+        tax,
+        total
+      });
+
     } catch (error) {
       
     }
@@ -376,108 +450,400 @@ const Checkout = ({ route }) => {
     
   };
 
-  const totals = calculateTotals();
+const getAddressFromCoordsGoogle = async (lat, lon) => {
+  const apiKey = 'AIzaSyAM29otTWBIAefQe6mb7f617BbnXTHtN0M'; // Add your key here
 
-  // Place Order
-  const placeOrder = async () => {
-    if (!deliveryAddress.trim()) {
-      Alert.alert("Missing Information", "Please enter your delivery address");
-      return;
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`
+    );
+    const data = await response.json();
+
+    if (data.status === 'OK') {
+      const result = data.results[0];
+      const fullAddress = result.formatted_address;
+
+      let pinCode = '';
+      result.address_components.forEach(comp => {
+        if (comp.types.includes('postal_code')) {
+          pinCode = comp.long_name;
+        }
+      });
+
+      console.log("Full Address:", fullAddress);
+      console.log("Pincode:", pinCode);
+      setFullAddress(fullAddress);
+      setPinCode(pinCode);
+      return pinCode
+    } else {
+      console.log("No results found");
     }
+  } catch (error) {
+    console.error("Error with Google Geocoding API:", error);
+  }
+};
+
+
+
+
+  const placeOrder = async () => {
+    // if (!deliveryAddress.trim()) {
+    //   Alert.alert("Missing Information", "Please enter your delivery address");
+    //   return;
+    // }
+    const GOOGLE_MAPS_API_KEY = "AIzaSyAM29otTWBIAefQe6mb7f617BbnXTHtN0M"
+    const today = new Date();
+
+    const day = String(today.getDate()).padStart(2, "0");
+    const month = String(today.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const year = today.getFullYear();
+
+    const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
+
+    let location = null;
+    let pinCode = null;
+
+      try {
+    const geocodeURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+      deliveryAddress
+    )}&key=${GOOGLE_MAPS_API_KEY}`;
+
+    const geoResponse = await axios.get(geocodeURL);
+    if (
+      geoResponse.data.status === "OK" &&
+      geoResponse.data.results &&
+      geoResponse.data.results.length > 0
+    ) {
+      location = geoResponse.data.results[0].geometry.location;
+      console.log("Coordinates:", location);
+     pinCode =  await getAddressFromCoordsGoogle(location.lat, location.lng)
+
+
+      setCoordinates(location);
+    } else {
+      console.error("Geocoding failed:", geoResponse.data);
+    }
+
 
     try {
       setOrderProcessing(true);
-
-      const orderData = {
-        customerId: customerId || storeDetails.userId,
-        storeId: storeId || storeDetails.storeId,
-        items: cartItems.map(item => ({
-          itemId: item.itemId,
-          itemName: item.itemName,
-          quantity: item.cartQuantity,
-          price: item.effectivePrice,
-          originalPrice: item.originalPrice,
-          offerPrice: item.offerPrice,
-          weight: item.weight,
-          units: item.units,
-        })),
-        subtotal: totals.subtotal,
-        deliveryFee: totals.deliveryFee,
-        tax: totals.tax,
-        grandTotal: totals.total,
-        deliveryAddress: deliveryAddress,
-        specialInstructions: specialInstructions,
-        paymentMethod: paymentMethod,
-        nofDaysAfterMeetAgain: nofDaysAfterMeetAgain,
-        orderDate: new Date().toISOString(),
-      };
-
+      const orderData = 
+        {
+  "address": deliveryAddress,
+  "amount": totalAmount,
+  "customerId": customerId,
+  "flatNo": "",
+  "landMark": "",
+  "orderStatus": paymentMethod,
+  "pincode": pinCode,
+  latitude: location.lat,
+  longitude: location.lng,
+  "area": "",
+  "houseType": "",
+  "residenceName": "",
+  "walletAmount": 0,
+  "couponCode": null,
+  "couponValue": "",
+  "deliveryBoyFee": deliveryFee,
+  "subTotal": subtotal,
+  "gstAmount": tax,
+  "orderFrom": Platform.OS === "android" ? "ANDROID" : "IOS",
+  "dayOfWeek": weekday,
+  "expectedDeliveryDate": day + "-" + month + "-" + year,
+  "timeSlot": "10:00 AM - 07:00 PM",
+  "storeId": storeId
+}
       console.log("Placing order with data:", orderData);
 
-      // API call to place order
-      const response = await axios.post(
-        `${BASE_URL}order-service/orders/place`,
-        orderData,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
-
-      console.log("Order placed successfully:", response.data);
-
-      // Show success message and navigate
-      Alert.alert(
-        "Order Placed Successfully!",
-        `Your order has been placed successfully. Order ID: ${response.data.orderId || 'N/A'}`,
-        [
-          {
-            text: "View Orders",
-            onPress: () => {
-              navigation.reset({
-                index: 0,
-                routes: [
-                  { 
-                    name: "Orders", 
-                    params: { 
-                      customerId: customerId || storeDetails.userId 
-                    }
-                  }
-                ],
-              });
+      const response = await axios.post(`${BASE_URL}order-service/orderPlacedOfflineStores`, orderData);
+      console.log("Order placed successfully:", response);
+       if(paymentMethod=="COD"){
+          Alert.alert("Order Placed Successfully", "Your order has been placed successfully.", 
+            [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.navigate("Store Details");
+              }
             }
-          },
-          {
-            text: "Continue Shopping",
-            onPress: () => {
-              navigation.reset({
-                index: 0,
-                routes: [
-                  { 
-                    name: "All Categories",
-                    params: { 
-                      storeDetails: storeDetails 
-                    }
-                  }
-                ],
-              });
-            }
+          ]
+        )
+          }else{
+            setTransactionId(response.data.paymentId);
+            paymentInitiation()
           }
-        ]
-      );
-
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error placing order:", error);
-      
       let errorMessage = "Failed to place order. Please try again.";
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
       Alert.alert("Order Failed", errorMessage);
-    } finally {
-      setOrderProcessing(false);
     }
+    finally {
+      setOrderProcessing(false);
+
+    }
+  } catch (error) { 
+    console.error("Geocoding error:", error);
+    Alert.alert("Error", "Failed to fetch coordinates. Please try again.");
+  }
   };
+
+  useEffect(() => {
+    if (
+      paymentStatus == "PENDING" ||
+      paymentStatus == "" ||
+      paymentStatus == null ||
+      paymentStatus == "INITIATED"
+    ) {
+      const data = setInterval(() => {
+        Requery(paymentId);
+      }, 4000);
+      return () => clearInterval(data);
+    } else {
+    }
+  }, [paymentStatus, paymentId]);
+
+const paymentInitiation=()=>{
+              const data = {
+                mid: "1152305",
+                // amount: couponValue==''?cartData?.amountToPay : total,
+                amount: 1,
+                merchantTransactionId: transactionId,
+                transactionDate: new Date(),
+                terminalId: "getepay.merchant128638@icici",
+                udf1: route.params.storeDetails.mobileNumber,
+                udf2: '',
+                udf3: '',
+                udf4: "",
+                udf5: "",
+                udf6: "",
+                udf7: "",
+                udf8: "",
+                udf9: "",
+                udf10: "",
+                ru: "https://app.oxybricks.world/interact/paymentreturn",
+                callbackUrl:
+                  "https://fintech.oxyloans.com/oxyloans/v1/user/getepay",
+                currency: "INR",
+                paymentMode: "ALL",
+                bankId: "",
+                txnType: "single",
+                productType: "IPG",
+                txnNote: "Rice Order In Live",
+                vpa: "Getepay.merchant129014@icici",
+              };
+              // console.log({ data });
+              getepayPortal(data);
+            //   GoogleAnalyticsService.purchase(
+            //     transactionId,
+            //     cartData,
+            //     couponValue==''?cartData?.amountToPay : total,
+            //     "ONLINE"
+            //   );
+}
+
+
+const getepayPortal = async (data) => {
+    // console.log("getepayPortal", data);
+    const JsonData = JSON.stringify(data);
+    // console.log("ytfddd");
+
+    var ciphertext = encryptEas(JsonData);
+    var newCipher = ciphertext.toUpperCase();
+
+    var myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    var raw = JSON.stringify({
+      mid: data.mid,
+      terminalId: data.terminalId,
+      req: newCipher,
+    });
+    // console.log("========");
+    var requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+    };
+    await fetch(
+      "https://portal.getepay.in:8443/getepayPortal/pg/generateInvoice",
+      requestOptions
+    )
+      .then((response) => response.text())
+      .then((result) => {
+        //  console.log("===getepayPortal result======")
+        //  console.log("result",result);
+        var resultobj = JSON.parse(result);
+        // console.log(resultobj);
+        var responseurl = resultobj.response;
+        var data = decryptEas(responseurl);
+        // console.log("===getepayPortal data======");
+        console.log({data});
+        data = JSON.parse(data);
+        setPaymentId(data.paymentId);
+        // paymentID = data.paymentId
+        Alert.alert(
+          "Cart Summary",
+          `The total amount for your cart is ₹${totalAmount}. Please proceed to checkout to complete your purchase.`,
+          [
+            {
+              text: "No",
+              onPress: () => {
+                setLoading(false);
+              },
+            },
+            {
+              text: "yes",
+              onPress: () => {
+                setQrCode(data.qrPath);
+                setQrShowModal(true)
+                Requery(data.paymentId);
+                setPaymentStatus(null);
+              },
+            },
+          ]
+        );
+      })
+      .catch((error) => {
+        console.log("getepayPortal", error.response);
+        setLoading(false);
+      });
+  };
+
+    function Requery(paymentId) {
+    if (
+      paymentStatus === "PENDING" ||
+      paymentStatus === "" ||
+      paymentStatus === null ||
+      paymentStatus === "INITIATED"
+    ) {
+      // console.log("Before.....",paymentId)
+
+      const Config = {
+        "Getepay Mid": 1152305,
+        "Getepay Terminal Id": "getepay.merchant128638@icici",
+        "Getepay Key": "kNnyys8WnsuOXgBlB9/onBZQ0jiYNhh4Wmj2HsrV/wY=",
+        "Getepay IV": "L8Q+DeKb+IL65ghKXP1spg==",
+      };
+
+      const JsonData = {
+        mid: Config["Getepay Mid"],
+        paymentId: parseInt(paymentId),
+        referenceNo: "",
+        status: "",
+        terminalId: Config["Getepay Terminal Id"],
+        vpa: "",
+      };
+
+      var ciphertext = encryptEas(
+        JSON.stringify(JsonData),
+        Config["Getepay Key"],
+        Config["Getepay IV"]
+      );
+
+      var newCipher = ciphertext.toUpperCase();
+
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+      myHeaders.append(
+        "Cookie",
+        "AWSALBAPP-0=remove; AWSALBAPP-1=remove; AWSALBAPP-2=remove; AWSALBAPP-3=remove"
+      );
+
+      var raw = JSON.stringify({
+        mid: Config["Getepay Mid"],
+        terminalId: Config["Getepay Terminal Id"],
+        req: newCipher,
+      });
+
+      var requestOptions = {
+        method: "POST",
+        headers: myHeaders,
+        body: raw,
+        redirect: "follow",
+      };
+
+      fetch(
+        "https://portal.getepay.in:8443/getepayPortal/pg/invoiceStatus",
+        requestOptions
+      )
+        .then((response) => response.text())
+        .then((result) => {
+          var resultobj = JSON.parse(result);
+          if (resultobj.response != null) {
+            // console.log("Requery ID result", paymentId);
+            var responseurl = resultobj.response;
+            // console.log({ responseurl });
+            var data = decryptEas(responseurl);
+            data = JSON.parse(data);
+            // console.log("Payment Result", data);
+            setPaymentStatus(data.paymentStatus);
+            // console.log(data.paymentStatus);
+            if (
+              data.paymentStatus == "SUCCESS" ||
+              data.paymentStatus == "FAILED"
+            ) {
+              // clearInterval(intervalId); 294182409
+              if (data.paymentStatus === "SUCCESS") {
+                                setQrShowModal(false)
+
+                axios({
+                  method: "get",
+                  url:
+                    BASE_URL +
+                    `/order-service/api/download/invoice?paymentId=${transactionId}&&userId=${customerId}`,
+                //   headers: {
+                //     "Content-Type": "application/json",
+                //     Authorization: Bearer ${token},
+                //   },
+                })
+                  .then((response) => {
+                    // console.log(response.data);
+                  })
+                  .catch((error) => {
+                    console.error("Error in payment confirmation:", error);
+                  });
+              }
+              axios({
+                method: "POST",
+                url: BASE_URL + "order-service/orderPlacedPaymet",
+                data: {
+                //   ...payload,
+                  paymentId: transactionId,
+                  paymentStatus: data.paymentStatus,
+                },
+                // headers: {
+                //   "Content-Type": "application/json",
+                //   Authorization: Bearer ${token},
+                // },
+              })
+                .then((secondResponse) => {
+                  console.log(
+                    "Order Placed with Payment API:",
+                    secondResponse.data
+                  );
+                 
+                  Alert.alert("Order Confirmed!", "Order Placed Successfully");
+                })
+                .catch((error) => {
+                  console.error("Error in payment confirmation:", error.response);
+                  setLoading(false);
+                });
+            } else {
+              setLoading(false);
+            }
+          }
+        })
+        .catch((error) => {
+          console.log("Payment Status", error);
+          setLoading(false);
+        });
+    }
+  }
 
   // Render cart item for checkout
   const renderCheckoutItem = ({ item }) => (
@@ -494,17 +860,17 @@ const Checkout = ({ route }) => {
           {item.offerPrice ? (
             <>
               <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
-              <Text style={styles.offerPrice}>₹{item.effectivePrice}</Text>
+              <Text style={styles.offerPrice}>₹{item.offerPrice}</Text>
             </>
           ) : (
-            <Text style={styles.price}>₹{item.effectivePrice}</Text>
+            <Text style={styles.price}>₹{item.offerPrice}</Text>
           )}
         </View>
       </View>
       <View style={styles.quantityContainer}>
-        <Text style={styles.quantity}>Qty: {item.cartQuantity}</Text>
+        <Text style={styles.quantity}>Qty: {item.qty}</Text>
         <Text style={styles.itemTotal}>
-          ₹{(item.effectivePrice * item.cartQuantity).toFixed(2)}
+          ₹{(item.offerPrice * item.qty).toFixed(2)}
         </Text>
       </View>
     </View>
@@ -540,7 +906,7 @@ const Checkout = ({ route }) => {
           <FlatList
             data={cartItems}
             renderItem={renderCheckoutItem}
-            keyExtractor={(item) => item.itemId?.toString()}
+            keyExtractor={(item,index) => index}
             scrollEnabled={false}
           />
         </View>
@@ -643,28 +1009,28 @@ const Checkout = ({ route }) => {
           <View style={styles.priceBreakdown}>
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>
-                Subtotal ({cartItems.length} items)
+                Subtotal{subtotal > 0 ? ` (${cartItems.length} items)` : ""}
               </Text>
-              <Text style={styles.priceValue}>₹{totals.subtotal.toFixed(2)}</Text>
+              <Text style={styles.priceValue}>₹{subtotal.toFixed(2) || 0}</Text>
             </View>
             
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Delivery Fee</Text>
-              <Text style={[styles.priceValue, totals.deliveryFee === 0 && styles.freeText]}>
-                {totals.deliveryFee === 0 ? "FREE" : `₹${totals.deliveryFee.toFixed(2)}`}
+              <Text style={[styles.priceValue, deliveryFee === 0 && styles.freeText]}>
+                {deliveryFee === "0.00" ? "FREE" : `₹${deliveryFee.toFixed(2) || 0}` }
               </Text>
             </View>
             
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Tax (5%)</Text>
-              <Text style={styles.priceValue}>₹{totals.tax.toFixed(2)}</Text>
+              <Text style={styles.priceValue}>₹{tax.toFixed(2) || 0}</Text>
             </View>
             
             <View style={styles.divider} />
             
             <View style={styles.priceRow}>
               <Text style={styles.totalLabel}>Total Amount</Text>
-              <Text style={styles.totalValue}>₹{totals.total.toFixed(2)}</Text>
+              <Text style={styles.totalValue}>₹{totalAmount.toFixed(2) || 0}</Text>
             </View>
           </View>
         </View>
@@ -676,7 +1042,7 @@ const Checkout = ({ route }) => {
       <View style={styles.bottomContainer}>
         <View style={styles.totalSummary}>
           <Text style={styles.payableLabel}>Total Payable</Text>
-          <Text style={styles.payableAmount}>₹{totals.total.toFixed(2)}</Text>
+          <Text style={styles.payableAmount}>₹{totalAmount.toFixed(2) ||0}</Text>
         </View>
         
         <TouchableOpacity
@@ -694,6 +1060,25 @@ const Checkout = ({ route }) => {
           )}
         </TouchableOpacity>
       </View>
+      <Modal
+        visible={qrShowModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setQrShowModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={styles.modalCloseButton}
+            onPress={() => setQrShowModal(false)}
+          >
+            <MaterialIcons name="close" size={24} color="#000" />
+          </TouchableOpacity>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Payment Rs.{totalAmount}</Text>
+                <Image source={{uri:qrCode}} style={{ width: 200, height: 200 }} />
+          </View>
+        </View>
+</Modal>
     </View>
   );
 };
@@ -871,11 +1256,15 @@ const styles = StyleSheet.create({
   priceLabel: {
     fontSize: 16,
     color: "#666",
+    fontWeight: "500",
+    width: "70%",
   },
   priceValue: {
     fontSize: 16,
     fontWeight: "600",
     color: "#1D1D1F",
+    width: "30%",
+    textAlign: "right",
   },
   freeText: {
     color: "#34C759",
@@ -889,11 +1278,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#1D1D1F",
+    width: "70%",
   },
   totalValue: {
     fontSize: 18,
     fontWeight: "700",
     color: "#007AFF",
+    width: "30%",
+    textAlign: "right",
   },
   bottomPadding: {
     height: 120,
@@ -941,6 +1333,42 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginLeft: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 20,
+    width: "80%",
+    maxWidth: 400,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  modalCloseButton: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    padding: 8,
+    backgroundColor: "white",
+    borderRadius: 20,
+    zIndex: 1,
   },
 });
 

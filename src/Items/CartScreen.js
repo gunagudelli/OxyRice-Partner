@@ -51,6 +51,8 @@ const CartScreen = ({ route }) => {
     const storeDetails = {
       storeId: storeId,
       userId: customerId,
+      storeName: route.params?.storeDetails.storeName || "Store",
+      address : route.params?.storeDetails.address || "Address not available",
     };
     navigation.navigate("All Categories", {
       storeDetails: storeDetails,
@@ -441,6 +443,24 @@ const CartScreen = ({ route }) => {
         >
           <MaterialIcons name="shopping-cart" size={20} color="#007AFF" />
           <Text style={styles.addMoreText}>Add More</Text>
+        </TouchableOpacity>
+         <TouchableOpacity
+          onPress={()=>navigation.navigate("Checkout", {
+        cartItems: [],
+        grandTotal: grandTotal,
+        storeDetails: {
+          storeId: storeId,
+          userId: customerId,
+          address: route.params?.storeDetails.address || "Address not available",
+        },
+        customerId: customerId, // Also passing as direct prop for fallback
+        storeId: storeId, // Also passing as direct prop for fallback
+        nofDaysAfterMeetAgain: nofDaysAfterMeetAgain,
+      })}
+          style={styles.addMoreButton}
+        >
+          <MaterialIcons name="shopping-cart" size={20} color="#007AFF" />
+          <Text style={styles.addMoreText}>checkout</Text>
         </TouchableOpacity>
       </View>
 
