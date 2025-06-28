@@ -52,7 +52,6 @@ const OrdersScreen = ({ orders }) => {
             <Text style={styles.emptyText}>No orders available.</Text>
           </View>
         }        
-
       />
     </View>
   );

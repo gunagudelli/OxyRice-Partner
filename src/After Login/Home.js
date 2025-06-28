@@ -18,10 +18,14 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useSelector } from "react-redux";
+import { useSelector,useDispatch } from "react-redux";
 import BASE_URL, { userStage } from "../../config";
 import Svg, { Circle, Text as SvgText } from "react-native-svg";
 import axios from "axios";
+
+import { clearAccessToken } from '../../Redux/Slice/authSlice'
+ // adjust path as needed
+
 
 const { width, height } = Dimensions.get("window");
 
@@ -29,6 +33,8 @@ const HomeScreen = ({ navigation }) => {
   const userData = useSelector((state) => state.counter);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [scaleAnimation] = useState(new Animated.Value(1));
+    const dispatch = useDispatch();
+
   const [dashboardMetrics, setDashboardMetrics] = useState({
     orders: {
       new: 0,
@@ -298,7 +304,7 @@ if (exchangeOrdersResponse.status === "fulfilled") {
         },
         {
           id: 2,
-          title: "Items ",
+          title: "Items",
           icon: "list-outline",
           color: "#2196F3",
           onPress: () => navigation.navigate("Products"),
@@ -392,21 +398,27 @@ if (exchangeOrdersResponse.status === "fulfilled") {
         color: "#2196F3",
         onPress: () => navigation.navigate("Products"),
       },
-     
-      // {
-      //   id: 3,
-      //   title: "Categories",
-      //   icon: "pricetags-outline",
-      //   color: "#9C27B0",
-      //   onPress: () => navigation.navigate("CategoriesScreen"),
-      // },
-      // {
-      //   id: 4,
-      //   title: "Image Upload",
-      //   icon: "image-outline",
-      //   color: "#795548",
-      //   onPress: () => navigation.navigate("OfferImagesScreen"),
-      // }
+      {
+        id: 2,
+        title: "Orders Report",
+        icon: "receipt-outline",
+        color: "#FF4081",
+        onPress: () => navigation.navigate("Orders Report"),
+      },
+       {
+        id: 3,
+        title: "Orders Stats",
+        icon: "trending-up-outline",
+        color: "green",
+        onPress: () => navigation.navigate("Orders Stats"),
+      },
+       {
+        id: 3,
+        title: "Pincode wise Orders",
+        icon: "location-outline",
+        color: "orange",
+        onPress: () => navigation.navigate("Pincode wise orders"),
+      },
       // {
       //   id: 2,
       //   title: "Split Bags",
@@ -474,27 +486,6 @@ if (exchangeOrdersResponse.status === "fulfilled") {
         color: "#FF4245",
         onPress: () => navigation.navigate("PaymentStatus"),
       },
-        {
-        id: 4,
-        title: "Image Upload",
-        icon: "image-outline",
-        color: "#795548",
-        onPress: () => navigation.navigate("OfferImagesScreen"),
-      },
-       {
-        id: 2,
-        title: "AddstoreScreen",
-        icon: "add-circle-outline",
-        color: "#FF4081",
-        onPress: () => navigation.navigate("Add Store"),
-     },
-     {
-        id: 3,
-        title: "Store Details",
-        icon: "storefront-outline",
-        color: "#9C27B0",
-        onPress: () => navigation.navigate("Store Details"),
-     },
     ],
   };
 
@@ -799,29 +790,48 @@ if (exchangeOrdersResponse.status === "fulfilled") {
                 <TouchableOpacity
                   style={styles.logoutButton}
                   onPress={() => {
-                    Alert.alert(
-                      "Logout",
-                      "🔒 Are you sure you want to log out from ASKΟXY.AI PARTNER?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Logout",
-                          onPress: async () => {
-                            try {
-                              await AsyncStorage.removeItem("accessToken");
-                              navigation.navigate("LoginWithPassword");
-                            } catch (error) {
-                              console.error("Logout error:", error);
-                              Alert.alert(
-                                "Error",
-                                "Failed to logout. Please try again."
-                              );
-                            }
-                          },
-                        },
-                      ],
-                      { cancelable: false }
-                    );
+                    console.log("ashgcx")
+                    // Alert.alert(
+                    //   "Logout",
+                    //   "🔒 Are you sure you want to log out from ASKΟXY.AI PARTNER?",
+                    //   [
+                    //     { text: "Cancel", style: "cancel" },
+                    //     {
+                    //       text: "Logout",
+                    //       onPress: async () => {
+                    //         try {
+                    //           await AsyncStorage.removeItem("accessToken");
+                    //           navigation.navigate("LoginWithPassword");
+                    //         } catch (error) {
+                    //           console.error("Logout error:", error);
+                    //           Alert.alert(
+                    //             "Error",
+                    //             "Failed to logout. Please try again."
+                    //           );
+                    //         }
+                    //       },
+                    //     },
+                    //   ],
+                    //   { cancelable: false }
+                    // );
+                  
+                    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        onPress: () => console.log("Cancel Pressed"),
+        style: "cancel"
+      },
+      {
+        text: "OK",
+        onPress: async () => {
+          console.log({userData})
+          await AsyncStorage.removeItem("userData");
+          console.log("Logout pressed");
+          // dispatch(clearAccessToken());  // <-- Clear Redux token
+          navigation.navigate("LoginWithPassword");
+        }
+      }
+    ]);
                   }}
                   activeOpacity={0.8}
                 >

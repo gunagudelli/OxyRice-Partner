@@ -1,317 +1,294 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, TextInput, Image } from 'react-native';
-import { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated,BackHandler,Alert } from 'react-native';
+import { useEffect, useState,useCallback } from 'react';
 import { FontAwesome5, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import BASE_URL from '../../config';
+import { useFocusEffect } from '@react-navigation/native';
+import { Dimensions } from 'react-native';
+import { useSelector } from 'react-redux';
+const { height,width } = Dimensions.get('window');
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function MarketVisitsScreen() {
   const navigation = useNavigation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTab, setSelectedTab] = useState('Upcoming');
-  
-  // Tabs data
-  const tabs = ['Upcoming', 'Completed', 'All'];
-  
-  // Sample sales team data
-  const teamMembers = [
-    { 
-      id: '1', 
-      name: 'Sarah Johnson', 
-      role: 'Team Lead',
-      avatar: 'https://api.a0.dev/assets/image?text=SJ&aspect=1:1',
-      activeMarkets: ['Central Market', 'Eastern Market'],
-      lastVisit: '2h ago'
-    },
-    { 
-      id: '2', 
-      name: 'Michael Chen', 
-      role: 'Sales Rep',
-      avatar: 'https://api.a0.dev/assets/image?text=MC&aspect=1:1',
-      activeMarkets: ['Western Market'],
-      lastVisit: '1d ago'
-    },
-    { 
-      id: '3', 
-      name: 'Aisha Patel', 
-      role: 'Sales Rep',
-      avatar: 'https://api.a0.dev/assets/image?text=AP&aspect=1:1',
-      activeMarkets: ['Northern Market', 'Southern Market'],
-      lastVisit: '4h ago'
-    },
-    { 
-      id: '4', 
-      name: 'David Kim', 
-      role: 'Sales Rep',
-      avatar: 'https://api.a0.dev/assets/image?text=DK&aspect=1:1',
-      activeMarkets: ['Central Market'],
-      lastVisit: '2d ago'
-    },
-  ];
-  
-  // Sample visit schedule data
-  const visitSchedule = [
-    { 
-      id: '1', 
-      market: 'Central Market', 
-      date: '09 Jun 2025', 
-      time: '9:00 AM',
-      status: 'Upcoming',
-      team: ['Sarah Johnson', 'David Kim'],
-      notes: 'Follow up on last week\'s premium rice orders'
-    },
-    { 
-      id: '2', 
-      market: 'Eastern Market', 
-      date: '08 Jun 2025', 
-      time: '11:30 AM',
-      status: 'Completed',
-      team: ['Sarah Johnson'],
-      notes: 'Introduced new jasmine rice variety'
-    },
-    { 
-      id: '3', 
-      market: 'Western Market', 
-      date: '10 Jun 2025', 
-      time: '10:00 AM',
-      status: 'Upcoming',
-      team: ['Michael Chen'],
-      notes: 'Promotion for premium basmati rice'
-    },
-    { 
-      id: '4', 
-      market: 'Northern Market', 
-      date: '07 Jun 2025', 
-      time: '2:00 PM',
-      status: 'Completed',
-      team: ['Aisha Patel'],
-      notes: 'Market survey for organic rice demand'
-    },
-    { 
-      id: '5', 
-      market: 'Southern Market', 
-      date: '11 Jun 2025', 
-      time: '1:30 PM',
-      status: 'Upcoming',
-      team: ['Aisha Patel'],
-      notes: 'New product introduction'
-    },
-  ];
-  
-  // Filter visits based on search and selected tab
-  const filteredVisits = visitSchedule.filter(item => {
-    const matchesSearch = item.market.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.team.some(member => member.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesTab = selectedTab === 'All' || item.status === selectedTab;
-    return matchesSearch && matchesTab;
-  });
-  
-  // Market stats data
-  const marketStats = [
-    { id: '1', name: 'Central Market', visits: 22, orders: 18, revenue: '$5,400' },
-    { id: '2', name: 'Eastern Market', visits: 18, orders: 15, revenue: '$4,200' },
-    { id: '3', name: 'Western Market', visits: 14, orders: 11, revenue: '$3,100' },
-    { id: '4', name: 'Northern Market', visits: 16, orders: 13, revenue: '$3,600' },
-    { id: '5', name: 'Southern Market', visits: 12, orders: 9, revenue: '$2,800' },
-  ];
+  const [marketData, setMarketData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
+  const spinValue = new Animated.Value(0);
+  const userData = useSelector((state) => state.auth); // Adjust the path to your auth slice
 
-  const renderTeamMember = ({ item }) => (
-    <TouchableOpacity style={styles.teamCard}>
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      <View style={styles.teamInfo}>
-        <Text style={styles.teamName}>{item.name}</Text>
-        <Text style={styles.teamRole}>{item.role}</Text>
-      </View>
-      <View style={styles.marketBadge}>
-        <Text style={styles.marketCount}>{item.activeMarkets.length}</Text>
-        <Text style={styles.marketLabel}>Markets</Text>
-      </View>
-    </TouchableOpacity>
+
+useFocusEffect(
+  useCallback(() => {
+    let isActive = true;
+
+    // Start spinner animation
+    const spinAnim = Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }) 
+    );
+    spinAnim.start();
+
+    // Fetch data
+    const fetchData = async () => {
+      if (isActive) {
+        await getAllMarkets();
+      }
+    };
+    fetchData();
+
+    // BackHandler to exit app or log out
+    const onBackPress = () => {
+      Alert.alert('Logout App', 'Do you want to logout the app?', [
+        { text: 'Cancel', style: 'cancel' },
+
+        { text: 'Yes', onPress: () =>{ console.log({userData})
+           AsyncStorage.removeItem("userData");
+          console.log("Logout pressed");
+          // dispatch(clearAccessToken());  // <-- Clear Redux token
+          navigation.navigate("LoginWithPassword");},
+      }
+      ]);
+      return true;
+    };
+    BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+    return () => {
+      isActive = false;
+      spinAnim.stop(); // stop the animation
+      BackHandler.removeEventListener('hardwareBackPress', onBackPress); // clean up back handler
+    };
+  }, [page])
+);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+
+
+const getAllMarkets = () => {
+  setLoading(true);
+  axios({
+    method: 'get',
+    url: `${BASE_URL}product-service/getAllMarket?page=${page}&size=${pageSize}`,
+  })
+    .then((response) => {
+      if (response.data && response.data.content) {
+        const { content, totalPages } = response.data;
+        setMarketData(content || []);
+        setTotalPages(totalPages || 1);
+      } else {
+        setMarketData([]);
+        setTotalPages(1);
+      }
+      setLoading(false);
+    })
+    .catch((error) => {
+      console.error('Error fetching markets:', error);
+      setMarketData([]);
+      setTotalPages(1);
+      setLoading(false);
+    });
+};
+
+  useEffect(() => {
+    getAllMarkets();
+  }, [page]);
+
+  const handlePrevPage = () => {
+    if (page > 0 && !loading) {
+      setPage(page - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (page < totalPages - 1 && !loading) {
+      setPage(page + 1);
+    }
+  };
+
+
+const isTodayItemAdded = (listItems = []) => {
+  if (!listItems || !Array.isArray(listItems)) return false;
+  
+  const today = new Date();
+  const todayFormatted = `${String(today.getDate()).padStart(2, '0')}-${String(
+    today.getMonth() + 1
+  ).padStart(2, '0')}-${today.getFullYear()}`;
+
+  return listItems.some(
+    (item) => item.itemAddedDate === todayFormatted
   );
+};
+
 
   const renderVisitItem = ({ item }) => (
-    <TouchableOpacity style={[
-      styles.visitItem,
-      item.status === 'Completed' ? styles.completedVisit : styles.upcomingVisit
-    ]}>
+    <View style={styles.visitItem}>
       <View style={styles.visitHeader}>
-        <Text style={styles.visitMarket}>{item.market}</Text>
-        <View style={[
-          styles.statusBadge,
-          item.status === 'Completed' ? styles.completedBadge : styles.upcomingBadge
-        ]}>
-          <Text style={[
-            styles.statusText,
-            item.status === 'Completed' ? styles.completedText : styles.upcomingText
-          ]}>{item.status}</Text>
-        </View>
+        <Text style={styles.visitMarket}>{item.marketName}</Text>
+         <TouchableOpacity
+          style={[styles.visitButton, {backgroundColor: 'orange'}]}
+          onPress={() => navigation.navigate('Market Orders', { MarketDetails: item,type:"Market" })}
+        >
+          <Text style={styles.primaryButtonText}>View Orders</Text>
+        </TouchableOpacity>
       </View>
-      
       <View style={styles.visitDetails}>
         <View style={styles.visitRow}>
-          <View style={styles.visitIconContainer}>
-            <Ionicons name="calendar-outline" size={16} color="#777" />
-          </View>
-          <Text style={styles.visitDetailText}>{item.date} • {item.time}</Text>
+          <Ionicons name="location-outline" size={16} color="#777" style={styles.visitIcon} />
+          <Text style={styles.visitDetailText}>{item.address}</Text>
         </View>
-        
         <View style={styles.visitRow}>
-          <View style={styles.visitIconContainer}>
-            <Ionicons name="people-outline" size={16} color="#777" />
-          </View>
-          <Text style={styles.visitDetailText}>{item.team.join(', ')}</Text>
+          <Ionicons name="people-outline" size={16} color="#777" style={styles.visitIcon} />
+          <Text style={styles.visitDetailText}>{item.leadName}</Text>
         </View>
-        
         {item.notes && (
           <View style={styles.visitRow}>
-            <View style={styles.visitIconContainer}>
-              <MaterialIcons name="notes" size={16} color="#777" />
-            </View>
+            <MaterialIcons name="notes" size={16} color="#777" style={styles.visitIcon} />
             <Text style={styles.visitDetailText}>{item.notes}</Text>
           </View>
         )}
       </View>
-      
       <View style={styles.visitActions}>
-        {item.status === 'Upcoming' ? (
-          <>
-            <TouchableOpacity style={styles.visitButton}>
-              <Text style={styles.visitButtonText}>Reschedule</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.visitButton, styles.primaryButton]}>
-              <Text style={styles.primaryButtonText}>Start Visit</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <TouchableOpacity style={styles.visitButton}>
-              <Text style={styles.visitButtonText}>View Report</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.visitButton, styles.primaryButton]}>
-              <Text style={styles.primaryButtonText}>Follow Up</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+        
+        <TouchableOpacity
+          style={[styles.visitButton, {backgroundColor: '#2A6B57'}]}
+          onPress={() => navigation.navigate('All Categories', { MarketDetails: item,type:"Market" })}
+        >
+          <Text style={styles.primaryButtonText}>Add market items</Text>
+        </TouchableOpacity>
 
-  const renderMarketItem = ({ item }) => (
-    <View style={styles.marketRow}>
-      <Text style={styles.marketName}>{item.name}</Text>
-      <View style={styles.marketStats}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{item.visits}</Text>
-          <Text style={styles.statLabel}>Visits</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{item.orders}</Text>
-          <Text style={styles.statLabel}>Orders</Text>
-        </View>
-        <Text style={styles.revenueText}>{item.revenue}</Text>
+         {/* <TouchableOpacity
+          style={[styles.visitButton, {backgroundColor: '#0384d5'}]}
+          onPress={() => navigation.navigate('Place Order', { MarketDetails: item,type:"Market" })}
+        >
+          <Text style={styles.primaryButtonText}>Place Order</Text>
+        </TouchableOpacity> */}
+
+       <TouchableOpacity
+  style={[
+    styles.visitButton,
+    {
+      backgroundColor: isTodayItemAdded(item.listItems) ? '#0384d5' : '#d3d3d3',
+      opacity: isTodayItemAdded(item.listItems) ? 1 : 0.6
+    }
+  ]}
+  onPress={() =>
+    isTodayItemAdded(item.listItems) &&
+    navigation.navigate('Place Order', { MarketDetails: item, type: "Market" })
+  }
+  disabled={!isTodayItemAdded(item.listItems)}
+>
+  <Text
+    style={[
+      styles.primaryButtonText,
+      { color: isTodayItemAdded(item.listItems) ? '#fff' : '#000' }
+    ]}
+  >
+    Place Order
+  </Text>
+</TouchableOpacity>
+
+
       </View>
+
+      <TouchableOpacity
+          style={[styles.visitButton,{alignItems:"center",borderTopWidth:0.4,borderTopColor:"#000",width:width*0.9}]}
+          onPress={() => navigation.navigate('Market List Items', { MarketDetails: item })}
+        >
+          <Text style={styles.visitButtonText}>List Items</Text>
+        </TouchableOpacity>
     </View>
   );
 
-  return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.headerContainer}>
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Market Visits</Text>
-          <Text style={styles.headerSubtitle}>Team activity tracker</Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => navigation.navigate('ScheduleVisit')}
-        >
-          <FontAwesome5 name="plus" size={16} color="#fff" />
-        </TouchableOpacity>
-      </View>
+  const renderLoader = () => (
+    <View style={styles.loaderContainer}>
+      <Animated.View style={[styles.loaderCircle, { transform: [{ rotate: spin }] }]} />
+      <Text style={styles.loaderText}>Loading Items...</Text>
+    </View>
+  );
 
-      {/* Search bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <FontAwesome5 name="search" size={16} color="#999" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search markets or team members..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-      </View>
-
-      {/* Team section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Sales Team</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAllText}>See All</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <FlatList
-          data={teamMembers}
-          renderItem={renderTeamMember}
-          keyExtractor={item => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.teamList}
-        />
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        {tabs.map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tab, selectedTab === tab && styles.activeTab]}
-            onPress={() => setSelectedTab(tab)}
-          >
-            <Text style={[styles.tabText, selectedTab === tab && styles.activeTabText]}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Visit schedule */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Visit Schedule</Text>
-        
-        <FlatList
-          data={filteredVisits}
-          renderItem={renderVisitItem}
-          keyExtractor={item => item.id}
-          scrollEnabled={false}
-          style={styles.visitsList}
-        />
-      </View>
-
-      {/* Markets section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Market Performance</Text>
-        
-        <View style={styles.marketContainer}>
-          <FlatList
-            data={marketStats}
-            renderItem={renderMarketItem}
-            keyExtractor={item => item.id}
-            scrollEnabled={false}
-            style={styles.marketList}
-          />
-        </View>
-      </View>
-
-      {/* Schedule Visit Button */}
-      <TouchableOpacity 
-        style={styles.scheduleButton}
-        onPress={() => navigation.navigate('ScheduleVisit')}
+  const renderPagination = () => (
+    <View style={styles.paginationContainer}>
+      <TouchableOpacity
+        style={[styles.paginationButton, page === 0 && styles.disabledButton]}
+        onPress={handlePrevPage}
+        disabled={page === 0 || loading}
       >
-        <FontAwesome5 name="calendar-plus" size={16} color="#fff" style={styles.scheduleIcon} />
-        <Text style={styles.scheduleButtonText}>Schedule New Visit</Text>
+        <Ionicons
+          name="chevron-back"
+          size={20}
+          color={page === 0 || loading ? '#a0a0a0' : '#fff'}
+        />
+        <Text style={[styles.paginationText, page === 0 && styles.disabledText]}>Previous</Text>
       </TouchableOpacity>
+      <Text style={styles.pageInfo}>
+        Page {page + 1} of {totalPages}
+      </Text>
+      <TouchableOpacity
+        style={[styles.paginationButton, page >= totalPages - 1 && styles.disabledButton]}
+        onPress={handleNextPage}
+        disabled={page >= totalPages - 1 || loading}
+      >
+        <Text style={[styles.paginationText, page >= totalPages - 1 && styles.disabledText]}>Next</Text>
+        <Ionicons
+          name="chevron-forward"
+          size={20}
+          color={page >= totalPages - 1 || loading ? '#a0a0a0' : '#fff'}
+        />
+      </TouchableOpacity>
+    </View>
+  );
 
+    function footer() {
+    return (
+      <View style={{ alignSelf: "center" }}>
+        <Text>No more data Found </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {loading ? (
+        renderLoader()
+      ) : (
+        <>
+          <TouchableOpacity
+            style={styles.scheduleButton}
+            onPress={() => navigation.navigate('Add Market')}
+          >
+            <FontAwesome5 name="calendar-plus" size={16} color="#fff" style={styles.scheduleIcon} />
+            <Text style={styles.scheduleButtonText}>Schedule New Visit</Text>
+          </TouchableOpacity>
+          {renderPagination()}
+         <FlatList
+  data={marketData}
+  renderItem={renderVisitItem}
+  keyExtractor={(item) => item.id || Math.random().toString()}
+  style={styles.visitsList}
+  ListEmptyComponent={
+    !loading && (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No markets found</Text>
+      </View>
+    )
+  }
+  ListFooterComponent={marketData.length > 0 ? footer : null}
+  ListFooterComponentStyle={styles.footerStyle}
+/>
+        </>
+      )}
       <View style={styles.bottomPadding} />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -320,219 +297,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  headerContainer: {
-    backgroundColor: '#2A6B57',
-    padding: 20,
-    paddingBottom: 25,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#E0E0E0',
-    marginTop: 5,
-  },
-  addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-  },
-  searchInputContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    height: 45,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-  },
-  section: {
-    padding: 15,
-    paddingTop: 5,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  seeAllText: {
-    color: '#2A6B57',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  teamList: {
-    paddingRight: 15,
-  },
-  teamCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginRight: 12,
-    width: 150,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 10,
-  },
-  teamInfo: {
-    alignItems: 'center',
-  },
-  teamName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    textAlign: 'center',
-  },
-  teamRole: {
-    fontSize: 12,
-    color: '#777',
-    marginTop: 3,
-    textAlign: 'center',
-  },
-  marketBadge: {
-    backgroundColor: 'rgba(42, 107, 87, 0.1)',
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  marketCount: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2A6B57',
-  },
-  marketLabel: {
-    fontSize: 10,
-    color: '#2A6B57',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    marginHorizontal: 15,
-    marginVertical: 10,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 6,
-  },
-  activeTab: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#555',
-  },
-  activeTabText: {
-    fontWeight: '500',
-    color: '#2A6B57',
-  },
   visitsList: {
-    backgroundColor: 'transparent',
+    padding: 15,
   },
   visitItem: {
-    borderRadius: 10,
+    backgroundColor: '#fff',
+    borderRadius: 5,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  upcomingVisit: {
-    backgroundColor: '#fff',
-    borderLeftWidth: 4,
-    borderLeftColor: '#3498db',
-  },
-  completedVisit: {
-    backgroundColor: '#fff',
-    borderLeftWidth: 4,
-    borderLeftColor: '#2ecc71',
+    borderWidth: 0.6,
+    borderColor: '#000',
   },
   visitHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#808080',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems:"center"
+
   },
   visitMarket: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 15,
-  },
-  upcomingBadge: {
-    backgroundColor: 'rgba(52, 152, 219, 0.15)',
-  },
-  completedBadge: {
-    backgroundColor: 'rgba(46, 204, 113, 0.15)',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  upcomingText: {
-    color: '#3498db',
-  },
-  completedText: {
-    color: '#2ecc71',
+    width:width*0.6
   },
   visitDetails: {
     padding: 15,
@@ -542,10 +330,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  visitIconContainer: {
-    width: 24,
+  visitIcon: {
     marginRight: 8,
-    alignItems: 'center',
   },
   visitDetailText: {
     fontSize: 14,
@@ -577,58 +363,34 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '500',
   },
-  marketContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  marketList: {
-    backgroundColor: 'transparent',
-  },
-  marketRow: {
-    flexDirection: 'row',
+  loaderContainer: {
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    justifyContent: 'center',
+    height: height / 1.5,
   },
-  marketName: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#333',
-    width: '35%',
+  loaderCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 5,
+    borderColor: '#4A90E2',
+    borderTopColor: 'transparent',
+    marginBottom: 10,
   },
-  marketStats: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statItem: {
-    alignItems: 'center',
-    width: '25%',
-  },
-  statValue: {
+  emptyContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: 20,
+},
+emptyText: {
+  fontSize: 16,
+  color: '#777',
+},
+  loaderText: {
     fontSize: 16,
+    color: '#4A90E2',
     fontWeight: 'bold',
-    color: '#333',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#777',
-  },
-  revenueText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2A6B57',
-    width: '25%',
-    textAlign: 'right',
   },
   scheduleButton: {
     backgroundColor: '#2A6B57',
@@ -640,11 +402,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignSelf: 'center',
     marginVertical: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
   },
   scheduleIcon: {
     marginRight: 8,
@@ -654,7 +411,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  paginationButton: {
+    flexDirection: 'row',
+    backgroundColor: '#2A6B57',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+    // flex: 1,
+    marginHorizontal: 5,
+    width:"auto"
+  },
+  disabledButton: {
+    backgroundColor: '#a0a0a0',
+  },
+  paginationText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginHorizontal: 5,
+  },
+  disabledText: {
+    color: '#e0e0e0',
+  },
+  pageInfo: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
   bottomPadding: {
     height: 20,
   },
+  footerStyle:{
+    marginBottom:100
+  }
 });

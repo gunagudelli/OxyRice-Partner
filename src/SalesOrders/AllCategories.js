@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,250 +7,269 @@ import {
   Dimensions,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
+  Animated,
   Alert,
 } from "react-native";
+import { useEffect, useState } from "react";
+import { TextInput } from "react-native-paper";
 import axios from "axios";
 import BASE_URL from "../../config";
-
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width / 2 - 30;
 
 const AllCategories = ({ route, navigation }) => {
   const [allData, setAllData] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedWeight, setSelectedWeight] = useState("All");
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [cartLoading, setCartLoading] = useState({}); // Track loading state for individual items
-  const [error, setError] = useState(null);
-  const [cartQuantities, setCartQuantities] = useState({});
-  const [showCartItems, setShowCartItems] = useState();
-  const [showGoToCart, setShowGoToCart] = useState(false);
-  const customerId = route.params?.storeDetails.userId;
-  const storeDetails = route.params?.storeDetails;
+  const [quantities, setQuantities] = useState({});
 
+  const [weightOptions, setWeightOptions] = useState(["All"]);
+  const [loading, setLoading] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
+  const [quantityInput, setQuantityInput] = useState("");
+  const [cartQuantities, setCartQuantities] = useState({});
+  const spinValue = new Animated.Value(0);
+  // const customerId = "939d875f-af3e-4292-b45e-5ade22366428";
+  const customerId = route.params?.userId; //Offline user
+  const userType = route.params?.type;
   useEffect(() => {
-    console.log("All Categories route",route.params);
+    // console.log("All Categories", route.params);
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      })
+    ).start();
     fetchAllCategoryInventory();
-    fetchCartData();
   }, []);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
 
   const fetchAllCategoryInventory = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
       const res = await axios.get(
         `${BASE_URL}product-service/showItemsForCustomrs`
       );
       const data = res.data;
 
       const flattenedData = [];
-      data.forEach((category) => {
-        if (category.itemsResponseDtoList && category.itemsResponseDtoList.length > 0) {
-          category.itemsResponseDtoList.forEach((item) => {
-            const itemWeight = item.weight + "" + item.units;
+      const weightSet = new Set();
 
-            if (itemWeight === "1kgs" || itemWeight === "5kgs") {
-              flattenedData.push({
+      data.forEach((category) => {
+        if (category.itemsResponseDtoList?.length) {
+          category.itemsResponseDtoList.forEach((item) => {
+            // Filter: Only weight 1 or 5 AND units = 'kgs' (case-insensitive)
+            const isValidWeight = item.weight === 1 || item.weight === 5;
+            const isValidUnit = item.units?.toLowerCase() === "kgs";
+
+            if (isValidWeight && isValidUnit) {
+              const flattenedItem = {
                 ...item,
                 catName: category.categoryName,
-              });
+                displayWeight: `${item.weight}${item.units}`,
+              };
+              flattenedData.push(flattenedItem);
+              weightSet.add(flattenedItem.displayWeight);
             }
           });
         }
       });
 
-      const uniqueCategories = ["All", ...Array.from(
-        new Set(data.map((item) => item.categoryName).filter(Boolean))
-      )];
-      
-      setCategories(uniqueCategories);
+      const sortedWeights = Array.from(weightSet).sort((a, b) => {
+        const priority = (w) =>
+          w.toLowerCase().includes("kg")
+            ? 1
+            : w.includes("pcs") || w.includes("piece")
+            ? 2
+            : 3;
+        const priorityA = priority(a),
+          priorityB = priority(b);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        const aNum = parseFloat(a),
+          bNum = parseFloat(b);
+        return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : a.localeCompare(b);
+      });
+
+      setCategories(["All", ...new Set(data.map((item) => item.categoryName))]);
+      setWeightOptions(["All", ...sortedWeights]);
       setAllData(flattenedData);
     } catch (error) {
       console.error("Error fetching inventory:", error);
-      setError("Failed to load products. Please try again.");
-      Alert.alert(
-        "Error",
-        "Failed to load products. Please check your internet connection and try again.",
-        [
-          {
-            text: "Retry",
-            onPress: () => fetchAllCategoryInventory(),
-          },
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-        ]
-      );
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchCartData = async () => {
-    // const customerId = route.params?.userId;
-    console.log("Fetching cart data for customerId:", customerId);
-    if (!customerId) return;
-
-    try {
-      const res = await axios.get(`${BASE_URL}cart-service/cart/customersCartItems`, {
-        params: { customerId }
-      });
-      const cartItems = res.data;
-      console.log("Cart Items:", cartItems);
-      setShowCartItems(cartItems?.customerCartResponseList);
-      const quantities = {};
-      cartItems?.customerCartResponseList?.forEach((item) => {
-        quantities[item.itemId] = item.cartQuantity;
-      });
-
-      console.log("Cart Quantities:", quantities);
-
-      
-      setCartQuantities(quantities);
-      setShowGoToCart(Object.keys(quantities).length > 0);
-    } catch (error) {
-      console.error("Error fetching cart data:", error);
-    }
+  const openQuantityModal = (item) => {
+    setCurrentItem(item);
+    setQuantityInput("");
+    setModalVisible(true);
   };
 
-  const addItemfunc = async (itemId) => {
-    if (!customerId) {
-      Alert.alert('Error', 'Customer ID not found. Please login again.');
+  const handleAddItemsQuantity = () => {
+    const qty = parseInt(quantityInput);
+    if (!qty || qty <= 0) {
+      Alert.alert("Invalid Quantity", "Please enter a valid number.");
       return;
     }
 
-    setCartLoading(prev => ({ ...prev, [itemId]: true }));
+    const itemPayload = {
+      itemId: currentItem.itemId,
+      qty,
+      weight: currentItem.weight || 0,
+    };
 
+    setSelectedItems((prevItems) => {
+      const updatedItems = prevItems.filter(
+        (i) => i.itemId !== currentItem.itemId
+      );
+      return [...updatedItems, itemPayload];
+    });
+    setModalVisible(false);
+  };
+
+  const handleSubmitQuantity = () => {
+    let finalItems = [...selectedItems];
+    if (modalVisible && currentItem && quantityInput) {
+      const qty = parseInt(quantityInput);
+      if (!qty || qty <= 0) {
+        Alert.alert("Invalid Quantity", "Please enter a valid number.");
+        return;
+      }
+      const newItem = {
+        itemId: currentItem.itemId,
+        qty,
+        weight: currentItem.weight || 0,
+      };
+      finalItems = finalItems
+        .filter((i) => i.itemId !== currentItem.itemId)
+        .concat(newItem);
+    }
+
+    if (!finalItems.length) {
+      Alert.alert("No Items", "Please add items before submitting.");
+      return;
+    }
+    const today = new Date();
+
+    const day = String(today.getDate()).padStart(2, "0");
+    const month = String(today.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+    const year = today.getFullYear();
+
+    console.log({ finalItems });
+    const payload = {
+      listItems: finalItems,
+      marketId: route.params.MarketDetails.marketId,
+      visitDate: `${year}-${month}-${day}`,
+    };
+    console.log({ payload });
+    axios
+      .post(`${BASE_URL}product-service/addMarketItems`, payload)
+      .then((response) => {
+        Alert.alert(
+          "Success",
+          `Items added successfully for market ${route.params.MarketDetails.marketName}`
+        );
+        setSelectedItems([]);
+        setModalVisible(false);
+      })
+      .catch((error) =>
+        console.error("Error adding market items:", error.response)
+      );
+  };
+
+  const addItemfunc = async (itemId) => {
     try {
-      const response = await axios.post(`${BASE_URL}cart-service/cart/add_Items_ToCart`, { 
-        itemId, 
-        customerId 
+      await axios.post(`${BASE_URL}cart-service/cart/addAndIncrementCart`, {
+        itemId,
+        customerId,
       });
-      
-      console.log(response.data);
       setCartQuantities((prev) => ({ ...prev, [itemId]: 1 }));
-      setShowGoToCart(true);
     } catch (error) {
-      console.error('Error adding item to cart:', error);
-      Alert.alert('Error', 'Could not add item to cart.');
-    } finally {
-      setCartLoading(prev => ({ ...prev, [itemId]: false }));
+      console.error("Error addAndIncrementCart:", error.response);
     }
   };
 
   const incrementQty = async (itemId) => {
-    if (!customerId) return;
-
-    setCartLoading(prev => ({ ...prev, [itemId]: true }));
-
     try {
-      await axios.patch(`${BASE_URL}cart-service/cart/incrementCartData`, { 
-        itemId, 
-        customerId 
+      await axios.post(`${BASE_URL}cart-service/cart/addAndIncrementCart`, {
+        itemId,
+        customerId,
       });
-      
-      setCartQuantities((prev) => ({ 
-        ...prev, 
-        [itemId]: (prev[itemId] || 0) + 1 
+      setCartQuantities((prev) => ({
+        ...prev,
+        [itemId]: (prev[itemId] || 0) + 1,
       }));
-      fetchCartData(); // Refresh cart data to ensure UI is updated
     } catch (error) {
-      console.error('Error incrementing:', error);
-      Alert.alert('Error', 'Could not update cart.');
-    } finally {
-      setCartLoading(prev => ({ ...prev, [itemId]: false }));
+      console.error("Error incrementing:", error);
     }
   };
 
   const decrementQty = async (itemId) => {
-  if (!customerId) return;
-
-  setCartLoading(prev => ({ ...prev, [itemId]: true }));
-
-  const cartItem = showCartItems.find(item => item.itemId === itemId);
-  const cartId = cartItem?.cartId;
-  console.log("Cart ID for item:", cartId);
-
-  // If quantity is 1 or less, remove the item from the cart
-  if (cartQuantities[itemId] <= 1) {
-    if (!cartId) {
-      console.error('Cart ID not found for itemId:', itemId);
-      setCartLoading(prev => ({ ...prev, [itemId]: false }));
-      return;
-    }
-
     try {
-      const res = await axios({
-        url:`${BASE_URL}cart-service/cart/remove`,
-        method: 'DELETE',
-        data: { id : cartId }, 
-    });
-
-      console.log("Cart item deleted:", res.data);
-      // Optionally update local state here if needed (e.g., remove item from list)
-      fetchCartData(); // Refresh cart data to ensure UI is updated
-
+      await axios.patch(`${BASE_URL}cart-service/cart/minusCartItem`, {
+        itemId,
+        customerId,
+      });
+      setCartQuantities((prev) => {
+        const newQty = (prev[itemId] || 1) - 1;
+        const updated = { ...prev, [itemId]: newQty };
+        if (newQty <= 0) delete updated[itemId];
+        return updated;
+      });
     } catch (error) {
-      console.error('Error removing item from cart:', error.response);
-      Alert.alert('Error', 'Could not remove item from cart.');
-    } finally {
-      setCartLoading(prev => ({ ...prev, [itemId]: false }));
+      console.error("Error decrementing:", error);
     }
+  };
 
-    return;
-  }
-
-  // If quantity > 1, decrement the quantity
-  try {
-    const res = await axios.patch(`${BASE_URL}cart-service/cart/decrementCartData`, {
+  const addorminusOfflineItem = async (itemId, AddOrMinusItem) => {
+    console.log(
+      "Adding or decrementing offline item with ID:",
       itemId,
-      customerId
-    });
+      ",",
+      AddOrMinusItem
+    );
 
-    console.log(`Decremented item ${itemId} in cart`);
-    console.log("Decrement response:", res.data);
+    const currentQty = parseInt(quantities[itemId]) || 0;
+    const newofflineQty =
+      AddOrMinusItem === "ADD" ? currentQty + 1 : Math.max(0, currentQty - 1);
+    console.log("djgcj", itemId, newofflineQty);
 
-    // Optionally update state like cartQuantities here if needed
-    setCartQuantities((prev) => {
-      const newQty = (prev[itemId] || 1) - 1;
-      const updated = { ...prev };
-      if (newQty <= 0) delete updated[itemId];
-      else updated[itemId] = newQty;
-      return updated;
-    });
-
-    fetchCartData(); // Refresh cart data to ensure UI is updated
-
-  } catch (error) {
-    console.error('Error decrementing quantity:', error);
-    Alert.alert('Error', 'Could not update cart.');
-  } finally {
-    setCartLoading(prev => ({ ...prev, [itemId]: false }));
-  }
-};
-
-
-  const goToCart = () => {
-  // const storeDetails = {
-  //   storeId: route.params?.storeId,
-  //   storeName: route.params?.storeName,
-  //   storeAddress: route.params?.storeAddress,
-  //   // Add other store-related fields you need
-  // };
- navigation.navigate('Cart', { 
-    // customerId: route.params?.customerId,
-    storeDetails: route.params?.storeDetails
-  });
-};
+    setQuantities({ ...quantities, [itemId]: newofflineQty });
+    console.log({ currentQty });
+    let data = {
+      itemId,
+      qty: 1,
+      type: AddOrMinusItem,
+      userOfflineOrdersId: customerId, // pass from route or state
+    };
+    axios
+      .post(`${BASE_URL}user-service/addOrMinusOfflineItems`, data)
+      .then((res) => {
+        console.log("Updated:", res);
+        Alert.alert("Success", `Item quantity updated successfully!`);
+      })
+      .catch((err) => {
+        console.error("Error updating offline item:", err);
+        Alert.alert(
+          "Error",
+          "Failed to update item quantity. Please try again."
+        );
+      });
+  };
 
   const renderCategoryTabs = () => (
-    <ScrollView 
-      horizontal 
-      showsHorizontalScrollIndicator={false} 
-      style={styles.categoryTabContainer}
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.categoryTabContent}
     >
       {categories.map((cat) => (
@@ -264,10 +282,10 @@ const AllCategories = ({ route, navigation }) => {
           ]}
         >
           <Text
-            style={[
-              styles.categoryTabText,
-              selectedCategory === cat && styles.activeTabText,
-            ]}
+            style={{
+              color: selectedCategory === cat ? "white" : "black",
+              fontWeight: "bold",
+            }}
           >
             {cat}
           </Text>
@@ -276,156 +294,281 @@ const AllCategories = ({ route, navigation }) => {
     </ScrollView>
   );
 
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.imageContainer}>
+  const renderWeightTabs = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.weightTabContent}
+    >
+      {weightOptions.map((weight) => (
+        <TouchableOpacity
+          key={weight}
+          onPress={() => setSelectedWeight(weight)}
+          style={[
+            styles.weightTab,
+            selectedWeight === weight && styles.activeWeightTab,
+          ]}
+        >
+          <Text
+            style={{
+              color: selectedWeight === weight ? "white" : "black",
+              fontWeight: "bold",
+            }}
+          >
+            {weight}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+
+  const renderItem = ({ item }) => {
+    const existingItem = selectedItems.find((i) => i.itemId === item.itemId);
+    const offlineQty = quantities[item.itemId] || 0;
+    const onlineQty = cartQuantities[item.itemId] || 0;
+
+    return (
+      <View style={styles.card}>
         <Image
           source={{ uri: item.itemImage }}
           style={styles.image}
-          resizeMode="cover"
+          resizeMode="contain"
         />
-      </View>
-      
-      <View style={styles.cardContent}>
-        <Text style={styles.title} numberOfLines={2}>
-          {item.itemName}
-        </Text>
-        <Text style={styles.weight}>{item.weight} {item.units}</Text>
+        <Text style={styles.title}>{item.itemName}</Text>
         <Text style={styles.price}>₹{item.itemPrice}</Text>
-        
-        {/* Cart Controls */}
-        <View style={styles.cartControlContainer}>
-          {cartQuantities[item.itemId] ? (
-            <View style={styles.qtyContainer}>
-              <TouchableOpacity 
-                onPress={() => decrementQty(item.itemId,item)} 
-                style={[styles.qtyControlBtn, styles.decrementBtn]}
-                disabled={cartLoading[item.itemId]}
+        <Text style={styles.weight}>
+          {item.weight} {item.weight === 1 ? "Kg" : "Kgs"}
+        </Text>
+        {route.params.type === "Market" ? (
+          existingItem ? (
+            <>
+              <Text style={styles.qtyText}>Qty: {existingItem.qty}</Text>
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: "#FFA500" }]}
+                onPress={() => openQuantityModal(item)}
               >
-                {cartLoading[item.itemId] ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text style={styles.qtyControlText}>−</Text>
-                )}
+                <Text style={styles.addButtonText}>Update</Text>
               </TouchableOpacity>
-              
-              <View style={styles.qtyTextContainer}>
-                <Text style={styles.qtyText}>{cartQuantities[item.itemId]}</Text>
-              </View>
-              
-              <TouchableOpacity 
-                onPress={() => incrementQty(item.itemId)} 
-                style={[styles.qtyControlBtn, styles.incrementBtn]}
-                disabled={cartLoading[item.itemId]}
-              >
-                {cartLoading[item.itemId] ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text style={styles.qtyControlText}>+</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+            </>
           ) : (
             <TouchableOpacity
-              style={[styles.addButton, cartLoading[item.itemId] && styles.addButtonDisabled]}
-              onPress={() => addItemfunc(item.itemId)}
-              disabled={cartLoading[item.itemId]}
+              style={[styles.addButton, { backgroundColor: "#4A90E2" }]}
+              onPress={() => openQuantityModal(item)}
             >
-              {cartLoading[item.itemId] ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Text style={styles.addButtonText}>Add to Cart</Text>
-              )}
+              <Text style={styles.addButtonText}>Add</Text>
             </TouchableOpacity>
-          )}
-        </View>
+          )
+        ) : (
+          <>
+            {(userType === "ONLINE" && onlineQty > 0) ||
+            (userType === "OFFLINE" && offlineQty > 0) ? (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginTop: 10,
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => {
+                    userType === "ONLINE"
+                      ? decrementQty(item.itemId)
+                      : addorminusOfflineItem(item.itemId, "MINUS");
+                  }}
+                  style={styles.qtyControlBtn}
+                >
+                  <Text style={{ fontSize: 18 }}>−</Text>
+                </TouchableOpacity>
+                <Text style={{ marginHorizontal: 10, fontWeight: "bold" }}>
+                  {userType === "ONLINE" ? onlineQty : offlineQty}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    userType === "ONLINE"
+                      ? incrementQty(item.itemId)
+                      : addorminusOfflineItem(item.itemId, "ADD");
+                  }}
+                  style={styles.qtyControlBtn}
+                >
+                  <Text style={{ fontSize: 18 }}>+</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: "#4A90E2" }]}
+                onPress={() => {
+                  userType === "ONLINE"
+                    ? addItemfunc(item.itemId)
+                    : addorminusOfflineItem(item.itemId, "ADD");
+                }}
+              >
+                <Text style={styles.addButtonText}>Add to Cart</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
       </View>
-    </View>
-  );
+    );
+  };
+
+  const handleOfflineCheckout = async () => {
+    // Create array of offline items from quantities state
+    const offlineItems = Object.keys(quantities)
+      .filter((itemId) => quantities[itemId] > 0)
+      .map((itemId) => ({
+        itemId: itemId,
+        qty: quantities[itemId],
+      }));
+
+    if (offlineItems.length === 0) {
+      Alert.alert("No Items", "Please add items before checkout.");
+      return;
+    }
+
+    const payload = {
+      id: route.params?.userId,
+      offlineItems: offlineItems,
+    };
+console.log({offlineItems})
+    console.log({payload})
+    try {
+      const response = await axios.post(
+        `${BASE_URL}user-service/offlineOrdersItems`,
+        payload
+      );
+      Alert.alert("Success", response.data, [
+        {
+          text: "OK",
+          onPress: () =>
+            navigation.navigate("Proceed to Checkout", {
+              MarketDetails: route.params,
+            }),
+        },
+      ]);
+      // Clear quantities after successful submission
+      setQuantities({});
+      console.log("Offline order response:", response.data);
+    } catch (error) {
+      console.error("Error submitting offline order:", error.response);
+      Alert.alert("Error", "Failed to submit offline order. Please try again.");
+    }
+  };
+
+  const filteredItems = allData.filter((item) => {
+    const categoryMatch =
+      selectedCategory === "All" || item.catName === selectedCategory;
+    const weightMatch =
+      selectedWeight === "All" ||
+      (item.weight &&
+        item.units &&
+        `${item.weight}${item.units}` === selectedWeight);
+    return categoryMatch && weightMatch;
+  });
 
   const renderLoader = () => (
     <View style={styles.loaderContainer}>
-      <ActivityIndicator size="large" color="#4A90E2" />
-      <Text style={styles.loadingText}>Loading products...</Text>
+      <Animated.View
+        style={[styles.loaderCircle, { transform: [{ rotate: spin }] }]}
+      />
+      <Text style={styles.loaderText}>Loading Items...</Text>
     </View>
   );
 
-  const renderError = () => (
-    <View style={styles.errorContainer}>
-      <Text style={styles.errorText}>{error}</Text>
-      <TouchableOpacity 
-        style={styles.retryButton} 
-        onPress={fetchAllCategoryInventory}
-      >
-        <Text style={styles.retryButtonText}>Retry</Text>
-      </TouchableOpacity>
+  const footer = () => (
+    <View style={{ alignSelf: "center" }}>
+      <Text>No Data Found</Text>
     </View>
   );
 
-  const filteredItems = selectedCategory === "All"
-    ? allData
-    : allData.filter((item) => item.catName === selectedCategory);
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        {renderLoader()}
-      </View>
-    );
-  }
-
-  if (error && allData.length === 0) {
-    return (
-      <View style={styles.container}>
-        {renderError()}
-      </View>
-    );
-  }
+  const hasItemsInCart =
+    userType === "ONLINE"
+      ? Object.keys(cartQuantities).length > 0
+      : Object.keys(quantities).some((key) => quantities[key] > 0);
 
   return (
     <View style={styles.container}>
-      {renderCategoryTabs()}
-      <FlatList
-        data={filteredItems}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.itemId?.toString() || Math.random().toString()}
-        numColumns={2}
-        contentContainerStyle={styles.flatListContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              No items found in this category.
-            </Text>
-          </View>
-        }
-        refreshing={loading}
-        onRefresh={() => {
-          fetchAllCategoryInventory();
-          fetchCartData();
-        }}
-      />
-      
-      {/* Go to Cart Button */}
-      {showGoToCart && (
-  <TouchableOpacity style={styles.goToCartButton} onPress={goToCart}>
-    <Text style={styles.goToCartText}>
-      View Cart
-    </Text>
-  </TouchableOpacity>
-)}
-      
-      {/* Footer Container with Proceed to Checkout
-      {Object.keys(cartQuantities).length > 0 && (
-        <View style={styles.footerContainer}>
-          <TouchableOpacity
-            style={styles.checkoutButton}
-            onPress={() => navigation.navigate('Checkout', { customerId: route.params?.customerId })} 
-          >
-            <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
-          </TouchableOpacity>
+      {loading ? (
+        renderLoader()
+      ) : (
+        <View style={styles.contentContainer}>
+          {hasItemsInCart && (
+            <View>
+              <TouchableOpacity
+                // style={styles.checkoutButton}
+                onPress={() => {
+                  if (userType === "ONLINE") {
+                    navigation.navigate("Proceed to Checkout", {
+                      MarketDetails: route.params,
+                    });
+                  } else {
+                    handleOfflineCheckout();
+                    // Alert.alert("smdhcg")
+                  }
+                }}
+              >
+                <Text style={styles.checkoutButtonText}>
+                  Proceed to Checkout
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {renderCategoryTabs()}
+          {renderWeightTabs()}
+          <FlatList
+            data={filteredItems}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.itemId.toString()}
+            numColumns={2}
+            contentContainerStyle={[styles.flatListContent]} // Added padding to avoid overlap with footer
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  No items found for selected filters.
+                </Text>
+              </View>
+            }
+            ListFooterComponent={footer}
+            ListFooterComponentStyle={styles.footerStyle}
+          />
         </View>
-      )} */}
+      )}
+      {modalVisible && (
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              Enter quantity for {currentItem?.itemName}
+            </Text>
+            <TextInput
+              value={quantityInput}
+              onChangeText={setQuantityInput}
+              keyboardType="numeric"
+              label="Enter quantity"
+              mode="outlined"
+              style={styles.input}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={[styles.modalButton, { backgroundColor: "#ccc" }]}
+              >
+                <Text style={{ color: "#000" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleAddItemsQuantity}
+                style={[styles.modalButton, { backgroundColor: "#4A90E2" }]}
+              >
+                <Text style={{ color: "#fff" }}>Add Items</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSubmitQuantity}
+                style={[styles.modalButton, { backgroundColor: "#4A90E2" }]}
+              >
+                <Text style={{ color: "#fff" }}>Submit Items</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -435,259 +578,213 @@ export default AllCategories;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-    paddingHorizontal: 15,
-    paddingTop: 10,
-  },
-  categoryTabContainer: {
-    marginBottom: 15,
-    maxHeight: 50,
+    backgroundColor: "#F2F2F2",
+    padding: 10,
   },
   categoryTabContent: {
     paddingHorizontal: 5,
   },
   categoryTab: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 25,
-    marginRight: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 20,
+    marginRight: 8,
+    // minWidth: 50,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
+    height: 40,
   },
   activeTab: {
     backgroundColor: "#4A90E2",
-    borderColor: "#4A90E2",
+    // marginBottom:20
   },
-  categoryTabText: {
-    color: "#333333",
-    fontWeight: "600",
-    fontSize: 14,
+  weightTabContent: {
+    paddingVertical: 5,
+    paddingHorizontal: 5,
   },
-  activeTabText: {
-    color: "white",
+  weightTab: {
+    paddingHorizontal: 16,
+    // paddingVertical: 10,
+    borderRadius: 16,
+    marginHorizontal: 5,
+    backgroundColor: "#f3f4f6",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 40,
+  },
+  activeWeightTab: {
+    backgroundColor: "#FF6347",
+  },
+  flatListContent: {
+    paddingBottom: 200,
+  },
+  qtyControlBtn: {
+    padding: 6,
+    backgroundColor: "#eee",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
   card: {
     width: CARD_WIDTH,
-    backgroundColor: "#FFFFFF",
-    margin: 8,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    overflow: 'hidden',
-  },
-  imageContainer: {
-    width: '100%',
-    height: 120,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#FFF",
+    margin: 10,
+    borderRadius: 8,
+    padding: 10,
+    alignItems: "center",
+    elevation: 2,
   },
   image: {
-    width: '90%',
-    height: '90%',
-    borderRadius: 8,
-  },
-  cardContent: {
-    padding: 12,
-    alignItems: 'center',
+    width: CARD_WIDTH - 40,
+    height: 100,
+    marginBottom: 10,
   },
   title: {
-    fontWeight: "600",
-    fontSize: 14,
+    fontWeight: "bold",
+    fontSize: 16,
     textAlign: "center",
-    color: "#333333",
-    marginBottom: 4,
-    lineHeight: 18,
+  },
+  price: {
+    fontSize: 14,
+    color: "#4A90E2",
+    fontWeight: "bold",
+    marginTop: 4,
   },
   weight: {
     fontSize: 12,
-    color: "#666666",
-    marginBottom: 8,
-    fontWeight: "500",
+    color: "#888",
+    marginTop: 4,
   },
-  price: {
+  addButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginTop: 10,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  qtyText: {
+    fontSize: 14,
+    color: "#333",
+    marginTop: 6,
+    fontWeight: "bold",
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#888",
+  },
+  loaderContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: height / 1.5,
+  },
+  loaderCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 5,
+    borderColor: "#4A90E2",
+    borderTopColor: "transparent",
+    marginBottom: 10,
+  },
+  loaderText: {
     fontSize: 16,
     color: "#4A90E2",
     fontWeight: "bold",
-    marginBottom: 12,
   },
-  cartControlContainer: {
-    width: '100%',
-    alignItems: 'center',
+  modalContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
   },
-  qtyContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 25,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+  modalContent: {
+    width: width * 0.9,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    elevation: 5,
   },
-  qtyControlBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#4A90E2',
-  },
-  decrementBtn: {
-    backgroundColor: '#FF6B6B',
-  },
-  incrementBtn: {
-    backgroundColor: '#4A90E2',
-  },
-  qtyControlText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  qtyTextContainer: {
-    minWidth: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qtyText: {
-    fontWeight: 'bold',
+  modalTitle: {
     fontSize: 16,
-    color: '#333333',
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
   },
-  addButton: {
-    backgroundColor: '#4A90E2',
+  input: {
+    height: 50,
+    marginBottom: 15,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  modalButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 25,
-    minWidth: 100,
-    alignItems: 'center',
+    borderRadius: 5,
   },
-  addButtonDisabled: {
-    backgroundColor: '#B0B0B0',
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  goToCartButton: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: '#4A90E2',
-    paddingVertical: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-  },
-  goToCartText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+  contentContainer: {
+    // flex: 1,
+    paddingHorizontal: 10,
+    paddingBottom: 80, // Add padding equal to footer height + some extra space
   },
   footerContainer: {
-    position: 'absolute',
-    bottom: 85,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 20,
-    padding: 16,
-    elevation: 4,
-    shadowColor: '#000',
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 999,
+    elevation: 8,
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: -2,
     },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
+    minHeight: 70,
+    // marginBottom:300
   },
   checkoutButton: {
-    backgroundColor: '#28A745',
-    paddingVertical: 14,
+    backgroundColor: "#4A90E2",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
     borderRadius: 25,
-    alignItems: 'center',
+    width: "40%",
+    alignItems: "center",
   },
   checkoutButtonText: {
-    color: 'white',
+    marginTop: 10,
+    color: "#4A90E2",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "bold",
+    marginLeft: 250,
+    marginBottom: 10,
   },
-  flatListContent: {
-    paddingBottom: 180,
-    paddingTop: 5,
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 50,
-  },
-  loadingText: {
-    marginTop: 15,
-    fontSize: 16,
-    color: "#666666",
-    fontWeight: "500",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#E74C3C",
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 22,
-  },
-  retryButton: {
-    backgroundColor: "#4A90E2",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  retryButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 60,
-  },
-  emptyText: {
-    textAlign: "center",
-    fontSize: 16,
-    color: "#666666",
-    fontWeight: "500",
+  footerStyle: {
+    // marginBottom: 80, // Adjusted to ensure footer doesn't overlap with content
   },
 });

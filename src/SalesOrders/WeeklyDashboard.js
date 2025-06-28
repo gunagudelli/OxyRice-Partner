@@ -12,15 +12,15 @@ export default function DashboardScreen() {
 
   // Data for summary cards
   const summaryData = [
-    { 
-      id: 1, 
-      title: 'Inventory', 
-      value: `${totalBags}`, 
-      unit: 'Bags',
-      icon: <MaterialCommunityIcons name="rice" size={28} color="#fff" />,
-      color: '#3498db',
-      onPress: () => navigation.navigate('Inventory')
-    },
+    // { 
+    //   id: 1, 
+    //   title: 'Inventory', 
+    //   value: `${totalBags}`, 
+    //   unit: 'Bags',
+    //   icon: <MaterialCommunityIcons name="rice" size={28} color="#fff" />,
+    //   color: '#3498db',
+    //   onPress: () => navigation.navigate('Inventory')
+    // },
     { 
       id: 2, 
       title: 'Weekly Orders', 
@@ -30,15 +30,15 @@ export default function DashboardScreen() {
       color: '#e74c3c',
       onPress: () => navigation.navigate('MarketOrders')
     },
-    { 
-      id: 3, 
-      title: 'Field Team', 
-      value: `${fieldTeam}`, 
-      unit: 'Members',
-      icon: <FontAwesome name="users" size={24} color="#fff" />,
-      color: '#2ecc71',
-      onPress: () => navigation.navigate('MarketVisits')
-    },
+    // { 
+    //   id: 3, 
+    //   title: 'Field Team', 
+    //   value: `${fieldTeam}`, 
+    //   unit: 'Members',
+    //   icon: <FontAwesome name="users" size={24} color="#fff" />,
+    //   color: '#2ecc71',
+    //   onPress: () => navigation.navigate('MarketVisits')
+    // },
     { 
       id: 4, 
       title: 'Markets', 
@@ -46,7 +46,7 @@ export default function DashboardScreen() {
       unit: 'Active',
       icon: <FontAwesome5 name="store" size={24} color="#fff" />,
       color: '#f39c12',
-      onPress: () => navigation.navigate('MarketVisits')
+      onPress: () => navigation.navigate('Market Visits')
     },
   ];
 
@@ -61,10 +61,10 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={styles.container}>
       {/* Header with greeting */}
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <Text style={styles.headerTitle}>Rice Sales Dashboard</Text>
-        <Text style={styles.headerSubtitle}>Good morning, Manager</Text>
-      </View>
+        <Text style={styles.headerSubtitle}>Good morning,</Text>
+      </View> */}
       
       {/* Summary cards */}
       <View style={styles.cardContainer}>
@@ -87,12 +87,12 @@ export default function DashboardScreen() {
       </View>
 
       {/* Quick actions */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.quickActions}>
           <TouchableOpacity 
             style={styles.actionButton} 
-            onPress={() => navigation.navigate('RecordInventory')}
+            onPress={() => navigation.navigate('Record Inventory')}
           >
             <View style={[styles.actionIcon, { backgroundColor: '#3498db' }]}>
               <FontAwesome5 name="truck-loading" size={20} color="#fff" />
@@ -112,18 +112,18 @@ export default function DashboardScreen() {
           
           <TouchableOpacity 
             style={styles.actionButton} 
-            onPress={() => navigation.navigate('ScheduleVisit')}
+            onPress={() => navigation.navigate('Place Order')}
           >
             <View style={[styles.actionIcon, { backgroundColor: '#2ecc71' }]}>
-              <Ionicons name="location" size={20} color="#fff" />
+              <Ionicons name="bag-add" size={20} color="#fff" />
             </View>
-            <Text style={styles.actionText}>Record Visit</Text>
+            <Text style={styles.actionText}>Place Order</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
 
       {/* Recent Activity */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         <View style={styles.activityContainer}>
           {recentActivities.map(activity => (
@@ -136,10 +136,10 @@ export default function DashboardScreen() {
             </View>
           ))}
         </View>
-      </View>
+      </View> */}
 
       {/* Market Performance */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Market Performance</Text>
         <View style={styles.marketPerformanceContainer}>
           <View style={styles.marketItem}>
@@ -171,7 +171,7 @@ export default function DashboardScreen() {
             <Text style={styles.marketValue}>90%</Text>
           </View>
         </View>
-      </View>
+      </View> */}
 
       <View style={styles.bottomPadding} />
     </ScrollView>
@@ -194,6 +194,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+    marginTop:50
   },
   headerSubtitle: {
     fontSize: 16,
@@ -205,7 +206,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     padding: 15,
-    marginTop: -30,
+    // marginTop: -30,
   },
   card: {
     width: '48%',

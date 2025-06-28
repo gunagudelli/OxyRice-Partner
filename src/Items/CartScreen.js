@@ -40,31 +40,31 @@ const CartScreen = ({ route }) => {
   const storeId = route.params?.storeDetails.storeId;
   const customerId = route.params?.storeDetails.userId;
   const token = useSelector((state) => state.auth?.token);
-
   useEffect(() => {
-    console.log("CartScreen mounted with params:", route.params);
-    fetchCartData();
-  }, []);
-
+    const customerIdFromParams = route?.params?.storeDetails?.userId;
+    if (customerIdFromParams) {
+      fetchCartData(customerIdFromParams);
+    }
+  }, [route.params]);
   // Navigate to Categories page
   const navigateToCategories = () => {
     const storeDetails = {
       storeId: storeId,
       userId: customerId,
       storeName: route.params?.storeDetails.storeName || "Store",
-      address : route.params?.storeDetails.address || "Address not available",
+      address: route.params?.storeDetails.address || "Address not available",
     };
-    navigation.navigate("All Categories", {
+    navigation.navigate("Categories", {
       storeDetails: storeDetails,
     });
   };
 
   // Save Store Request and Navigate to Checkout
   const saveRequestAndCheckout = async () => {
-    // if (cartData.length === 0) {
-    //   Alert.alert("Empty Cart", "Please add items to your cart first");
-    //   return;
-    // }
+    if (cartData.length === 0) {
+      Alert.alert("Empty Cart", "Please add items to your cart first");
+      return;
+    }
 
     try {
       setCheckoutProcessing(true);
@@ -82,7 +82,7 @@ const CartScreen = ({ route }) => {
       const requestBody = {
         intrestPlaceOrder: "YES",
         listItems: listItems,
-        marketId: storeId, 
+        marketId: storeId,
         nofDaysAfterMeetAgain: parseInt(nofDaysAfterMeetAgain) || 0,
       };
 
@@ -97,7 +97,7 @@ const CartScreen = ({ route }) => {
       );
 
       console.log("Store Request Response:", response.data);
-      
+
       // After successful save, navigate to checkout with proper parameters
       const checkoutItems = cartData.map((item) => ({
         ...item,
@@ -117,7 +117,6 @@ const CartScreen = ({ route }) => {
         storeId: storeId, // Also passing as direct prop for fallback
         nofDaysAfterMeetAgain: nofDaysAfterMeetAgain,
       });
-
     } catch (error) {
       console.error("Error saving store request:", error);
       Alert.alert("Error", "Failed to save your request. Please try again.");
@@ -137,27 +136,41 @@ const CartScreen = ({ route }) => {
     try {
       setLoading(true);
       setError(null);
-       const response = await axios.get(`${BASE_URL}cart-service/cart/customersCartItems?customerId=${customerId}`);
-      console.log("Response from getStore:", response.data);
-      const cartItems = response.data || [];
 
-   
-        setCartData(cartItems?.customerCartResponseList);
+      const response = await axios.get(
+        `${BASE_URL}cart-service/cart/customersCartItems?customerId=${customerId}`
+      );
 
-        const originalPricesObj = {};
-        const offerPricesObj = {};
+      console.log("Response from getStore:", response);
 
-        cartItems?.customerCartResponseList.forEach((item) => {
-          originalPricesObj[item.itemId] = item.itemPrice;
-          offerPricesObj[item.itemId] = "";
-        });
+      const cartItems = response.data || {};
+      const customerCartList = cartItems.customerCartResponseList;
 
-        setOriginalPrices(originalPricesObj);
-        setOfferPrices(offerPricesObj);
+      if (!customerCartList || customerCartList.length === 0) {
+        console.warn("No cart items available.");
+        setCartData([]);
+        setGrandTotal(0);
+        return;
+      }
 
-        // Calculate total with original prices initially
-        calculateTotalWithPrices(cartItems?.customerCartResponseList, offerPricesObj, originalPricesObj);
+      setCartData(customerCartList);
 
+      const originalPricesObj = {};
+      const offerPricesObj = {};
+
+      customerCartList.forEach((item) => {
+        originalPricesObj[item.itemId] = item.itemPrice;
+        offerPricesObj[item.itemId] = "";
+      });
+
+      setOriginalPrices(originalPricesObj);
+      setOfferPrices(offerPricesObj);
+
+      calculateTotalWithPrices(
+        customerCartList,
+        offerPricesObj,
+        originalPricesObj
+      );
     } catch (error) {
       console.error("Error fetching cart data:", error);
       setError("Failed to load cart data");
@@ -253,28 +266,26 @@ const CartScreen = ({ route }) => {
 
   // Remove item
   const removeCartItem = async (item) => {
-  setRemovalLoading((prev) => ({ ...prev, [item.cartId]: true }));
+    setRemovalLoading((prev) => ({ ...prev, [item.cartId]: true }));
 
-  try {
-    await axios.delete(`${BASE_URL}cart-service/cart/remove`, {
-      data: { id: item.cartId }, // Make sure this key matches your backend
-    });
+    try {
+      await axios.delete(`${BASE_URL}cart-service/cart/remove`, {
+        data: { id: item.cartId }, // Make sure this key matches your backend
+      });
 
-    fetchCartData(); // Refresh cart after removal
-    Alert.alert("Success", `${item.itemName} removed from cart`);
-  } catch (error) {
-    console.error("Error removing item:", error);
-    Alert.alert("Error", "Failed to remove item");
-  } finally {
-    setRemovalLoading((prev) => ({ ...prev, [item.cartId]: false }));
-  }
-};
-
+      fetchCartData(); // Refresh cart after removal
+      Alert.alert("Success", `${item.itemName} removed from cart`);
+    } catch (error) {
+      console.error("Error removing item:", error);
+      Alert.alert("Error", "Failed to remove item");
+    } finally {
+      setRemovalLoading((prev) => ({ ...prev, [item.cartId]: false }));
+    }
+  };
 
   const handleRemoveItem = (item) => {
-
     console.log("Removing item:", item);
-    
+
     Alert.alert(
       "Remove Item",
       `Are you sure you want to remove "${item.itemName}" from your cart?`,
@@ -338,7 +349,9 @@ const CartScreen = ({ route }) => {
                   value={offerPriceText}
                   onChangeText={(text) => updateOfferPrice(item.itemId, text)}
                   keyboardType="numeric"
-                  placeholder={Number(originalPrice) > 0 ? originalPrice.toString() : "0"}
+                  placeholder={
+                    Number(originalPrice) > 0 ? originalPrice.toString() : "0"
+                  }
                   placeholderTextColor="#999"
                 />
               </View>
@@ -433,10 +446,10 @@ const CartScreen = ({ route }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          {/* My Cart ({cartData.length} items) */}
-          My cart
-        </Text>
+        {/* <Text style={styles.headerTitle}> */}
+        {/* My Cart ({cartData.length} items) */}
+        {/* My cart
+        </Text> */}
         <TouchableOpacity
           onPress={navigateToCategories}
           style={styles.addMoreButton}
@@ -444,19 +457,22 @@ const CartScreen = ({ route }) => {
           <MaterialIcons name="shopping-cart" size={20} color="#007AFF" />
           <Text style={styles.addMoreText}>Add More</Text>
         </TouchableOpacity>
-         <TouchableOpacity
-          onPress={()=>navigation.navigate("Checkout", {
-        cartItems: [],
-        grandTotal: grandTotal,
-        storeDetails: {
-          storeId: storeId,
-          userId: customerId,
-          address: route.params?.storeDetails.address || "Address not available",
-        },
-        customerId: customerId, // Also passing as direct prop for fallback
-        storeId: storeId, // Also passing as direct prop for fallback
-        nofDaysAfterMeetAgain: nofDaysAfterMeetAgain,
-      })}
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("Checkout", {
+              cartItems: [],
+              grandTotal: grandTotal,
+              storeDetails: {
+                storeId: storeId,
+                userId: customerId,
+                address:
+                  route.params?.storeDetails.address || "Address not available",
+              },
+              customerId: customerId, // Also passing as direct prop for fallback
+              storeId: storeId, // Also passing as direct prop for fallback
+              nofDaysAfterMeetAgain: nofDaysAfterMeetAgain,
+            })
+          }
           style={styles.addMoreButton}
         >
           <MaterialIcons name="shopping-cart" size={20} color="#007AFF" />
@@ -468,9 +484,7 @@ const CartScreen = ({ route }) => {
       <FlatList
         data={cartData}
         renderItem={renderCartItem}
-        keyExtractor={(item) =>
-         item.itemId
-        }
+        keyExtractor={(item) => item.itemId}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={onRefresh} />
         }
@@ -508,20 +522,39 @@ const CartScreen = ({ route }) => {
         </View>
 
         {/* Single Checkout Button that saves request and navigates */}
-        <TouchableOpacity
-          style={[styles.button, styles.checkoutButton]}
-          onPress={saveRequestAndCheckout}
-          disabled={checkoutProcessing}
-        >
-          {checkoutProcessing ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <>
-              <MaterialIcons name="payment" size={20} color="white" />
-              <Text style={styles.checkoutButtonText}>Save & Checkout</Text>
-            </>
-          )}
-        </TouchableOpacity>
+      <TouchableOpacity
+  style={[styles.button, styles.checkoutButton]}
+  onPress={() => {
+    // You can also add any validation checks before showing the alert
+    Alert.alert(
+      "Important Message",
+      "Please check your cart item price and offer price.\n\nIf you add any item, you must go back and add it again. Once you save the items, you cannot remove or add them. Please check once before proceeding.",
+      [
+        {
+          text: "Cancel", 
+          onPress: () => console.log("User canceled"), 
+          style: "cancel"
+        },
+        {
+          text: "Proceed", 
+          onPress: saveRequestAndCheckout,  // Proceed with checkout function
+        },
+      ],
+      { cancelable: false }
+    );
+  }}
+  disabled={checkoutProcessing}
+>
+  {checkoutProcessing ? (
+    <ActivityIndicator size="small" color="white" />
+  ) : (
+    <>
+      <MaterialIcons name="payment" size={20} color="white" />
+      <Text style={styles.checkoutButtonText}>Save & Checkout</Text>
+    </>
+  )}
+</TouchableOpacity>
+
       </View>
     </View>
   );
@@ -562,7 +595,7 @@ const styles = StyleSheet.create({
   },
   addMoreText: {
     fontSize: 14,
-    color: "#007AFF",
+    color: "purple",
     fontWeight: "600",
     marginLeft: 4,
   },

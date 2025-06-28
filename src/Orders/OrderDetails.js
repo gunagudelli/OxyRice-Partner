@@ -66,15 +66,12 @@ const OrderDetails = ({ route }) => {
   const [acceptLoader, setAcceptLoader] = useState(false);
   const [assignLoader, setAssignLoader] = useState(false);
   const [RejectLoader, setRejectLoader] = useState(false);
+  const[showContainerButton,setShowContainerButton]=useState(false)
   const [RejectReason_error, setRejectReason_error] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [timeSlot, setTimeSlot] = useState([]);
-  const [showContainerButton, setShowContainerButton] = useState(false);
-  const [containerButtonLabel, setContainerButtonLabel] = useState("Add");
-  const [selectedContainerItem, setSelectedContainerItem] = useState(null);
-  const [containerLoader, setContainerLoader] = useState(false);
-  const [selectedTimeslot, setSelectedTimeSlot] = useState(null);
-  const date = new Date();
+  const[selectedSlot,setSelectedSlot]=useState(null)
+  const[timeSlot,setTimeSlot]=useState([])
+  const[selectedTimeslot,setSelectedTimeSlot]=useState(null)
+  const date=new Date();
   useEffect(() => {
     fetchOrderData();
     deliveryBoyDetails();

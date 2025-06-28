@@ -22,6 +22,7 @@ const StoreDetailsScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [focusLoading, setFocusLoading] = useState(false);
 
   // Get access token from Redux store
   const accessToken = useSelector((state) => state.auth?.accessToken);
@@ -30,7 +31,7 @@ const StoreDetailsScreen = ({ navigation }) => {
   const debugLog = (message, data = null) => {
     // console.log(`🐛 [StoreDetails Debug] ${message}`);
     if (data) {
-      // console.log('📊 Data:', JSON.stringify(data, null, 2));
+    // console.log('📊 Data:', JSON.stringify(data, null, 2));
     }
   };
 
@@ -40,21 +41,39 @@ const StoreDetailsScreen = ({ navigation }) => {
       // Convert to boolean to handle any truthy/falsy values
       const aAvailable = Boolean(a.isavailable);
       const bAvailable = Boolean(b.isavailable);
-      
-      // Available stores (true) should come first
+
+    
       if (aAvailable && !bAvailable) return -1;
       if (!aAvailable && bAvailable) return 1;
-      
-      // If both have same availability status, maintain original order
+
+       
       return 0;
     });
   };
 
+  // Check if store has closed items
+  const hasClosedItems = (store) => {
+    return store.listItems && 
+           store.listItems.some(item => 
+             item.status && item.status.toUpperCase() === "CLOSE"
+           );
+  };
+
+  // Get count of closed items
+  const getClosedItemsCount = (store) => {
+    if (!store.listItems) return 0;
+    return store.listItems.filter(item => 
+      item.status && item.status.toUpperCase() === "CLOSE"
+    ).length;
+  };
+
   // Fetch stores from API
-  const fetchStores = async (isRefresh = false) => {
+  const fetchStores = async (isRefresh = false, isFocus = false) => {
     try {
       if (isRefresh) {
         setRefreshing(true);
+      } else if (isFocus) {
+        setFocusLoading(true);
       } else {
         setLoading(true);
       }
@@ -81,7 +100,7 @@ const StoreDetailsScreen = ({ navigation }) => {
 
       const response = await axios.get(apiUrl, config);
       console.log("API Response:", response.data);
-      
+
       debugLog("API Response Success", {
         status: response.status,
         dataLength: response.data?.length || 0,
@@ -121,12 +140,15 @@ const StoreDetailsScreen = ({ navigation }) => {
       }
 
       setError(errorMessage);
-      if (!isRefresh) {
+
+      // Only show alert for initial load, not for focus or refresh
+      if (!isRefresh && !isFocus) {
         Alert.alert("Error", errorMessage);
       }
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setFocusLoading(false);
     }
   };
 
@@ -138,8 +160,11 @@ const StoreDetailsScreen = ({ navigation }) => {
   // Refresh when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchStores();
-    }, [])
+      // Only fetch if stores are already loaded (not on initial mount)
+      if (stores.length > 0 || error) {
+        fetchStores(false, true); // Pass isFocus = true
+      }
+    }, [stores.length, error])
   );
 
   // Handle refresh
@@ -176,17 +201,87 @@ const StoreDetailsScreen = ({ navigation }) => {
     }
 
     // Navigate with both store details and customer ID
-    navigation.navigate("All Categories", {
+    navigation.navigate("Categories", {
       storeDetails: store,
-      // customerId: customerId,
-      // storeId: store.storeId,
-      // storeName: store.storeName,
+      storeId: store.storeId,
+      customerId: store.userId,
+      // alreadyAddedItems: cartData,
+    });
+  };
+
+  // Handle view items functionality - Navigate to Cart screen
+  const handleViewItems = (store) => {
+    const customerId = store.userId;
+
+    // Log for debugging
+    console.log("Navigating to Cart with:", {
+      storeId: store.storeId,
+      storeName: store.storeName,
+      customerId: customerId,
+      hasCustomerId: !!customerId,
+      itemsCount: store.listItems ? store.listItems.length : 0,
+    });
+
+    // Check if customerId exists
+    if (!customerId) {
+      Alert.alert(
+        "Customer ID Missing",
+        "This store doesn't have a customer ID associated with it. Unable to view cart.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    // Check if store has items
+    if (!store.listItems || store.listItems.length === 0) {
+      Alert.alert("No Items", "This store doesn't have any items to view.", [
+        { text: "OK" },
+      ]);
+      return;
+    }
+
+    // Navigate to Cart screen with store details and customer ID
+    navigation.navigate("Checkout", {
+      storeDetails: store,
+      storeId: store.storeId,
+      customerId: store.userId,
+    });
+  };
+
+  // Handle placed orders navigation
+  const handlePlacedOrders = (store) => {
+    const customerId = store.userId;
+
+    // Log for debugging
+    console.log("Navigating to Placed Orders with:", {
+      storeId: store.storeId,
+      storeName: store.storeName,
+      customerId: customerId,
+      hasCustomerId: !!customerId,
+      closedItemsCount: getClosedItemsCount(store),
+    });
+
+    // Check if customerId exists
+    if (!customerId) {
+      Alert.alert(
+        "Customer ID Missing",
+        "This store doesn't have a customer ID associated with it. Unable to view placed orders.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    // Navigate to PlacedOrdersScreen
+    navigation.navigate("Store Orders", {
+      customerId: store.userId,
+      storeId: store.storeId,
     });
   };
 
   // Render individual store card
   const renderStoreCard = (store, index) => (
     <View key={store.storeId || index} style={styles.storeCard}>
+      {/* Store Header */}
       <View style={styles.storeHeader}>
         <View style={styles.storeNameContainer}>
           <Icon name="store" size={24} color="#3B82F6" />
@@ -213,6 +308,7 @@ const StoreDetailsScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* Store Information */}
       <View style={styles.storeInfo}>
         <View style={styles.infoRow}>
           <Icon name="person" size={18} color="#6B7280" />
@@ -268,33 +364,106 @@ const StoreDetailsScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Add Button for each store */}
+      {/* Store Actions */}
       <View style={styles.storeActions}>
-        <TouchableOpacity
-          style={[styles.addButton, !store.userId && styles.disabledButton]}
-          onPress={() => handleNavigateToCategories(store)}
-          activeOpacity={0.7}
-          disabled={!store.userId}
-        >
-          <Icon
-            name="add"
-            size={20}
-            color={store.userId ? "#FFFFFF" : "#9CA3AF"}
-          />
-          <Text
-            style={[
-              styles.addButtonText,
-              !store.userId && styles.disabledButtonText,
-            ]}
+        {/* Placed Orders Button - Show only if there are closed items */}
+        {hasClosedItems(store) && store.userId && (
+          <TouchableOpacity
+            style={styles.placedOrdersButton}
+            onPress={() => handlePlacedOrders(store)}
+            activeOpacity={0.7}
           >
-            {store.userId ? "Add Products" : "No Customer ID"}
-          </Text>
-        </TouchableOpacity>
+            <Icon name="receipt" size={20} color="#FFFFFF" />
+            <Text style={styles.placedOrdersButtonText}>
+              Placed Orders ({getClosedItemsCount(store)})
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Buttons Container */}
+        <View style={styles.buttonsContainer}>
+          {/* View Button */}
+          <TouchableOpacity
+            style={[
+              styles.viewButton,
+              (!store.listItems ||
+                store.listItems.filter(
+                  (item) => item.status === "" || item.status === "OPEN"
+                ).length === 0 ||
+                !store.userId) &&
+                styles.disabledButton,
+            ]}
+            onPress={() => handleViewItems(store)}
+            activeOpacity={0.7}
+            disabled={
+              !store.listItems ||
+              store.listItems.filter(
+                (item) => item.status === "" || item.status === "OPEN"
+              ).length === 0 ||
+              !store.userId
+            }
+          >
+            <Icon
+              name="visibility"
+              size={20}
+              color={
+                store.listItems &&
+                store.listItems.filter(
+                  (item) => item.status === "" || item.status === "OPEN"
+                ).length > 0 &&
+                store.userId
+                  ? "#FFFFFF"
+                  : "#9CA3AF"
+              }
+            />
+            <Text
+              style={[
+                styles.viewButtonText,
+                (!store.listItems ||
+                  store.listItems.filter(
+                    (item) => item.status === "" || item.status === "OPEN"
+                  ).length === 0 ||
+                  !store.userId) &&
+                  styles.disabledButtonText,
+              ]}
+            >
+              Checkout Items (
+              {store.listItems
+                ? store.listItems.filter(
+                    (item) => item.status === "" || item.status === "OPEN"
+                  ).length
+                : 0}
+              )
+            </Text>
+          </TouchableOpacity>
+
+          {/* Add Products Button */}
+          <TouchableOpacity
+            style={[styles.addButton, !store.userId && styles.disabledButton]}
+            onPress={() => handleNavigateToCategories(store)}
+            activeOpacity={0.7}
+            disabled={!store.userId}
+          >
+            <Icon
+              name="add"
+              size={20}
+              color={store.userId ? "#FFFFFF" : "#9CA3AF"}
+            />
+            <Text
+              style={[
+                styles.addButtonText,
+                !store.userId && styles.disabledButtonText,
+              ]}
+            >
+              {store.userId ? "Add Products" : "No Customer ID"}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Show warning if no customer ID */}
         {!store.userId && (
           <Text style={styles.warningText}>
-            Customer ID is required to add products
+            Customer ID is required to add products or view items
           </Text>
         )}
       </View>
@@ -357,9 +526,19 @@ const StoreDetailsScreen = ({ navigation }) => {
     </View>
   );
 
+  // Render focus loading overlay
+  const renderFocusLoadingOverlay = () => (
+    <View style={styles.focusLoadingOverlay}>
+      <View style={styles.focusLoadingContainer}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text style={styles.focusLoadingText}>Refreshing stores...</Text>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" backgroundColor="#3d2a71" />
 
       <View style={styles.content}>
         {loading ? (
@@ -394,6 +573,9 @@ const StoreDetailsScreen = ({ navigation }) => {
             )}
           </>
         )}
+
+        {/* Focus Loading Overlay */}
+        {focusLoading && renderFocusLoadingOverlay()}
       </View>
     </SafeAreaView>
   );
@@ -407,13 +589,14 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+
   // Card Header Styles
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
@@ -422,7 +605,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
-    marginTop: -45,
+    marginTop: -54,
   },
   cardHeaderLeft: {
     flex: 1,
@@ -443,17 +626,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#EFF6FF",
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: "#DBEAFE",
   },
   cardHeaderButtonText: {
-    color: "#3B82F6",
+    color: "purple",
     fontSize: 14,
     fontWeight: "600",
     marginLeft: 4,
   },
+
+  // Scroll Container Styles
   scrollContainer: {
     flex: 1,
   },
@@ -461,9 +646,11 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   storeList: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 14,
+    paddingTop: 12,
   },
+
+  // Store Card Styles
   storeCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -473,9 +660,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
+    borderWidth: -1,
+    borderColor: "grey",
   },
+
+  // Store Header Styles
   storeHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -499,6 +688,8 @@ const styles = StyleSheet.create({
   storeHeaderRight: {
     alignItems: "flex-end",
   },
+
+  // Availability Badge Styles
   availabilityBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -518,6 +709,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 4,
   },
+
+  // Store Info Styles
   storeInfo: {
     padding: 16,
   },
@@ -539,6 +732,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
+
   // Store Actions Styles
   storeActions: {
     paddingHorizontal: 16,
@@ -549,14 +743,66 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
   },
+
+  // Placed Orders Button (positioned at top)
+  placedOrdersButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#8B5CF6",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  placedOrdersButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 6,
+  },
+
+  buttonsContainer: {
+    flexDirection: "row",
+    gap: 12,
+  },
+
+  // Button Styles
+  viewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#10B981",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    flex: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  viewButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 6,
+  },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#3B82F6",
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     borderRadius: 8,
+    flex: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -568,7 +814,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     marginLeft: 6,
   },
@@ -582,6 +828,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontStyle: "italic",
   },
+
+  // Empty State Styles
   emptyState: {
     flex: 1,
     justifyContent: "center",
@@ -601,6 +849,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
+
+  // Error State Styles
   errorState: {
     flex: 1,
     justifyContent: "center",
@@ -635,6 +885,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 8,
   },
+
+  // Loading State Styles
   loadingState: {
     flex: 1,
     justifyContent: "center",
@@ -644,6 +896,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#6B7280",
     marginTop: 16,
+  },
+
+  // Focus Loading Overlay Styles
+  focusLoadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  focusLoadingContainer: {
+    backgroundColor: "#FFFFFF",
+    padding: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  focusLoadingText: {
+    fontSize: 16,
+    color: "#6B7280",
+    marginTop: 12,
+    fontWeight: "500",
   },
 });
 

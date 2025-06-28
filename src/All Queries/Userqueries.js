@@ -155,7 +155,7 @@ const Userqueries = ({ navigation }) => {
 
   // Document picking function
   const pickDocument = async () => {
-    console.log("sreeja")
+    // console.log("sreeja")
     try {
     let result = await ImagePicker.launchImageLibraryAsync({
           // mediaTypes: ImagePicker.MediaType.Images,

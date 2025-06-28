@@ -85,7 +85,7 @@ export default function InventoryScreen() {
         </View>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => navigation.navigate('RecordInventory')}
+          onPress={() => navigation.navigate('Record Inventory')}
         >
           <FontAwesome5 name="plus" size={16} color="#fff" />
         </TouchableOpacity>

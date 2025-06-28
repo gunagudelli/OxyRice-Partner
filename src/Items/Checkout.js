@@ -1,287 +1,4 @@
-// import { StyleSheet, Text, View, FlatList, Image, TouchableOpacity, SafeAreaView } from 'react-native';
-// import React, { useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { Checkbox, TextInput, Button } from 'react-native-paper';
-// import BASE_URL from '../../config';
-// import Ionicons from 'react-native-vector-icons/Ionicons';
 
-
-// const Checkout = ({ route }) => {
-//   const [cartData, setCartData] = useState(null);
-//   const [couponChecked, setCouponChecked] = useState(false);
-//   const [couponCode, setCouponCode] = useState('');
-
-//   useEffect(() => {
-//     console.log(route.params.MarketDetails);
-//     getCartDetails();
-//   }, []);
-
-//  function getCartDetails() {
-//   axios({
-//     method: 'get',
-//     url: `${BASE_URL}cart-service/cart/userCartInfo?customerId=${route.params.MarketDetails.userId}`,
-//   })
-//     .then(function (response) {
-//       console.log(response.data);
-//       const data = response.data;
-//       if (!data.customerCartResponseList || data.customerCartResponseList.length === 0) {
-//         // Navigate back to AllCategories if cart is empty
-//         navigation.replace('AllCategories', {
-//           customerId: route.params.MarketDetails.userId,
-//         });
-//       } else {
-//         setCartData(data);
-//       }
-//     })
-//     .catch(function (error) {
-//       console.log(error.response);
-//     });
-// }
-
-
-// const renderItem = ({ item }) => {
-//   const handleIncrement = () => {
-//     axios.post(`${BASE_URL}cart-service/cart/addAndIncrementCart`, {
-//       itemId: item.itemId,
-//       customerId: route.params.MarketDetails.userId,
-//     })
-//     .then(() => getCartDetails())
-//     .catch(err => console.log('Increment Error', err.response));
-//   };
-
-//   const handleDecrement = () => {
-//     axios.patch(`${BASE_URL}cart-service/cart/minusCartItem`, {
-//       itemId: item.itemId,
-//       customerId: route.params.MarketDetails.userId,
-//     })
-//     .then(() => getCartDetails())
-//     .catch(err => console.log('Decrement Error', err.response));
-//   };
-
-//   const handleRemove = () => {
-//     if (item.status === 'FREE') {
-//       // Confirm delete for FREE item
-//       Alert.alert(
-//         "Remove Free Item",
-//         "Are you sure you want to remove this free item?",
-//         [
-//           { text: "Cancel", style: "cancel" },
-//           { text: "Remove", onPress: () => {
-//               axios.delete(`${BASE_URL}cart-service/cart/removeFreeContainer`, {
-//                 data: { item: item.itemId }
-//               })
-//               .then(() => getCartDetails())
-//               .catch(err => console.log('Delete FREE Error', err.response));
-//             }
-//           }
-//         ]
-//       );
-//     } else {
-//       // Regular item remove
-//       Alert.alert(
-//         "Remove Item",
-//         "Are you sure you want to remove this item?",
-//         [
-//           { text: "Cancel", style: "cancel" },
-//           { text: "Remove", onPress: () => {
-//               axios.delete(`${BASE_URL}cart-service/cart/remove`, {
-//                 data: { id: item.cartId },
-//               })
-//               .then(() => getCartDetails())
-//               .catch(err => console.log('Delete Error', err.response));
-//             }
-//           }
-//         ]
-//       );
-//     }
-//   };
-
-//   return (
-//     <View style={styles.itemContainer}>
-//       <Image source={{ uri: item.image }} style={styles.itemImage} />
-//       <View style={styles.itemDetails}>
-//         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-//           <Text style={styles.itemName}>{item.itemName}</Text>
-//           <TouchableOpacity onPress={handleRemove}>
-//             <Ionicons name="trash-outline" size={20} color="red" />
-//           </TouchableOpacity>
-//         </View>
-//         <Text style={styles.itemWeight}>Weight: {item.weight} {item.weight == 1 ? "Kg" : "Kgs"}</Text>
-//         <Text style={styles.itemPrice}>Price: ₹{item.totalPrice}</Text>
-//         <View style={styles.quantityRow}>
-//           <TouchableOpacity onPress={handleDecrement} style={styles.iconButton}>
-//             <Text style={styles.iconText}>-</Text>
-//           </TouchableOpacity>
-//           <Text style={styles.itemQuantity}>{item.cartQuantity}</Text>
-//           <TouchableOpacity onPress={handleIncrement} style={styles.iconButton}>
-//             <Text style={styles.iconText}>+</Text>
-//           </TouchableOpacity>
-//         </View>
-//       </View>
-//     </View>
-//   );
-// };
-
-
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       {cartData && (
-//         <>
-//           <FlatList
-//             data={cartData.customerCartResponseList}
-//             renderItem={renderItem}
-//             keyExtractor={(item) => item.cartId}
-//             contentContainerStyle={styles.listContainer}
-//           />
-//           <View style={styles.summaryContainer}>
-//             <Text style={styles.summaryText}>Total Cart Value: ₹{cartData.totalCartValue}</Text>
-//             <Text style={styles.summaryText}>Total GST: ₹{cartData.totalGstAmountToPay}</Text>
-//             <Text style={styles.summaryText}>Discounted by Free Items: ₹{cartData.discountedByFreeItems}</Text>
-//             <Text style={styles.summaryText}>Amount to Pay: ₹{cartData.amountToPay}</Text>
-//             <View style={styles.couponContainer}>
-//               <Checkbox
-//                 status={couponChecked ? 'checked' : 'unchecked'}
-//                 onPress={() => setCouponChecked(!couponChecked)}
-//               />
-//               <Text style={styles.couponText}>Apply Coupon</Text>
-//             </View>
-//             {couponChecked && (
-//               <TextInput
-//                 label="Enter Coupon Code"
-//                 value={couponCode}
-//                 onChangeText={(text) => setCouponCode(text)}
-//                 style={styles.couponInput}
-//                 mode="outlined"
-//               />
-//             )}
-//           </View>
-//           <View style={styles.payButtonContainer}>
-//             <Button
-//               mode="contained"
-//               onPress={() => console.log('Pay Now', { amount: cartData.amountToPay, coupon: couponCode })}
-//               style={styles.payButton}
-//             >
-//               Pay ₹{cartData?.amountToPay}
-//             </Button>
-//           </View>
-//         </>
-//       )}
-//     </SafeAreaView>
-//   );
-// };
-
-// export default Checkout;
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#fff',
-//   },
-//   listContainer: {
-//     padding: 16,
-//     paddingBottom: 150, // Ensure space for fixed button and summary
-//   },
-//   itemContainer: {
-//     flexDirection: 'row',
-//     marginBottom: 16,
-//     borderWidth: 1,
-//     borderColor: '#ddd',
-//     borderRadius: 8,
-//     padding: 8,
-//   },
-//   itemImage: {
-//     width: 80,
-//     height: 80,
-//     borderRadius: 8,
-//     marginRight: 16,
-//   },
-//   itemDetails: {
-//     flex: 1,
-//     justifyContent: 'center',
-//   },
-//   itemName: {
-//     fontSize: 16,
-//     fontWeight: 'bold',
-//     marginBottom: 4,
-//   },
-//   itemWeight: {
-//     fontSize: 14,
-//     color: '#555',
-//     marginBottom: 4,
-//   },
-//   itemPrice: {
-//     fontSize: 14,
-//     color: '#000',
-//     marginBottom: 4,
-//   },
-//   itemQuantity: {
-//     fontSize: 14,
-//     color: '#555',
-//     marginBottom: 4,
-//   },
-//   quantityRow: {
-//   flexDirection: 'row',
-//   alignItems: 'center',
-//   marginVertical: 8,
-// },
-// iconButton: {
-//   padding: 6,
-//   borderWidth: 1,
-//   borderColor: '#ccc',
-//   borderRadius: 4,
-//   marginHorizontal: 8,
-// },
-// iconText: {
-//   fontSize: 18,
-// },
-
-//   itemSavings: {
-//     fontSize: 14,
-//     color: 'green',
-//     marginBottom: 4,
-//   },
-//   itemGst: {
-//     fontSize: 14,
-//     color: '#555',
-//   },
-//   summaryContainer: {
-//     padding: 16,
-//     borderTopWidth: 1,
-//     borderColor: '#ddd',
-//     backgroundColor: '#f9f9f9',
-//   },
-//   summaryText: {
-//     fontSize: 16,
-//     marginBottom: 8,
-//   },
-//   couponContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginTop: 8,
-//   },
-//   couponText: {
-//     fontSize: 16,
-//     marginLeft: 8,
-//   },
-//   couponinput: {
-//     marginTop: 8,
-//     backgroundColor: '#fff',
-//   },
-//   payButtonContainer: {
-//     position: 'absolute',
-//     bottom: 0,
-//     left: 0,
-//     right: 0,
-//     padding: 16,
-//     backgroundColor: '#fff',
-//     borderTopWidth: 1,
-//     borderColor: '#ddd',
-//   },
-//   payButton: {
-//     backgroundColor: '#007AFF',
-//   },
-// });
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -295,60 +12,66 @@ import {
   ScrollView,
   TextInput,
   Modal,
-  Platform
+  Platform,
 } from "react-native";
 import axios from "axios";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { useSelector } from "react-redux";
 import BASE_URL from "../../config";
-import encryptEas  from "../component/encryptEas";
-import  decryptEas  from "../component/decryptEas";
+import encryptEas from "../component/encryptEas";
+import decryptEas from "../component/decryptEas";
 
 const Checkout = ({ route }) => {
   const navigation = useNavigation();
   const token = useSelector((state) => state.auth?.token);
+  console.log(route.params);
+  
 
-  // Get route params
+  // Get route params with proper defaults
   const {
-    // cartItems = [],
     grandTotal = 0,
     storeDetails = {},
     customerId,
     storeId,
     nofDaysAfterMeetAgain = 0,
     userCartInfo = null,
-    address
+    address,
   } = route.params || {};
 
   // States
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true for initial load
   const [orderProcessing, setOrderProcessing] = useState(false);
+  const [calculatingTotals, setCalculatingTotals] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("COD"); // COD, ONLINE
+  const [paymentMethod, setPaymentMethod] = useState("COD");
   const [userInfo, setUserInfo] = useState(null);
-  const [cartItems, setCartItems] = useState()
+  const [cartItems, setCartItems] = useState([]);
   const [subtotal, setSubtotal] = useState(0);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [tax, setTax] = useState(0);
   const [totalAmount, setGrandTotal] = useState(0);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-  const[qrCode,setQrCode]=useState('')
-  const[qrShowModal,setQrShowModal]=useState(false)
+  const [qrCode, setQrCode] = useState("");
+  const [qrShowModal, setQrShowModal] = useState(false);
   const [selectedPaymentMode, setSelectedPaymentMode] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
-  const [transactionId, setTransactionId] = useState();
+  const [transactionId, setTransactionId] = useState("");
   const [paymentId, setPaymentId] = useState(null);
-  const [paymentStatus, setPaymentStatus] = useState("1");
+  const [paymentStatus, setPaymentStatus] = useState("1");
   const [fullAddress, setFullAddress] = useState("");
   const [pinCode, setPinCode] = useState("");
+
+  // Google Maps API Key
+  const GOOGLE_MAPS_API_KEY = "AIzaSyAM29otTWBIAefQe6mb7f617BbnXTHtN0M";
 
   useFocusEffect(
     React.useCallback(() => {
       // Reset state when screen is focused
-      setLoading(false);
+      setLoading(true);
       setOrderProcessing(false);
+      setCalculatingTotals(false);
       setDeliveryAddress(route.params?.storeDetails?.address || "");
       setSpecialInstructions("");
       setPaymentMethod("COD");
@@ -358,222 +81,304 @@ const Checkout = ({ route }) => {
       setDeliveryFee(0);
       setTax(0);
       setGrandTotal(0);
-      fetchCartItems();
-      fetchUserDetails();
+      setPaymentStatus("1");
+      setTransactionId("");
+      setPaymentId(null);
 
-      console.log("route.params", route.params?.storeDetails?.address);
-      
-      
-    if (userCartInfo) {
-      setUserInfo(userCartInfo);
-    }
-    }, [])
+      // Initialize data
+      initializeCheckoutData();
+      fetchCartData();
+      console.log("route.params", route.params);
+
+      if (userCartInfo) {
+        setUserInfo(userCartInfo);
+      }
+    }, [route.params])
   );
 
-  useEffect(() => {
-    // Calculate totals when cartItems or userCartInfo changes
-    calculateTotals();
-  }, [subtotal, deliveryFee, tax, cartItems, userCartInfo]);
-
-  // Fetch additional user details if needed
-  const fetchUserDetails = async () => {
+  const fetchCartData = async () => {
+    console.log("into the fetch cart dataaaaaaa");
+    
+    // const customerId = route.params?.userId;
+    console.log("Fetching cart data for customerId:", customerId);
+    if (!customerId) return;
+    
+    try {
+      const res = await axios.get(
+        `${BASE_URL}cart-service/cart/customersCartItems`,
+        {
+          params: { customerId },
+        }
+      );
+      console.log("cart response",res);
+      
+      const cartItems = res.data;
+      console.log("Cart Items:", cartItems);
+     
+    } catch (error) {
+      console.error("Error fetching cart data:", error);
+     
+    }
+  };
+  // Initialize checkout data
+  const initializeCheckoutData = async () => {
     try {
       setLoading(true);
-      // You can add API call here to fetch user details like address, etc.
-      // const response = await axios.get(`${BASE_URL}user-service/user/${customerId}`);
-      // setUserInfo(response.data);
+      await Promise.all([fetchCartItems(), fetchUserDetails()]);
     } catch (error) {
-      console.error("Error fetching user details:", error);
+      console.error("Error initializing checkout data:", error);
+      Alert.alert("Error", "Failed to load checkout data. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-const fetchCartItems = async () => {
+
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      calculateTotals();
+    } else if (!loading) {
+      setSubtotal(0);
+      setDeliveryFee(0);
+      setTax(0);
+      setGrandTotal(0);
+      setCalculatingTotals(false);
+    }
+  }, [cartItems]);
+
+  useEffect(() => {
+    let intervalId;
+    if (
+      paymentId &&
+      (paymentStatus === "PENDING" ||
+        paymentStatus === "" ||
+        paymentStatus === null ||
+        paymentStatus === "INITIATED")
+    ) {
+      intervalId = setInterval(() => {
+        Requery(paymentId);
+      }, 4000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [paymentStatus, paymentId]);
+
+  // Fetch user details
+  const fetchUserDetails = async () => {
+    try {
+      // Add your user details API call here if needed
+      console.log("Fetching user details for customerId:", customerId);
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      throw error;
+    }
+  };
+
+  // Fetch cart items
+  const fetchCartItems = async () => {
     if (!storeId) {
       console.warn("No storeId provided, cannot fetch cart items.");
       return;
     }
+
     try {
-      setLoading(true);
-      const response = await axios.get(`${BASE_URL}product-service/getStore/${storeId}`);
-      // console.log("Cart items fetched:", response.data[0].listItems);
-      setCartItems(
-                  (response.data[0].listItems || []).filter(
-                    item => item.status === '' || item.status === 'OPEN'
-                  )
-                );
+      console.log("Fetching cart items for storeId:", storeId);
+
+      const response = await axios.get(
+        `${BASE_URL}product-service/getStore/${storeId}`
+      );
+
+      console.log("Store response:", response.data);
+
+      // Safely access listItems from response
+      const items = (response.data[0]?.listItems || []).filter(
+        (item) => item.status === "" || item.status === "OPEN"
+      );
+
+      console.log("Filtered cart items:", items);
+
+      setCartItems(items); // Update state
     } catch (error) {
       console.error("Error fetching cart items:", error);
       Alert.alert("Error", "Failed to fetch cart items. Please try again.");
-    } finally {
-      setLoading(false);
     }
-  }
-
-  // Calculate totals
-  const calculateTotals = async() => {
-
-    try {
-      const response = await axios.post(`${BASE_URL}cart-service/cart/offlineSales`,{
-        customerId
-      })
-      console.log(response.data);
-      
-      const subtotal = cartItems.reduce((sum, item) => {
-        if (!item.offerPrice || !item.qty) {
-          console.warn("Item missing offerPrice or qty:", item);
-          return 
-        }
-        // console.log(sum+ (item.offerPrice * item.qty));
-        const price = sum + (item.offerPrice * item.qty)
-      return price
-    }, 0);
-      const deliveryFee = subtotal > 500 ? 50.123654 : 0; // Free delivery above ₹500
-    const tax = response.data.totalGstSum || 0; // 5% tax
-    const total = subtotal + deliveryFee + tax;
-      setSubtotal(subtotal);
-      setDeliveryFee(deliveryFee);
-      setTax(tax);
-      setGrandTotal(total);
-
-      console.log("Totals calculated:", { 
-        subtotal,
-        deliveryFee,
-        tax,
-        total
-      });
-
-    } catch (error) {
-      
-    }
-
-    
   };
 
-const getAddressFromCoordsGoogle = async (lat, lon) => {
-  const apiKey = 'AIzaSyAM29otTWBIAefQe6mb7f617BbnXTHtN0M'; // Add your key here
-
-  try {
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`
-    );
-    const data = await response.json();
-
-    if (data.status === 'OK') {
-      const result = data.results[0];
-      const fullAddress = result.formatted_address;
-
-      let pinCode = '';
-      result.address_components.forEach(comp => {
-        if (comp.types.includes('postal_code')) {
-          pinCode = comp.long_name;
-        }
-      });
-
-      console.log("Full Address:", fullAddress);
-      console.log("Pincode:", pinCode);
-      setFullAddress(fullAddress);
-      setPinCode(pinCode);
-      return pinCode
-    } else {
-      console.log("No results found");
-    }
-  } catch (error) {
-    console.error("Error with Google Geocoding API:", error);
-  }
-};
-
-
-
-
-  const placeOrder = async () => {
-    // if (!deliveryAddress.trim()) {
-    //   Alert.alert("Missing Information", "Please enter your delivery address");
-    //   return;
-    // }
-    const GOOGLE_MAPS_API_KEY = "AIzaSyAM29otTWBIAefQe6mb7f617BbnXTHtN0M"
-    const today = new Date();
-
-    const day = String(today.getDate()).padStart(2, "0");
-    const month = String(today.getMonth() + 1).padStart(2, "0"); // Months are 0-based
-    const year = today.getFullYear();
-
-    const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
-
-    let location = null;
-    let pinCode = null;
-
-      try {
-    const geocodeURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-      deliveryAddress
-    )}&key=${GOOGLE_MAPS_API_KEY}`;
-
-    const geoResponse = await axios.get(geocodeURL);
-    if (
-      geoResponse.data.status === "OK" &&
-      geoResponse.data.results &&
-      geoResponse.data.results.length > 0
-    ) {
-      location = geoResponse.data.results[0].geometry.location;
-      console.log("Coordinates:", location);
-     pinCode =  await getAddressFromCoordsGoogle(location.lat, location.lng)
-
-
-      setCoordinates(location);
-    } else {
-      console.error("Geocoding failed:", geoResponse.data);
-    }
-
-
+  // Calculate totals
+  const calculateTotals = async () => {
     try {
-      setOrderProcessing(true);
-      const orderData = 
-        {
-  "address": deliveryAddress,
-  "amount": totalAmount,
-  "customerId": customerId,
-  "flatNo": "",
-  "landMark": "",
-  "orderStatus": paymentMethod,
-  "pincode": pinCode,
-  latitude: location.lat,
-  longitude: location.lng,
-  "area": "",
-  "houseType": "",
-  "residenceName": "",
-  "walletAmount": 0,
-  "couponCode": null,
-  "couponValue": "",
-  "deliveryBoyFee": deliveryFee,
-  "subTotal": subtotal,
-  "gstAmount": tax,
-  "orderFrom": Platform.OS === "android" ? "ANDROID" : "IOS",
-  "dayOfWeek": weekday,
-  "expectedDeliveryDate": day + "-" + month + "-" + year,
-  "timeSlot": "10:00 AM - 07:00 PM",
-  "storeId": storeId
-}
+      setCalculatingTotals(true);
+      console.log("Calculating totals for items:", cartItems);
+
+      // Calculate subtotal from cart items
+      const itemSubtotal = cartItems.reduce((sum, item) => {
+        if (!item.offerPrice || !item.qty) {
+          console.warn("Item missing offerPrice or qty:", item);
+          return sum;
+        }
+        return sum + parseFloat(item.offerPrice) * parseInt(item.qty);
+      }, 0);
+
+      console.log("Item subtotal calculated:", itemSubtotal);
+
+      // Get tax information from API
+      let taxAmount = 0;
+      if (customerId && itemSubtotal > 0) {
+        try {
+          const response = await axios.post(
+            `${BASE_URL}cart-service/cart/offlineSales`,
+            {
+              customerId,
+            }
+          );
+          taxAmount = response.data?.totalGstSum || 0;
+          console.log("Tax from API:", taxAmount);
+        } catch (error) {
+          console.error("Error fetching tax info:", error);
+          taxAmount = itemSubtotal * 0.05; // Fallback to 5% tax
+          console.log("Using fallback tax:", taxAmount);
+        }
+      } else {
+        taxAmount = itemSubtotal * 0.05; // 5% tax fallback
+        console.log("Using default tax calculation:", taxAmount);
+      }
+
+      const calculatedDeliveryFee = itemSubtotal > 500 ? 0 : 50;
+      const total = itemSubtotal + calculatedDeliveryFee + taxAmount;
+
+      setSubtotal(itemSubtotal);
+      setDeliveryFee(calculatedDeliveryFee);
+      setTax(taxAmount);
+      setGrandTotal(total);
+
+      console.log("Totals calculated:", {
+        subtotal: itemSubtotal,
+        deliveryFee: calculatedDeliveryFee,
+        tax: taxAmount,
+        total,
+      });
+    } catch (error) {
+      console.error("Error calculating totals:", error);
+      Alert.alert("Error", "Failed to calculate totals. Please refresh.");
+    } finally {
+      setCalculatingTotals(false);
+    }
+  };
+
+  // Get address from coordinates using Google Geocoding API
+  const getAddressFromCoordsGoogle = async (lat, lon) => {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+
+      if (data.status === "OK" && data.results.length > 0) {
+        const result = data.results[0];
+        const fullAddress = result.formatted_address;
+
+        let pinCode = "";
+        result.address_components.forEach((comp) => {
+          if (comp.types.includes("postal_code")) {
+            pinCode = comp.long_name;
+          }
+        });
+
+        setFullAddress(fullAddress);
+        setPinCode(pinCode);
+
+        return pinCode;
+      } else {
+        console.log("No results found for reverse geocoding");
+        return "";
+      }
+    } catch (error) {
+      console.error("Error with Google Geocoding API:", error);
+      return "";
+    }
+  };
+
+  // Helper function to proceed without location
+  const proceedWithoutLocation = async () => {
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, "0");
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const year = today.getFullYear();
+    const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
+
+    // Use fallback coordinates (you can use store coordinates or 0,0)
+    const fallbackLocation = { lat: 0, lng: 0 };
+    await proceedWithOrder(fallbackLocation, "", day, month, year, weekday);
+  };
+
+  // Helper function to handle order placement
+  const proceedWithOrder = async (
+    location,
+    pinCode,
+    day,
+    month,
+    year,
+    weekday
+  ) => {
+    try {
+      const orderData = {
+        address: deliveryAddress,
+        amount: totalAmount,
+        customerId: customerId,
+        flatNo: "",
+        landMark: specialInstructions,
+        orderStatus: paymentMethod,
+        pincode: pinCode || "",
+        latitude: location?.lat || 0,
+        longitude: location?.lng || 0,
+        area: "",
+        houseType: "",
+        residenceName: "",
+        walletAmount: 0,
+        couponCode: null,
+        couponValue: "",
+        deliveryBoyFee: deliveryFee,
+        subTotal: subtotal,
+        gstAmount: tax,
+        orderFrom: Platform.OS === "android" ? "ANDROID" : "IOS",
+        dayOfWeek: weekday,
+        expectedDeliveryDate: day + "-" + month + "-" + year,
+        timeSlot: "10:00 AM - 07:00 PM",
+        storeId: storeId,
+      };
+
       console.log("Placing order with data:", orderData);
 
-      const response = await axios.post(`${BASE_URL}order-service/orderPlacedOfflineStores`, orderData);
-      console.log("Order placed successfully:", response);
-       if(paymentMethod=="COD"){
-          Alert.alert("Order Placed Successfully", "Your order has been placed successfully.", 
-            [
+      const response = await axios.post(
+        `${BASE_URL}order-service/orderPlacedOfflineStores`,
+        orderData
+      );
+
+      console.log("Order placed successfully:", response.data);
+
+      if (paymentMethod === "COD") {
+        Alert.alert(
+          "Order Placed Successfully",
+          "Your order has been placed successfully.",
+          [
             {
               text: "OK",
               onPress: () => {
                 navigation.navigate("Store Details");
-              }
-            }
+              },
+            },
           ]
-        )
-          }else{
-            setTransactionId(response.data.paymentId);
-            paymentInitiation()
-          }
-    }
-    catch (error) {
+        );
+      } else {
+        setTransactionId(response.data.paymentId);
+        paymentInitiation();
+      }
+    } catch (error) {
       console.error("Error placing order:", error);
       let errorMessage = "Failed to place order. Please try again.";
       if (error.response?.data?.message) {
@@ -581,148 +386,214 @@ const getAddressFromCoordsGoogle = async (lat, lon) => {
       }
       Alert.alert("Order Failed", errorMessage);
     }
-    finally {
-      setOrderProcessing(false);
-
-    }
-  } catch (error) { 
-    console.error("Geocoding error:", error);
-    Alert.alert("Error", "Failed to fetch coordinates. Please try again.");
-  }
   };
 
-  useEffect(() => {
-    if (
-      paymentStatus == "PENDING" ||
-      paymentStatus == "" ||
-      paymentStatus == null ||
-      paymentStatus == "INITIATED"
-    ) {
-      const data = setInterval(() => {
-        Requery(paymentId);
-      }, 4000);
-      return () => clearInterval(data);
-    } else {
+  // Main place order function
+  const placeOrder = async () => {
+    // Validate delivery address
+    if (!deliveryAddress.trim()) {
+      Alert.alert("Missing Information", "Please enter your delivery address");
+      return;
     }
-  }, [paymentStatus, paymentId]);
 
-const paymentInitiation=()=>{
-              const data = {
-                mid: "1152305",
-                // amount: couponValue==''?cartData?.amountToPay : total,
-                amount: 1,
-                merchantTransactionId: transactionId,
-                transactionDate: new Date(),
-                terminalId: "getepay.merchant128638@icici",
-                udf1: route.params.storeDetails.mobileNumber,
-                udf2: '',
-                udf3: '',
-                udf4: "",
-                udf5: "",
-                udf6: "",
-                udf7: "",
-                udf8: "",
-                udf9: "",
-                udf10: "",
-                ru: "https://app.oxybricks.world/interact/paymentreturn",
-                callbackUrl:
-                  "https://fintech.oxyloans.com/oxyloans/v1/user/getepay",
-                currency: "INR",
-                paymentMode: "ALL",
-                bankId: "",
-                txnType: "single",
-                productType: "IPG",
-                txnNote: "Rice Order In Live",
-                vpa: "Getepay.merchant129014@icici",
-              };
-              // console.log({ data });
-              getepayPortal(data);
-            //   GoogleAnalyticsService.purchase(
-            //     transactionId,
-            //     cartData,
-            //     couponValue==''?cartData?.amountToPay : total,
-            //     "ONLINE"
-            //   );
-}
+    // Validate cart items
+    if (!cartItems || cartItems.length === 0) {
+      Alert.alert(
+        "Empty Cart",
+        "Please add items to your cart before placing an order"
+      );
+      return;
+    }
 
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, "0");
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const year = today.getFullYear();
+    const weekday = today.toLocaleDateString("en-US", { weekday: "long" });
 
-const getepayPortal = async (data) => {
-    // console.log("getepayPortal", data);
-    const JsonData = JSON.stringify(data);
-    // console.log("ytfddd");
+    let location = null;
+    let pinCode = null;
 
-    var ciphertext = encryptEas(JsonData);
-    var newCipher = ciphertext.toUpperCase();
+    try {
+      setOrderProcessing(true);
 
-    var myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
+      // Try to geocode the address
+      const geocodeURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        deliveryAddress
+      )}&key=${GOOGLE_MAPS_API_KEY}`;
 
-    var raw = JSON.stringify({
-      mid: data.mid,
-      terminalId: data.terminalId,
-      req: newCipher,
-    });
-    // console.log("========");
-    var requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
-    await fetch(
-      "https://portal.getepay.in:8443/getepayPortal/pg/generateInvoice",
-      requestOptions
-    )
-      .then((response) => response.text())
-      .then((result) => {
-        //  console.log("===getepayPortal result======")
-        //  console.log("result",result);
-        var resultobj = JSON.parse(result);
-        // console.log(resultobj);
-        var responseurl = resultobj.response;
-        var data = decryptEas(responseurl);
-        // console.log("===getepayPortal data======");
-        console.log({data});
-        data = JSON.parse(data);
-        setPaymentId(data.paymentId);
-        // paymentID = data.paymentId
+      console.log("Geocoding address:", deliveryAddress);
+
+      const geoResponse = await axios.get(geocodeURL);
+      console.log("Geocoding response status:", geoResponse.data.status);
+
+      if (
+        geoResponse.data.status === "OK" &&
+        geoResponse.data.results &&
+        geoResponse.data.results.length > 0
+      ) {
+        location = geoResponse.data.results[0].geometry.location;
+        console.log("Coordinates found:", location);
+
+        // Get pincode from coordinates
+        pinCode = await getAddressFromCoordsGoogle(location.lat, location.lng);
+        setCoordinates(location);
+
+        // Proceed with order placement
+        await proceedWithOrder(location, pinCode, day, month, year, weekday);
+      } else {
+        console.warn("Geocoding failed:", geoResponse.data);
+
+        // Handle geocoding failure - give user options
         Alert.alert(
-          "Cart Summary",
-          `The total amount for your cart is ₹${totalAmount}. Please proceed to checkout to complete your purchase.`,
+          "Address Not Found",
+          "We couldn't find the exact location for this address. Would you like to continue without precise location data?",
           [
             {
-              text: "No",
-              onPress: () => {
-                setLoading(false);
-              },
+              text: "Fix Address",
+              style: "cancel",
             },
             {
-              text: "yes",
-              onPress: () => {
-                setQrCode(data.qrPath);
-                setQrShowModal(true)
-                Requery(data.paymentId);
-                setPaymentStatus(null);
-              },
+              text: "Continue Anyway",
+              onPress: () => proceedWithoutLocation(),
             },
           ]
         );
-      })
-      .catch((error) => {
-        console.log("getepayPortal", error.response);
-        setLoading(false);
-      });
+      }
+    } catch (error) {
+      console.error("Error in placeOrder:", error);
+      Alert.alert(
+        "Error",
+        "An error occurred while processing your order. Please try again."
+      );
+    } finally {
+      setOrderProcessing(false);
+    }
   };
 
-    function Requery(paymentId) {
+  // Payment initiation
+  const paymentInitiation = () => {
+    const data = {
+      mid: "1152305",
+      amount: Math.max(1, totalAmount), // Ensure minimum amount of 1
+      merchantTransactionId: transactionId,
+      transactionDate: new Date(),
+      terminalId: "getepay.merchant128638@icici",
+      udf1: storeDetails?.mobileNumber || "",
+      udf2: "",
+      udf3: "",
+      udf4: "",
+      udf5: "",
+      udf6: "",
+      udf7: "",
+      udf8: "",
+      udf9: "",
+      udf10: "",
+      ru: "https://app.oxybricks.world/interact/paymentreturn",
+      callbackUrl: "https://fintech.oxyloans.com/oxyloans/v1/user/getepay",
+      currency: "INR",
+      paymentMode: "ALL",
+      bankId: "",
+      txnType: "single",
+      productType: "IPG",
+      txnNote: "Order Payment",
+      vpa: "Getepay.merchant129014@icici",
+    };
+
+    console.log("Initiating payment with data:", data);
+    getepayPortal(data);
+  };
+
+  // Getepay portal integration
+  const getepayPortal = async (data) => {
+    try {
+      const JsonData = JSON.stringify(data);
+      var ciphertext = encryptEas(JsonData);
+      var newCipher = ciphertext.toUpperCase();
+
+      var myHeaders = new Headers();
+      myHeaders.append("Content-Type", "application/json");
+
+      var raw = JSON.stringify({
+        mid: data.mid,
+        terminalId: data.terminalId,
+        req: newCipher,
+      });
+
+      var requestOptions = {
+        method: "POST",
+        headers: myHeaders,
+        body: raw,
+        redirect: "follow",
+      };
+
+      const response = await fetch(
+        "https://portal.getepay.in:8443/getepayPortal/pg/generateInvoice",
+        requestOptions
+      );
+
+      const result = await response.text();
+      console.log("Payment portal response:", result);
+
+      var resultobj = JSON.parse(result);
+      var responseurl = resultobj.response;
+      var decryptedData = decryptEas(responseurl);
+      console.log("Decrypted payment data:", decryptedData);
+
+      const paymentData = JSON.parse(decryptedData);
+      setPaymentId(paymentData.paymentId);
+
+      Alert.alert(
+        "Payment Required",
+        `Please complete the payment of ₹${totalAmount.toFixed(
+          2
+        )} to proceed with your order.`,
+        [
+          {
+            text: "Cancel",
+            onPress: () => {
+              setOrderProcessing(false);
+            },
+            style: "cancel",
+          },
+          {
+            text: "Pay Now",
+            onPress: () => {
+              setQrCode(paymentData.qrPath);
+              setQrShowModal(true);
+              setPaymentStatus("INITIATED");
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Payment portal error:", error);
+      setOrderProcessing(false);
+      Alert.alert(
+        "Payment Error",
+        "Failed to initiate payment. Please try again."
+      );
+    }
+  };
+  const navigateToAllCategories = () => {
+  //  navigation.navigate("All Categories", {
+  //     storeDetails: route.params?.storeDetails,
+  //   });
+  navigation.navigate("Categories",{
+    storeDetails: storeDetails,
+      storeId: storeDetails.storeId,
+      customerId: storeDetails.userId,
+  });
+  };
+
+  // Payment status requery
+  function Requery(paymentId) {
     if (
       paymentStatus === "PENDING" ||
       paymentStatus === "" ||
       paymentStatus === null ||
       paymentStatus === "INITIATED"
     ) {
-      // console.log("Before.....",paymentId)
-
       const Config = {
         "Getepay Mid": 1152305,
         "Getepay Terminal Id": "getepay.merchant128638@icici",
@@ -749,10 +620,6 @@ const getepayPortal = async (data) => {
 
       var myHeaders = new Headers();
       myHeaders.append("Content-Type", "application/json");
-      myHeaders.append(
-        "Cookie",
-        "AWSALBAPP-0=remove; AWSALBAPP-1=remove; AWSALBAPP-2=remove; AWSALBAPP-3=remove"
-      );
 
       var raw = JSON.stringify({
         mid: Config["Getepay Mid"],
@@ -775,112 +642,119 @@ const getepayPortal = async (data) => {
         .then((result) => {
           var resultobj = JSON.parse(result);
           if (resultobj.response != null) {
-            // console.log("Requery ID result", paymentId);
             var responseurl = resultobj.response;
-            // console.log({ responseurl });
             var data = decryptEas(responseurl);
             data = JSON.parse(data);
-            // console.log("Payment Result", data);
-            setPaymentStatus(data.paymentStatus);
-            // console.log(data.paymentStatus);
-            if (
-              data.paymentStatus == "SUCCESS" ||
-              data.paymentStatus == "FAILED"
-            ) {
-              // clearInterval(intervalId); 294182409
-              if (data.paymentStatus === "SUCCESS") {
-                                setQrShowModal(false)
+            console.log("Payment status result:", data);
 
+            setPaymentStatus(data.paymentStatus);
+
+            if (
+              data.paymentStatus === "SUCCESS" ||
+              data.paymentStatus === "FAILED"
+            ) {
+              if (data.paymentStatus === "SUCCESS") {
+                setQrShowModal(false);
+
+                // Download invoice
                 axios({
                   method: "get",
-                  url:
-                    BASE_URL +
-                    `/order-service/api/download/invoice?paymentId=${transactionId}&&userId=${customerId}`,
-                //   headers: {
-                //     "Content-Type": "application/json",
-                //     Authorization: Bearer ${token},
-                //   },
+                  url: `${BASE_URL}order-service/api/download/invoice?paymentId=${transactionId}&userId=${customerId}`,
                 })
                   .then((response) => {
-                    // console.log(response.data);
+                    console.log("Invoice downloaded:", response.data);
                   })
                   .catch((error) => {
-                    console.error("Error in payment confirmation:", error);
+                    console.error("Error downloading invoice:", error);
                   });
               }
+
+              // Update payment status
               axios({
                 method: "POST",
                 url: BASE_URL + "order-service/orderPlacedPaymet",
                 data: {
-                //   ...payload,
                   paymentId: transactionId,
                   paymentStatus: data.paymentStatus,
                 },
-                // headers: {
-                //   "Content-Type": "application/json",
-                //   Authorization: Bearer ${token},
-                // },
               })
                 .then((secondResponse) => {
-                  console.log(
-                    "Order Placed with Payment API:",
-                    secondResponse.data
+                  console.log("Payment status updated:", secondResponse.data);
+
+                  const message =
+                    data.paymentStatus === "SUCCESS"
+                      ? "Order Placed Successfully!"
+                      : "Payment Failed. Please try again.";
+
+                  Alert.alert(
+                    data.paymentStatus === "SUCCESS"
+                      ? "Success"
+                      : "Payment Failed",
+                    message,
+                    [
+                      {
+                        text: "OK",
+                        onPress: () => {
+                          if (data.paymentStatus === "SUCCESS") {
+                            navigation.navigate("Store Details");
+                          }
+                        },
+                      },
+                    ]
                   );
-                 
-                  Alert.alert("Order Confirmed!", "Order Placed Successfully");
                 })
                 .catch((error) => {
-                  console.error("Error in payment confirmation:", error.response);
-                  setLoading(false);
+                  console.error("Error updating payment status:", error);
                 });
-            } else {
-              setLoading(false);
             }
           }
         })
         .catch((error) => {
-          console.log("Payment Status", error);
-          setLoading(false);
-        });
-    }
-  }
+          console.error("Payment status check error:", error);
+        });
+    }
+  }
 
   // Render cart item for checkout
-  const renderCheckoutItem = ({ item }) => (
+  const renderCheckoutItem = ({ item, index }) => (
     <View style={styles.checkoutItem}>
       <Image source={{ uri: item.image }} style={styles.itemImage} />
       <View style={styles.itemDetails}>
         <Text style={styles.itemName} numberOfLines={2}>
-          {item.itemName}
+          {item.itemName || "Product Name"}
         </Text>
         <Text style={styles.itemWeight}>
-          {item.weight} {item.units}
+          {item.weight || "1"} {item.units || "unit"}
         </Text>
-        <View style={styles.priceRow}>
-          {item.offerPrice ? (
+        <View style={styles.priceRowItem}>
+          {item.originalPrice && item.originalPrice !== item.offerPrice ? (
             <>
               <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
               <Text style={styles.offerPrice}>₹{item.offerPrice}</Text>
             </>
           ) : (
-            <Text style={styles.price}>₹{item.offerPrice}</Text>
+            <Text style={styles.price}>₹{item.offerPrice || 0}</Text>
           )}
         </View>
       </View>
       <View style={styles.quantityContainer}>
-        <Text style={styles.quantity}>Qty: {item.qty}</Text>
+        <Text style={styles.quantity}>Qty: {item.qty || 1}</Text>
         <Text style={styles.itemTotal}>
-          ₹{(item.offerPrice * item.qty).toFixed(2)}
+          ₹{((item.offerPrice || 0) * (item.qty || 1)).toFixed(2)}
         </Text>
       </View>
     </View>
   );
 
+  // Show loading screen when fetching initial data
   if (loading) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Loading checkout details...</Text>
+        <Text style={styles.loadingSubText}>
+          Fetching cart items and calculating totals
+        </Text>
       </View>
     );
   }
@@ -888,27 +762,48 @@ const getepayPortal = async (data) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <MaterialIcons name="arrow-back" size={24} color="#1D1D1F" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Checkout</Text>
+        <Text style={styles.headerTitle}>Add Item</Text>
         <View style={styles.placeholder} />
-      </View>
+      </View> */}
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Order Summary */}
+          {/* Order Summary */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Order Summary</Text>
-          <FlatList
-            data={cartItems}
-            renderItem={renderCheckoutItem}
-            keyExtractor={(item,index) => index}
-            scrollEnabled={false}
-          />
+          <View style={styles.orderSummaryHeader}>
+            <Text style={styles.sectionTitle}>Order Summary</Text>
+            {/* <TouchableOpacity
+              style={styles.addItemButton}
+              onPress={navigateToAllCategories}
+            >
+              <MaterialIcons name="add" size={20} color="#007AFF" />
+              <Text style={styles.addItemText}>Add Item</Text>
+            </TouchableOpacity> */}
+          </View>
+          {cartItems.length > 0 ? (
+            <FlatList
+              data={cartItems}
+              renderItem={renderCheckoutItem}
+              keyExtractor={(item, index) =>
+                item.id?.toString() || index.toString()
+              }
+              scrollEnabled={false}
+            />
+          ) : (
+            <View style={styles.emptyCartContainer}>
+              <MaterialIcons name="shopping-cart" size={48} color="#E0E0E0" />
+              <Text style={styles.emptyText}>No items in cart</Text>
+              <Text style={styles.emptySubText}>
+                Tap "Add Item" to browse products
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Delivery Address */}
@@ -928,7 +823,9 @@ const getepayPortal = async (data) => {
 
         {/* Special Instructions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Special Instructions (Optional)</Text>
+          <Text style={styles.sectionTitle}>
+            Special Instructions (Optional)
+          </Text>
           <TextInput
             style={styles.instructionsInput}
             placeholder="Any special instructions for delivery..."
@@ -952,10 +849,10 @@ const getepayPortal = async (data) => {
               ]}
               onPress={() => setPaymentMethod("COD")}
             >
-              <MaterialIcons 
-                name="money" 
-                size={24} 
-                color={paymentMethod === "COD" ? "#007AFF" : "#666"} 
+              <MaterialIcons
+                name="money"
+                size={24}
+                color={paymentMethod === "COD" ? "#007AFF" : "#666"}
               />
               <Text
                 style={[
@@ -966,7 +863,7 @@ const getepayPortal = async (data) => {
                 Cash on Delivery
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[
                 styles.paymentOption,
@@ -974,10 +871,10 @@ const getepayPortal = async (data) => {
               ]}
               onPress={() => setPaymentMethod("ONLINE")}
             >
-              <MaterialIcons 
-                name="payment" 
-                size={24} 
-                color={paymentMethod === "ONLINE" ? "#007AFF" : "#666"} 
+              <MaterialIcons
+                name="payment"
+                size={24}
+                color={paymentMethod === "ONLINE" ? "#007AFF" : "#666"}
               />
               <Text
                 style={[
@@ -1005,32 +902,43 @@ const getepayPortal = async (data) => {
 
         {/* Price Breakdown */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Price Details</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Price Details</Text>
+            {calculatingTotals && (
+              <ActivityIndicator size="small" color="#007AFF" />
+            )}
+          </View>
           <View style={styles.priceBreakdown}>
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>
-                Subtotal{subtotal > 0 ? ` (${cartItems.length} items)` : ""}
+                Subtotal
+                {cartItems.length > 0 ? ` (${cartItems.length} items)` : ""}
               </Text>
-              <Text style={styles.priceValue}>₹{subtotal.toFixed(2) || 0}</Text>
+              <Text style={styles.priceValue}>₹{subtotal.toFixed(2)}</Text>
             </View>
-            
+
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Delivery Fee</Text>
-              <Text style={[styles.priceValue, deliveryFee === 0 && styles.freeText]}>
-                {deliveryFee === "0.00" ? "FREE" : `₹${deliveryFee.toFixed(2) || 0}` }
+              <Text
+                style={[
+                  styles.priceValue,
+                  deliveryFee === 0 && styles.freeText,
+                ]}
+              >
+                {deliveryFee === 0 ? "FREE" : `₹${deliveryFee.toFixed(2)}`}
               </Text>
             </View>
-            
+
             <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Tax (5%)</Text>
-              <Text style={styles.priceValue}>₹{tax.toFixed(2) || 0}</Text>
+              <Text style={styles.priceLabel}>Tax & Fees</Text>
+              <Text style={styles.priceValue}>₹{tax.toFixed(2)}</Text>
             </View>
-            
+
             <View style={styles.divider} />
-            
+
             <View style={styles.priceRow}>
               <Text style={styles.totalLabel}>Total Amount</Text>
-              <Text style={styles.totalValue}>₹{totalAmount.toFixed(2) || 0}</Text>
+              <Text style={styles.totalValue}>₹{totalAmount.toFixed(2)}</Text>
             </View>
           </View>
         </View>
@@ -1042,24 +950,35 @@ const getepayPortal = async (data) => {
       <View style={styles.bottomContainer}>
         <View style={styles.totalSummary}>
           <Text style={styles.payableLabel}>Total Payable</Text>
-          <Text style={styles.payableAmount}>₹{totalAmount.toFixed(2) ||0}</Text>
+          <Text style={styles.payableAmount}>₹{totalAmount.toFixed(2)}</Text>
         </View>
-        
+
         <TouchableOpacity
-          style={[styles.placeOrderButton, orderProcessing && styles.disabledButton]}
+          style={[
+            styles.placeOrderButton,
+            (orderProcessing || calculatingTotals) && styles.disabledButton,
+          ]}
           onPress={placeOrder}
-          disabled={orderProcessing}
+          disabled={
+            orderProcessing || cartItems.length === 0 || calculatingTotals
+          }
         >
           {orderProcessing ? (
-            <ActivityIndicator size="small" color="white" />
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <ActivityIndicator size="small" color="white" />
+              <Text style={styles.placeOrderText}>Processing...</Text>
+            </View>
           ) : (
-            <>
-              <MaterialIcons name="shopping-bag" size={20} color="white" />
-              <Text style={styles.placeOrderText}>Place Order</Text>
-            </>
+            <Text style={styles.placeOrderText}>
+              {cartItems.length === 0 ? "Cart is Empty" : "Place Order"}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
+
+      {/* QR Code Modal */}
       <Modal
         visible={qrShowModal}
         transparent
@@ -1074,15 +993,24 @@ const getepayPortal = async (data) => {
             <MaterialIcons name="close" size={24} color="#000" />
           </TouchableOpacity>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Payment Rs.{totalAmount}</Text>
-                <Image source={{uri:qrCode}} style={{ width: 200, height: 200 }} />
+            <Text style={styles.modalTitle}>
+              Payment ₹{totalAmount.toFixed(2)}
+            </Text>
+            <Text style={styles.modalSubtitle}>Scan QR code to pay</Text>
+            {qrCode ? (
+              <Image source={{ uri: qrCode }} style={styles.qrImage} />
+            ) : (
+              <ActivityIndicator size="large" color="#007AFF" />
+            )}
+            <Text style={styles.modalNote}>
+              Payment status will be updated automatically
+            </Text>
           </View>
         </View>
-</Modal>
+      </Modal>
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1092,146 +1020,191 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F8F9FA",
   },
   loadingText: {
-    marginTop: 12,
     fontSize: 16,
+    fontWeight: "600",
+    color: "#1D1D1F",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  loadingSubText: {
+    fontSize: 14,
     color: "#666",
+    marginTop: 8,
+    textAlign: "center",
+    paddingHorizontal: 32,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
-    backgroundColor: "white",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
+    borderBottomColor: "#E5E5E7",
+    paddingTop: Platform.OS === "ios" ? 50 : 12,
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F2F2F7",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "600",
     color: "#1D1D1F",
+    textAlign: "center",
   },
   placeholder: {
     width: 40,
   },
   content: {
     flex: 1,
+    paddingHorizontal: 16,
   },
   section: {
-    backgroundColor: "white",
-    marginHorizontal: 16,
-    marginTop: 16,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1D1D1F",
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    paddingVertical: 20,
+    fontStyle: "italic",
   },
   checkoutItem: {
     flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    borderBottomColor: "#F2F2F7",
   },
   itemImage: {
     width: 60,
     height: 60,
     borderRadius: 8,
-    marginRight: 12,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#F2F2F7",
   },
   itemDetails: {
     flex: 1,
+    marginLeft: 12,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "500",
     color: "#1D1D1F",
     marginBottom: 4,
   },
   itemWeight: {
-    fontSize: 14,
-    color: "#8E8E93",
+    fontSize: 12,
+    color: "#666",
     marginBottom: 4,
   },
-  priceRow: {
+  priceRowItem: {
     flexDirection: "row",
     alignItems: "center",
   },
   originalPrice: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#999",
     textDecorationLine: "line-through",
     marginRight: 8,
   },
   offerPrice: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
-    color: "#007AFF",
+    color: "#FF6B35",
   },
   price: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
-    color: "#007AFF",
+    color: "#1D1D1F",
   },
   quantityContainer: {
     alignItems: "flex-end",
+    minWidth: 80,
   },
   quantity: {
-    fontSize: 14,
-    color: "#8E8E93",
+    fontSize: 12,
+    color: "#666",
     marginBottom: 4,
   },
   itemTotal: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "600",
     color: "#1D1D1F",
   },
   addressInput: {
     borderWidth: 1,
-    borderColor: "#E5E5EA",
+    borderColor: "#E5E5E7",
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
-    minHeight: 100,
-    backgroundColor: "#F8F9FA",
+    fontSize: 14,
+    color: "#1D1D1F",
+    backgroundColor: "#FFFFFF",
+    minHeight: 80,
   },
   instructionsInput: {
     borderWidth: 1,
-    borderColor: "#E5E5EA",
+    borderColor: "#E5E5E7",
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
-    minHeight: 80,
-    backgroundColor: "#F8F9FA",
+    fontSize: 14,
+    color: "#1D1D1F",
+    backgroundColor: "#FFFFFF",
+    minHeight: 60,
   },
   paymentMethods: {
+    flexDirection: "column",
     gap: 12,
   },
   paymentOption: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderWidth: 2,
-    borderColor: "#E5E5EA",
-    borderRadius: 12,
     backgroundColor: "#F8F9FA",
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#E5E5E7",
   },
   selectedPayment: {
+    backgroundColor: "#E3F2FD",
     borderColor: "#007AFF",
-    backgroundColor: "#F0F8FF",
   },
   paymentText: {
-    fontSize: 16,
-    marginLeft: 12,
+    fontSize: 14,
+    fontWeight: "500",
     color: "#666",
+    marginLeft: 12,
   },
   selectedPaymentText: {
     color: "#007AFF",
@@ -1240,8 +1213,8 @@ const styles = StyleSheet.create({
   meetAgainInfo: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0F8FF",
     padding: 12,
+    backgroundColor: "#E3F2FD",
     borderRadius: 8,
   },
   meetAgainText: {
@@ -1251,55 +1224,51 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   priceBreakdown: {
-    gap: 12,
+    paddingTop: 8,
+  },
+  priceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
   },
   priceLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666",
-    fontWeight: "500",
-    width: "70%",
   },
   priceValue: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "500",
     color: "#1D1D1F",
-    width: "30%",
-    textAlign: "right",
   },
   freeText: {
     color: "#34C759",
+    fontWeight: "600",
   },
   divider: {
     height: 1,
-    backgroundColor: "#E5E5EA",
-    marginVertical: 8,
+    backgroundColor: "#E5E5E7",
+    marginVertical: 12,
   },
   totalLabel: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "600",
     color: "#1D1D1F",
-    width: "70%",
   },
   totalValue: {
     fontSize: 18,
     fontWeight: "700",
     color: "#007AFF",
-    width: "30%",
-    textAlign: "right",
   },
   bottomPadding: {
-    height: 120,
+    height: 100,
   },
   bottomContainer: {
-    backgroundColor: "white",
-    padding: 20,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E5E7",
+    paddingBottom: Platform.OS === "ios" ? 34 : 16,
   },
   totalSummary: {
     flexDirection: "row",
@@ -1308,29 +1277,39 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   payableLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1D1D1F",
   },
   payableAmount: {
-    fontSize: 24,
-    fontWeight: "800",
+    fontSize: 20,
+    fontWeight: "700",
     color: "#007AFF",
   },
   placeOrderButton: {
     backgroundColor: "#007AFF",
-    paddingVertical: 16,
     borderRadius: 12,
+    paddingVertical: 16,
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#007AFF",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   disabledButton: {
-    opacity: 0.6,
+    backgroundColor: "#999",
+    shadowOpacity: 0,
+    elevation: 0,
   },
   placeOrderText: {
-    color: "white",
-    fontSize: 18,
+    color: "#FFFFFF",
+    fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,
   },
@@ -1339,37 +1318,90 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
-  },
-  modalContainer: {
-    backgroundColor: "white",
-    borderRadius: 12,
     padding: 20,
-    width: "80%",
-    maxWidth: 400,
-    alignItems: "center",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
   },
   modalCloseButton: {
     position: "absolute",
-    top: 16,
-    right: 16,
-    padding: 8,
-    backgroundColor: "white",
+    top: Platform.OS === "ios" ? 60 : 40,
+    right: 20,
+    width: 40,
+    height: 40,
     borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+    width: "90%",
+    maxWidth: 350,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1D1D1F",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  qrImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  orderSummaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  addItemButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0F8FF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+  },
+  addItemText: {
+    color: "#007AFF",
+    fontSize: 14,
+    fontWeight: "500",
+    marginLeft: 4,
+  },
+  modalNote: {
+    fontSize: 12,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 16,
   },
 });
-
 export default Checkout;

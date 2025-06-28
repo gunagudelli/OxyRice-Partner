@@ -45,32 +45,36 @@ const LoginWithPassword = () => {
   };
 
   // Enhanced auto-login check
-  const checkAutoLogin = async () => {
-    try {
-      const token = await AsyncStorage.getItem("userData");
+ const checkAutoLogin = async () => {
+  try {
+    const tokenString = await AsyncStorage.getItem("userData");
 
-      if (token) {
-        console.log("Auto login with saved token",token);
-        dispatch(AccessToken(JSON.parse(token)));
-        dispatch(UserID("Live"));
-        // console.log(useSelector((state)=>state.counter))
-        if(token.primaryType === "SELLER") {
+    if (tokenString) {
+      const token = JSON.parse(tokenString); // ✅ Now it's an object
+
+      dispatch(AccessToken(token)); // store in Redux
+      dispatch(UserID("Live"));
+
+      console.log("Auto login with saved token:", token);
+
+      // Now navigation will work
+      if (token.primaryType === "SELLER") {
         navigation.navigate("Home");
-        }
-        else if(token.primaryType === "SALESEXECUTIVE") {
-        navigation.navigate("Weekly Orders", { isTestOrder: false });
-        }else {
-        navigation.navigate("Store Details");
-        }
+      } else if (token.primaryType === "SALESEXECUTIVE") {
+        navigation.navigate("Market Visits");
       } else {
-        console.log("No saved token found");
-        // Don't attempt auto-login with credentials for now
-        // since we're getting server errors
+        navigation.navigate("Store Details");
       }
-    } catch (error) {
-      console.error("Auto-login error:", error);
+
+    } else {
+      console.log("No saved token found");
     }
-  };
+
+  } catch (error) {
+    console.error("Auto-login error:", error);
+  }
+};
+
 
   useEffect(() => {
     checkAutoLogin();
@@ -121,15 +125,15 @@ const LoginWithPassword = () => {
         // Show success greeting popup
         Alert.alert(
           "Login Successful! 🎉",
-          `Welcome back to AskOxy.AI Partner! We're glad to see you again.`,
+          `Welcome back to AskOxy.AI ${response.data.primaryType}! We're glad to see you again.`,
           [
             {
               text: "Continue",
               onPress: () => {
-                if (isSeller) {
+                if (response.data.primaryType == "SELLER") {
                   navigation.navigate("Home");
-                }  else if(response.data.primaryType === "SALESEXECUTIVE") {
-                navigation.navigate("Weekly Orders", { isTestOrder: false });
+                }  else if(response.data.primaryType == "SALESEXECUTIVE") {
+                navigation.navigate("Market Visits");
                 }else {
                 navigation.navigate("Store Details");
                 }
