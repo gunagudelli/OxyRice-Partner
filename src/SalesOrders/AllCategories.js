@@ -494,7 +494,7 @@ console.log({offlineItems})
           {hasItemsInCart && (
             <View>
               <TouchableOpacity
-                // style={styles.checkoutButton}
+                style={styles.checkoutButton}
                 onPress={() => {
                   if (userType === "ONLINE") {
                     navigation.navigate("Proceed to Checkout", {
@@ -769,19 +769,22 @@ const styles = StyleSheet.create({
     // marginBottom:300
   },
   checkoutButton: {
-    backgroundColor: "#4A90E2",
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    width: "40%",
+    backgroundColor: "#6ea6e7",
+    // paddingVertical: 12,
+    // paddingHorizontal: 30,
+    borderRadius: 5,
+    width: width*0.5,
+    alignSelf:"flex-end",
     alignItems: "center",
+    margin:10,
+    elevation:10
   },
   checkoutButtonText: {
     marginTop: 10,
-    color: "#4A90E2",
+    color: "white",
     fontSize: 16,
     fontWeight: "bold",
-    marginLeft: 250,
+    // marginLeft: 250,
     marginBottom: 10,
   },
   footerStyle: {

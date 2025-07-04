@@ -73,8 +73,8 @@ const MarketListItems = ({ route }) => {
   };
 
   const renderDateSection = (date, items) => {
-    const totalQty = items.reduce((sum, item) => sum + item.qty, 0);
-    const totalSectionWeight = items.reduce((sum, item) => sum + (item.weight * item.qty), 0);
+    const totalQty = items?.reduce?.((sum, item) => sum + item.qty, 0);
+    const totalSectionWeight = items?.reduce?.((sum, item) => sum + (item.weight * item.qty), 0);
     const itemCount = items.length;
 
     return (

@@ -57,12 +57,17 @@ useFocusEffect(
       ]);
       return true;
     };
-    BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    // BackHandler.addEventListener('hardwareBackPress', onBackPress);
+     const backHandler = BackHandler.addEventListener(
+    'hardwareBackPress',
+    onBackPress
+  );
 
     return () => {
       isActive = false;
       spinAnim.stop(); // stop the animation
-      BackHandler.removeEventListener('hardwareBackPress', onBackPress); // clean up back handler
+      // BackHandler.removeEventListener('hardwareBackPress', onBackPress); // clean up back handler
+      backHandler.remove();
     };
   }, [page])
 );

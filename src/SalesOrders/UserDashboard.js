@@ -135,7 +135,7 @@ const AllCategories = () => {
       // console.log("cart response", response?.data);
 
       const cartData = response?.data?.customerCartResponseList;
-      const totalCartCount = cartData.reduce(
+      const totalCartCount = cartData?.reduce?.(
         (total, item) => total + item.cartQuantity,
         0
       );
@@ -149,7 +149,7 @@ const AllCategories = () => {
         return;
       }
 
-      const cartItemsMap = cartData.reduce((acc, item) => {
+      const cartItemsMap = cartData?.reduce?.((acc, item) => {
         if (
           !item.itemId ||
           item.cartQuantity === undefined ||
@@ -165,7 +165,7 @@ const AllCategories = () => {
 
       // console.log("cart items map", cartItemsMap);
 
-      const limitedStockMap = cartData.reduce((acc, item) => {
+      const limitedStockMap = cartData?.reduce?.((acc, item) => {
         if (item.quantity === 0) {
           acc[item.itemId] = "outOfStock";
         } else if (item.quantity <= 5) {
@@ -216,7 +216,7 @@ const AllCategories = () => {
       }
 
       if (has1kg && !anyOneKgHasTwoOrMore && offeravail < 2) {
-        const cheapestBag = oneKgBags.reduce((min, curr) =>
+        const cheapestBag = oneKgBags?.reduce?.((min, curr) =>
           parseFloat(curr.itemPrice) < parseFloat(min.itemPrice) ? curr : min
         );
         // console.log("cheapest bag", cheapestBag);

@@ -158,7 +158,7 @@ const UserDashboard = () => {
       // console.log("cartData:", cartData);
 
       // Mapping items to their quantities
-      const cartItemsMap = cartData.reduce((acc, item) => {
+      const cartItemsMap = cartData?.reduce((acc, item) => {
         if (
           !item.itemId ||
           item.cartQuantity === undefined ||
@@ -174,7 +174,7 @@ const UserDashboard = () => {
       // console.log("Cart Items Map:", cartItemsMap);
 
       // Mapping items with limited stock (quantity = 1)
-      const limitedStockMap = cartData.reduce((acc, item) => {
+      const limitedStockMap = cartData?.reduce?.((acc, item) => {
         if (item.quantity === 0) {
           acc[item.itemId] = "outOfStock";
         } else if (item.quantity <= 5) {

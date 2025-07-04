@@ -10,6 +10,7 @@ import {
   Alert,
   Dimensions,
   FlatList,
+  Platform
 } from "react-native";
 import axios from "axios";
 import { TextInput } from "react-native-paper";
@@ -1253,7 +1254,7 @@ const OrderDetails = ({ route }) => {
 
               {loader == false ? (
                 <ScrollView>
-                  {dbNames.length === 0 ? (
+                  {/* {dbNames.length === 0 ? (
                     <Text>No active delivery boys found.</Text>
                   ) : (
                     dbNames.map((dbName, index) => (
@@ -1272,7 +1273,6 @@ const OrderDetails = ({ route }) => {
                                 setDbId(dbName.userId);
                               }}
                             />
-                            {/* <Text>{dbName.deliveryBoyName}</Text> */}
                             <Text>
                               {dbName.firstName} {dbName.lastName}
                             </Text>
@@ -1280,7 +1280,91 @@ const OrderDetails = ({ route }) => {
                         ) : null}
                       </>
                     ))
-                  )}
+                  )} */}
+
+
+
+                   {/* {dbNames.length === 0 ? (
+        <Text>No active delivery boys found.</Text>
+      ) : (
+        dbNames.map((dbName, index) => {
+          const isCurrent = dbdetails.deliveryBoyName === dbName.whatsappNumber;
+          if (isCurrent) return null;
+
+          return (
+            <View key={index} style={styles.radioButtonContainer}>
+              <RadioButton
+                value={dbName.email}
+                status={selectedDb === dbName.email ? "checked" : "unchecked"}
+                onPress={() => {
+                  setSelectedDb(dbName.email);
+                  setDbId(dbName.userId);
+                }}
+                uncheckedColor="#999"
+                color={Platform.OS === "ios" ? "#007AFF" : "#6200ee"} // iOS blue vs Android primary
+              />
+              <Text style={styles.label}>
+                {dbName.firstName} {dbName.lastName}
+              </Text>
+            </View>
+          );
+        })
+      )} */}
+      {dbNames.length === 0 ? (
+  <Text>No active delivery boys found.</Text>
+) : (
+  dbNames.map((dbName, index) => {
+    const isCurrent = dbdetails.deliveryBoyName === dbName.whatsappNumber;
+    if (isCurrent) return null;
+    
+    const isSelected = selectedDb === dbName.email;
+    
+    return (
+      <View key={index} style={styles.radioButtonContainer}>
+        {Platform.OS === 'ios' ? (
+          // Custom iOS Radio Button
+          <TouchableOpacity
+            style={additionalStyles.customRadioButton}
+            onPress={() => {
+              setSelectedDb(dbName.email);
+              setDbId(dbName.userId);
+            }}
+          >
+            <View
+              style={[
+                additionalStyles.radioCircle,
+                {
+                  borderColor: isSelected ? '#007AFF' : '#999',
+                  backgroundColor: isSelected ? '#007AFF' : 'transparent',
+                }
+              ]}
+            >
+              {isSelected && (
+                <View style={additionalStyles.radioInnerCircle} />
+              )}
+            </View>
+          </TouchableOpacity>
+        ) : (
+          // Native Android Radio Button
+          <RadioButton
+            value={dbName.email}
+            status={isSelected ? "checked" : "unchecked"}
+            onPress={() => {
+              setSelectedDb(dbName.email);
+              setDbId(dbName.userId);
+            }}
+            uncheckedColor="#999"
+            color="#6200ee"
+          />
+        )}
+        <Text style={styles.label}>
+          {dbName.firstName} {dbName.lastName}
+        </Text>
+      </View>
+    );
+  })
+)}
+
                 </ScrollView>
               ) : (
                 <ActivityIndicator size="small" color="#FFFFFF" />
@@ -1484,11 +1568,27 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
+  // radioButtonContainer: {
+  //   flexDirection: "row",
+  //   alignItems: "center",
+  //   marginVertical: 5,
+  // },
   radioButtonContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 5,
+    // padding: 10,
+    // borderBottomWidth: 1,
+    borderColor: "#ccc",
+    ...(Platform.OS === "ios"
+      ? { paddingLeft: 15 }
+      : { paddingLeft: 10 }),
   },
+  //  label: {
+  //   fontSize: 16,
+  //   margin: 10,
+  //   color: "#333",
+  // },
   modalActions: {
     flexDirection: "row",
     marginTop: 20,
@@ -1535,7 +1635,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     color: "#555",
-    marginBottom: 8,
+    margin: 8,
     fontWeight: "bold",
   },
   value: {
@@ -1779,6 +1879,28 @@ const styles = StyleSheet.create({
     color: "#333333",
     marginBottom: 5,
   },
+  
 });
+
+const additionalStyles = {
+  customRadioButton: {
+    padding: 4,
+    marginRight: 4,
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioInnerCircle: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'white',
+  },
+};
 
 export default OrderDetails;

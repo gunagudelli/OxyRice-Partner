@@ -16,6 +16,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
+import Icon from "react-native-vector-icons/Ionicons"
 import BASE_URL from "../../config";
 import { useFocusEffect } from "@react-navigation/native";
 import * as FileSystem from 'expo-file-system';
@@ -54,7 +55,7 @@ const OrdersReport = () => {
 
   const filteredSalesReport = salesReport.filter(item => !excludedItemIds.includes(item.itemId));
   
-  const grandTotal = filteredSalesReport.reduce((acc, item) => acc + (Math.round(item.profit) || 0), 0);
+  const grandTotal = filteredSalesReport?.reduce?.((acc, item) => acc + (Math.round(item.profit) || 0), 0);
 
   useFocusEffect(
     useCallback(() => {
@@ -88,7 +89,7 @@ const downloadReport = async () => {
         item.totalItemQuantity,
         `₹${Math.round(item.profit).toLocaleString()}`,
       ]),
-      ["Grand Total", "", "", `₹${exportData.reduce(
+      ["Grand Total", "", "", `₹${exportData?.reduce?.(
         (acc, item) => acc + (Math.round(item.profit) || 0),
         0
       ).toLocaleString()}`],
@@ -182,7 +183,7 @@ const downloadReport = async () => {
     setSelectedWeight("all");
     setSortOrder("none");
     setFilteredData(filteredSalesReport);
-    setShowFilters(false);
+    // setShowFilters(false);
   };
 
 
@@ -302,7 +303,7 @@ const downloadReport = async () => {
       {showStartPicker && (
         <DateTimePicker 
           value={startDate} 
-          mode="date" 
+          mode="date"   
           display="default" 
           onChange={onChangeStart} 
           maximumDate={new Date()} 
@@ -328,8 +329,10 @@ const downloadReport = async () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
+            <TouchableOpacity onPress={()=>setShowFilters(false)}>
+              <Icon name="close" size={25} style={{alignSelf:"flex-end"}}/>
+            </TouchableOpacity>
             <Text style={styles.modalHeader}>Filter Options</Text>
-            
             <Text style={styles.filterLabel}>Search by Item Name</Text>
             <TextInput
               style={styles.searchInput}
@@ -787,4 +790,4 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontWeight: "600",
   },
-});
+}); 

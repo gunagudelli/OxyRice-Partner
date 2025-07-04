@@ -122,9 +122,9 @@ const PinCodeWiseOrders = () => {
   const pincodeData = aggregatePincodeData();
 
   // Calculate totals
-  const totalOrders = Object.values(pincodeData).reduce((sum, data) => sum + data.orders, 0);
-  const totalItems = Object.values(pincodeData).reduce((sum, data) => sum + data.items, 0);
-  const totalRevenue = Object.values(pincodeData).reduce((sum, data) => sum + data.revenue, 0);
+  const totalOrders = Object.values(pincodeData).reduce?.((sum, data) => sum + data.orders, 0);
+  const totalItems = Object.values(pincodeData).reduce?.((sum, data) => sum + data.items, 0);
+  const totalRevenue = Object.values(pincodeData).reduce?.((sum, data) => sum + data.revenue, 0);
 
   const ItemCard = ({ item, index, type }) => (
     <View style={[styles.itemCard, type === 'top' ? styles.topItemCard : styles.lowItemCard]}>
@@ -216,31 +216,7 @@ const PinCodeWiseOrders = () => {
                 )}
               </View>
             </View>
-            <View style={styles.dropdownContainer}>
-              <Text style={styles.label}>Order Status</Text>
-              <Dropdown
-                style={styles.dropdown}
-                data={[
-                  { label: 'Placed', value: '1' },
-                  { label: 'Assigned', value: '3' },
-                  { label: 'Picked Up', value: 'PickedUp' },
-                  { label: 'Delivered', value: '4' },
-                ]}
-                labelField="label"
-                valueField="value"
-                placeholder="Select status"
-                value={orderStatus}
-                onChange={item => setOrderStatus(item.value)}
-                selectedTextStyle={styles.dropdownSelectedText}
-                placeholderStyle={styles.dropdownPlaceholder}
-                itemTextStyle={styles.dropdownItemText}
-                containerStyle={styles.dropdownList}
-                activeColor="#f0f0f0"
-                renderLeftIcon={() => (
-                  <Icon name="local-shipping" size={18} color="#6366f1" style={{marginRight: 8}} />
-                )}
-              />
-            </View>
+            
           </View>
 
           {/* Pincode Performance Cards */}
@@ -308,9 +284,9 @@ const styles = StyleSheet.create({
   },
   totalSummaryCard: {
     backgroundColor: '#fff',
-    margin: 16,
+    margin: 10,
     borderRadius: 16,
-    padding: 20,
+    padding: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,

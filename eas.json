@@ -17,14 +17,5 @@
       "autoIncrement": true,
       "channel": "production"
     }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "ericehyd@gmail.com",
-        "ascAppId": "6738732634",
-        "appleTeamId": "SG87SA5V2Q"
-      }
-    }
   }
 }

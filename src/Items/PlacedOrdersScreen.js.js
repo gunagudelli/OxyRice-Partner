@@ -103,7 +103,7 @@ const PlacedOrdersScreen = ({ route }) => {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Total Amount:</Text>
             <Text style={styles.totalAmount}>
-              ₹{placedItems.reduce((sum, item) => sum + parseFloat(item.offerPrice || 0), 0).toFixed(2)}
+              ₹{placedItems?.reduce?.((sum, item) => sum + parseFloat(item.offerPrice || 0), 0).toFixed(2)}
             </Text>
           </View>
         </View>

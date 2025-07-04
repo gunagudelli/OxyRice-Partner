@@ -222,9 +222,13 @@ if (exchangeOrdersResponse.status === "fulfilled") {
         return true;
       };
 
-      BackHandler.addEventListener("hardwareBackPress", handleBackPress);
-      return () =>
-        BackHandler.removeEventListener("hardwareBackPress", handleBackPress);
+       const backHandler = BackHandler.addEventListener(
+    'hardwareBackPress',
+    handleBackPress
+  );
+     
+        // BackHandler.removeEventListener("hardwareBackPress", handleBackPress);
+       return () => backHandler.remove();
     }, [])
   );
 
@@ -413,7 +417,7 @@ if (exchangeOrdersResponse.status === "fulfilled") {
         onPress: () => navigation.navigate("Orders Stats"),
       },
        {
-        id: 3,
+        id: 4,
         title: "Pincode wise Orders",
         icon: "location-outline",
         color: "orange",

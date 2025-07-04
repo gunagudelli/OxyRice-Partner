@@ -77,7 +77,7 @@ const Logout = () => {
   };
 
   return (
-    <TouchableOpacity onPress={out}>
+    <TouchableOpacity onPress={()=>out()}>
       <Ionicons
         name="log-out-outline"
         size={26}

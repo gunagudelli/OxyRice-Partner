@@ -67,7 +67,7 @@ export default function CreateOrderScreen() {
 
   // Calculate total
   const calculateTotal = () => {
-    return selectedRiceTypes.reduce((total, item) => {
+    return selectedRiceTypes?.reduce?.((total, item) => {
       const quantity = parseInt(item.quantity) || 0;
       const price = parseFloat(item.price) || 0;
       return total + (quantity * price);
@@ -76,7 +76,7 @@ export default function CreateOrderScreen() {
 
   // Calculate total bags
   const calculateTotalBags = () => {
-    return selectedRiceTypes.reduce((total, item) => {
+    return selectedRiceTypes?.reduce?.((total, item) => {
       return total + (parseInt(item.quantity) || 0);
     }, 0);
   };

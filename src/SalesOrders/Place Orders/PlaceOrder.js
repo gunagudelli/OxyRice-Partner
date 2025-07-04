@@ -143,7 +143,7 @@ Alert.alert('Sorry', error.response.data.message || "Failed to register user");
           console.log("Success offlineRegistration:==========", response.data);
           console.log("Offine user Id",response.data.id)
           console.log("==========")
-          Alert.alert("Success", "R fvecord Saved Successfully", [
+          Alert.alert("Success", "Record Saved Successfully", [
             {
               text: "OK",
               onPress: () =>
@@ -188,7 +188,7 @@ Alert.alert('Sorry', error.response.data.message || "Failed to register user");
       }
     })
       .then((response) => {
-        console.log("Offline User ID:", response.data);
+        console.log("Offline User ID:", response);
         console.log("=========================")
         setFormData({...formData, loader:false})
         Alert.alert("Success", "Record Saved Successfully", [

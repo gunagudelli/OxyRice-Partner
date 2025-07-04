@@ -187,7 +187,7 @@ const CartScreen = ({ route }) => {
     currentOfferPrices,
     currentOriginalPrices
   ) => {
-    const total = items.reduce((sum, item) => {
+    const total = items?.reduce?.((sum, item) => {
       // Use offer price if entered, otherwise use original price
       const offerPrice = currentOfferPrices[item.itemId];
       const priceToUse =

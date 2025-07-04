@@ -216,7 +216,7 @@ const Checkout = ({ route }) => {
       console.log("Calculating totals for items:", cartItems);
 
       // Calculate subtotal from cart items
-      const itemSubtotal = cartItems.reduce((sum, item) => {
+      const itemSubtotal = cartItems?.reduce((sum, item) => {
         if (!item.offerPrice || !item.qty) {
           console.warn("Item missing offerPrice or qty:", item);
           return sum;

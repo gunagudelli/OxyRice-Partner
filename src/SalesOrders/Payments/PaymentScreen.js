@@ -389,20 +389,20 @@ const copyToClipboard = async(couponCode, discountAmount) => {
       
 
       setCartData(cartResponse);
-      const totalDeliveryFee = response.data?.customerCartResponseList.reduce(
+      const totalDeliveryFee = (response.data?.customerCartResponseList || []).reduce(
         (sum, item) => sum + item.deliveryBoyFee,
         0
       );
-        const itemsGst = cartResponse.reduce((sum, item) => {
+        const itemsGst = (cartResponse || []).reduce((sum, item) => {
        if ((item?.goldGst || 0) === 0) {
         return sum + (item?.gstAmount || 0);
        }
        return sum;
        }, 0);
        setItemsGstAmount(itemsGst)
-      const totalGoldGst = cartResponse.reduce((sum, item) => sum + (item?.goldGst || 0), 0);
+      const totalGoldGst = (cartResponse || []).reduce((sum, item) => sum + (item?.goldGst || 0), 0);
       setGoldGstAmont(totalGoldGst)
-     const totalGoldMakingCost = cartResponse.reduce((sum, item) => sum + (item?.goldMakingCost || 0), 0);
+     const totalGoldMakingCost = (cartResponse || []).reduce((sum, item) => sum + (item?.goldMakingCost || 0), 0);
       setGoldMakingCost(totalGoldMakingCost);
 
       console.log("gst amount to pay",response.data.totalGstAmountToPay);
@@ -426,13 +426,13 @@ const copyToClipboard = async(couponCode, discountAmount) => {
 
   var calculatedTotal;
   useEffect(() => {
-    calculatedTotal = items.reduce(
+    calculatedTotal = items.reduc?.(
       (total, item) => total + item.cartQuantity * item.itemPrice,
       0
     );
     console.log(
       "grand total",
-      items.reduce(
+      items.reduce?.(
         (total, item) => total + item.cartQuantity * item.itemPrice,
         0
       )

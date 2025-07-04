@@ -146,9 +146,9 @@ export default function PaymentStatusScreen () {
         </View>
       ) : (
         <>
-          <Text style={styles.description}>
+          {/* <Text style={styles.description}>
             Enable or disable payment methods using the toggles below
-          </Text>
+          </Text> */}
           
           <View style={styles.cardsContainer}>
             {paymentOptions.map(option => renderPaymentOption(option))}
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F7F9FC",
     paddingHorizontal: 16,
-    paddingTop: 16,
+    padding: 20,
   },
   header: {
     flexDirection: "row",
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },

@@ -2,7 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons"; // Import icon library
-import { TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import Register from "./src/Authorization/Register";
 import LoginScreen from "./src/Authorization/Login";
 import LoginWithPassword from "./src/Authorization/LoginWithPassword";
@@ -78,9 +78,9 @@ export default function App() {
       <NetworkAlert />
       <NavigationContainer>
         <Stack.Navigator
-          // initialRouteName="App Update"
+          initialRouteName="App Update"
           // initialRouteName='Address Book'
-          initialRouteName="LoginWithPassword"
+          // initialRouteName="LoginWithPassword"
           screenOptions={{
             headerStyle: {
               backgroundColor: "#3d2a71",
@@ -134,7 +134,15 @@ export default function App() {
           component={Orders}
           
         /> */}
-          <Stack.Screen name="Orders" component={Main} />
+          {/* <Stack.Screen name="Orders" component={Main} /> */}
+          <Stack.Screen
+  name="Orders"
+  component={Main}
+  initialParams={{ isTestOrder: false }}   // fallback for first load
+  options={({ route }) => ({
+    title: route.params?.isTestOrder ? 'Test Orders' : 'Orders',
+  })}
+/>
           <Stack.Screen name="Exchange" component={ExchangeMain} />
           <Stack.Screen name="Products" component={Items} />
           <Stack.Screen name="Orders Report" component={OrdersReport}/>
@@ -156,7 +164,6 @@ export default function App() {
           <Stack.Screen name="Add Store" component={AddstoreScreen} />
           <Stack.Screen name="Store Details" component={StoreDetailsScreen} options={{
               headerShown: true,
-
               headerRight: () => <Logout />,
               headerLeft: () => <></>,
             }}/>
@@ -196,7 +203,7 @@ export default function App() {
               headerLeft: () => <></>,
             }}/>
       <Stack.Screen name="Inventory" component={InventoryScreen} />
-      {/* <Stack.Screen name="MarketOrders" component={MarketOrdersScreen} /> */}
+      <Stack.Screen name="MarketOrders" component={MarketOrdersScreen} />
       <Stack.Screen name="Market Visits" component={MarketVisitsScreen} options={{
               headerShown: true,
 
@@ -231,3 +238,4 @@ export default function App() {
     </Provider>
   );
 }
+
