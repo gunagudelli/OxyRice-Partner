@@ -104,6 +104,8 @@ setFormData({...formData, loader:true})
                   mobileNumber: formData.customerNumber,
                   marketName: route?.params?.MarketDetails?.marketName,
                   address: route?.params?.MarketDetails?.address,
+                          marketId: route?.params?.MarketDetails?.marketId,
+
                 }),
             },
           ]);
@@ -148,14 +150,18 @@ Alert.alert('Sorry', error.response.data.message || "Failed to register user");
               text: "OK",
               onPress: () =>
                 navigation.navigate("All Categories", {
-                  type: formData.registerType,
-                  userId: response.data.userId,
+                  type: formData.registerType, 
+                  userId: response.data.id,
                   mobileNumber: formData.customerNumber,
-                  address: formData.address
+                  address: formData.address,
+                  marketName: route?.params?.MarketDetails?.marketName,
+                          marketId: route?.params?.MarketDetails?.marketId,
+
+                  // address: route?.params?.MarketDetails?.address,
                 }),
             },
           ]);
-          getOfflineUserId()
+          // getOfflineUserId()
         })
         .catch((error) => {
           setFormData({...formData, loader:false})

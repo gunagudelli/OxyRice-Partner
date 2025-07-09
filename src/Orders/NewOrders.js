@@ -55,12 +55,13 @@ const NewOrders = ({ navigation, route }) => {
 
   const userBgColors = {
     ERICEUSER: "rgba(255, 182, 193, 0.3)", 
-    NEWUSER: "rgba(144, 238, 144, 0.3)", // light pastel green
+    NEWUSER: "rgba(144, 238, 144, 0.3)", 
     MOBILE: "rgba(173, 216, 230, 0.3)",
     android: "rgba(221, 160, 221, 0.3)",
     WEB:"rgba(240, 230, 140, 0.3)",
-    ios:"rgba(255, 228, 181, 0.3)"
-
+    ios:"rgba(255, 228, 181, 0.3)",
+    MARKET: "rgba(176, 224, 230, 0.3)",
+    WHATSAPP:"rgba(255, 222, 173, 0.3)"
   };
 
   const fetchData = async () => {

@@ -473,7 +473,6 @@ const ProceedtoCheckout = ({ route, navigation }) => {
   };
 
   const OfflineUserPaymentfunc = () => {
-    setPlacedLoader(true)
     if (selectedPaymentMode == "COD") {
       var data = {
         paidAmount: cartData?.overalAmt - couponValue,
@@ -489,6 +488,8 @@ const ProceedtoCheckout = ({ route, navigation }) => {
         userOfflineOrdersId: customerId,
       };
     }
+        setPlacedLoader(true)
+
     console.log({ data });
     axios({
       method: "post",
@@ -709,7 +710,6 @@ const ProceedtoCheckout = ({ route, navigation }) => {
             data = JSON.parse(data);
             // console.log("Payment Result", data);
             setPaymentStatus(data.paymentStatus);
-            setPlacedLoader(false)
             // console.log(data.paymentStatus);
             if (
               data.paymentStatus == "SUCCESS" ||
@@ -771,7 +771,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
                     "Order Placed with Payment API:",
                     secondResponse.data
                   );
-
+                  setPlacedLoader(false)
                   Alert.alert("Order Confirmed!", "Order Placed Successfully", [
                     {
                       text: "OK",
@@ -787,6 +787,8 @@ const ProceedtoCheckout = ({ route, navigation }) => {
                   setLoading(false);
                 });
             } else {
+                          setPlacedLoader(false)
+
               setLoading(false);
             }
           }

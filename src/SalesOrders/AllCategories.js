@@ -36,7 +36,7 @@ const AllCategories = ({ route, navigation }) => {
   const customerId = route.params?.userId; //Offline user
   const userType = route.params?.type;
   useEffect(() => {
-    // console.log("All Categories", route.params);
+    console.log("All Categories", route.params);  
     Animated.loop(
       Animated.timing(spinValue, {
         toValue: 1,
@@ -44,7 +44,13 @@ const AllCategories = ({ route, navigation }) => {
         useNativeDriver: true,
       })
     ).start();
+if(route.params?.type=="Market" || route.params?.type=="ONLINE"){
     fetchAllCategoryInventory();
+}else{
+  if(route.params?.type=="OFFLINE"){
+  fetchRiceMarketInventory()
+  }
+}
   }, []);
 
   const spin = spinValue.interpolate({
@@ -52,61 +58,118 @@ const AllCategories = ({ route, navigation }) => {
     outputRange: ["0deg", "360deg"],
   });
 
-  const fetchAllCategoryInventory = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(
-        `${BASE_URL}product-service/showItemsForCustomrs`
-      );
-      const data = res.data;
 
-      const flattenedData = [];
-      const weightSet = new Set();
 
-      data.forEach((category) => {
-        if (category.itemsResponseDtoList?.length) {
-          category.itemsResponseDtoList.forEach((item) => {
-            // Filter: Only weight 1 or 5 AND units = 'kgs' (case-insensitive)
-            const isValidWeight = item.weight === 1 || item.weight === 5;
-            const isValidUnit = item.units?.toLowerCase() === "kgs";
 
-            if (isValidWeight && isValidUnit) {
-              const flattenedItem = {
-                ...item,
-                catName: category.categoryName,
-                displayWeight: `${item.weight}${item.units}`,
-              };
-              flattenedData.push(flattenedItem);
-              weightSet.add(flattenedItem.displayWeight);
-            }
-          });
-        }
-      });
+const fetchRiceMarketInventory = async () => {
+  try {
+    setLoading(true);
+    const res = await axios.get(
+      `${BASE_URL}product-service/market/${route.params?.marketId}`
+    );
+    const marketData = res.data;
+console.log("Offlijne fetchRiceMarketInventory",res.data)
+    // Filter only rice items (1kg and 5kg)
+    const riceItems = marketData.listItems.filter(item => {
+      const isRice = item.itemName.toLowerCase().includes('rice');
+      const isValidWeight = item.weight === 1 || item.weight === 5;
+      const isValidUnit = !item.itemName.toLowerCase().includes('gms'); // Exclude grams
+      return isRice && isValidWeight && isValidUnit;
+    });
 
-      const sortedWeights = Array.from(weightSet).sort((a, b) => {
-        const priority = (w) =>
-          w.toLowerCase().includes("kg")
-            ? 1
-            : w.includes("pcs") || w.includes("piece")
-            ? 2
-            : 3;
-        const priorityA = priority(a),
-          priorityB = priority(b);
-        if (priorityA !== priorityB) return priorityA - priorityB;
-        const aNum = parseFloat(a),
-          bNum = parseFloat(b);
-        return !isNaN(aNum) && !isNaN(bNum) ? aNum - bNum : a.localeCompare(b);
-      });
+    // Transform data to match your expected format
+    const transformedData = riceItems.map(item => ({
+      itemId: item.itemId,
+      itemName: item.itemName,
+      itemMrp: item.itemPrice, // Assuming itemPrice is MRP
+      units: "kgs",
+      weight: item.weight,
+      itemPrice: item.offerPrice || item.itemPrice, // Use offer price if available
+      quantity: item.qty,
+      displayWeight: `${item.weight}kgs`,
+      catName: "Rice" // Since the API doesn't provide categories, we'll group all as Rice
+    }));
 
-      setCategories(["All", ...new Set(data.map((item) => item.categoryName))]);
-      setWeightOptions(["All", ...sortedWeights]);
-      setAllData(flattenedData);
-    } catch (error) {
-      console.error("Error fetching inventory:", error);
-    } finally {
-      setLoading(false);
+    // Get unique weights for filter options
+    const weightSet = new Set();
+    transformedData.forEach(item => weightSet.add(item.displayWeight));
+    
+    const sortedWeights = Array.from(weightSet).sort((a, b) => {
+      const aNum = parseFloat(a);
+      const bNum = parseFloat(b);
+      return aNum - bNum;
+    });
+
+    // Set state
+    setCategories(["All", "Rice"]); // Only Rice category available
+    setWeightOptions(["All", ...sortedWeights]);
+    setAllData(transformedData);
+
+  } catch (error) {
+    console.error("Error fetching rice market inventory:", error.response);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+
+const fetchAllCategoryInventory = async () => {
+  try {
+    setLoading(true);
+    const res = await axios.get(
+      `${BASE_URL}product-service/showGroupItemsForCustomrs`
+    );
+    const data = res.data;
+
+    const riceData = data.find(item => item.categoryType === "RICE");
+    
+    if (!riceData) {
+      setAllData([]);
+      setWeightOptions(["All"]);
+      setCategories(["All"]);
+      return;
     }
-  };
+
+    const flattenedData = [];
+    const weightSet = new Set();
+
+    riceData.categories.forEach((category) => {
+      if (category.itemsResponseDtoList?.length) {
+        category.itemsResponseDtoList.forEach((item) => {
+          // Filter: Only weight 1 or 5 AND units = 'kgs' (case-insensitive)
+          const isValidWeight = item.weight === 1 || item.weight === 5;
+          const isValidUnit = item.units?.toLowerCase() === "kgs";
+
+          if (isValidWeight && isValidUnit) {
+            const flattenedItem = {
+              ...item,
+              catName: category.categoryName,
+              displayWeight: `${item.weight}${item.units}`,
+            };
+            flattenedData.push(flattenedItem);
+            weightSet.add(flattenedItem.displayWeight);
+          }
+        });
+      }
+    });
+
+    const sortedWeights = Array.from(weightSet).sort((a, b) => {
+      const aNum = parseFloat(a);
+      const bNum = parseFloat(b);
+      return aNum - bNum; // Simple numeric sort since we only have kgs
+    });
+
+    setCategories(["All", ...new Set(riceData.categories.map(cat => cat.categoryName))]);
+    setWeightOptions(["All", ...sortedWeights]);
+    setAllData(flattenedData);
+  } catch (error) {
+    console.error("Error fetching rice inventory:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const openQuantityModal = (item) => {
     setCurrentItem(item);

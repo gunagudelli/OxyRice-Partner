@@ -61,11 +61,11 @@ const LoginWithPassword = () => {
       if (token.primaryType === "SELLER") {
         navigation.navigate("Home");
       } 
-      // else if (token.primaryType === "SALESEXECUTIVE") {
-      //   navigation.navigate("Market Visits");
-      // } else {
-      //   navigation.navigate("Store Details");
-      // }
+      else if (token.primaryType === "SALESEXECUTIVE") {
+        navigation.navigate("Market Visits");
+      } else {
+        navigation.navigate("Store Details");
+      }
 
     } else {
       console.log("No saved token found");
@@ -134,11 +134,11 @@ const LoginWithPassword = () => {
                 if (response.data.primaryType == "SELLER") {
                   navigation.navigate("Home");
                 }  
-                // else if(response.data.primaryType == "SALESEXECUTIVE") {
-                // navigation.navigate("Market Visits");
-                // }else {
-                // navigation.navigate("Store Details");
-                // }
+                else if(response.data.primaryType == "SALESEXECUTIVE") {
+                navigation.navigate("Market Visits");
+                }else {
+                navigation.navigate("Store Details");
+                }
               },
             },
           ]

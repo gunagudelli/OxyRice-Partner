@@ -162,11 +162,25 @@ export default function App() {
           <Stack.Screen name="PaymentStatus" component={PaymentStatusScreen} />
           <Stack.Screen name="ImageUploader" component={ImageUploader} />
           <Stack.Screen name="Add Store" component={AddstoreScreen} />
-          <Stack.Screen name="Store Details" component={StoreDetailsScreen} options={{
+          {/* <Stack.Screen name="Store Details" component={StoreDetailsScreen} options={{
               headerShown: true,
               headerRight: () => <Logout />,
               headerLeft: () => <></>,
-            }}/>
+            }}/> */}
+            <Stack.Screen
+  name="Store Details"
+  component={StoreDetailsScreen}
+  options={{
+    headerShown: true,
+    headerRight: () => <Logout />,
+    headerLeft: () => <></>,
+    headerStyle: {
+      backgroundColor: '#3B82F6', // or any visible color
+    },
+    headerTintColor: 'white', // icon/text color
+  }}
+/>
+
           <Stack.Screen name="Store Orders" component={PlacedOrdersScreen}/>
           <Stack.Screen name="Checkout" component={Checkout}  />
           <Stack.Screen name="Cart" component={CartScreen} />
@@ -196,20 +210,48 @@ export default function App() {
 
           <Stack.Screen name="All Categories" component={AllCategories} />
           <Stack.Screen name="Weekly Orders" component={WeeklyOrders} />
-          <Stack.Screen name="Sales Dashboard" component={WeeklyDashboard} options={{
+          {/* <Stack.Screen name="Sales Dashboard" component={WeeklyDashboard} options={{
               headerShown: true,
 
               headerRight: () => <Logout />,
               headerLeft: () => <></>,
-            }}/>
+            }}/> */}
+            <Stack.Screen
+  name="Sales Dashboard"
+  component={WeeklyDashboard}
+  options={{
+    headerShown: true,
+    headerRight: () => <Logout />,
+    headerLeft: () => <></>,
+    headerStyle: {
+      backgroundColor: '#3B82F6', // or any visible color
+    },
+    headerTintColor: 'white', // icon/text color
+  }}
+/>
+
       <Stack.Screen name="Inventory" component={InventoryScreen} />
       <Stack.Screen name="MarketOrders" component={MarketOrdersScreen} />
-      <Stack.Screen name="Market Visits" component={MarketVisitsScreen} options={{
+      {/* <Stack.Screen name="Market Visits" component={MarketVisitsScreen} options={{
               headerShown: true,
-
               headerRight: () => <Logout />,
               headerLeft: () => <></>,
-            }} />
+            }}
+             /> */}
+             <Stack.Screen
+  name="Market Visits"
+  component={MarketVisitsScreen}
+  options={{
+    headerShown: true,
+    headerRight: () => <Logout />,
+    headerLeft: () => <></>,
+    headerStyle: {
+      backgroundColor: '#3d2a71', // or any visible color
+    },
+    headerTintColor: 'white', // icon/text color
+  }}
+/>
+
       <Stack.Screen name="Market List Items" component={MarketListItems}/>
       <Stack.Screen 
         name="Record Inventory" 
