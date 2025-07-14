@@ -267,6 +267,7 @@ const isTodayItemAdded = (listItems = []) => {
         renderLoader()
       ) : (
         <>
+        <View style={{flexDirection:"row",alignSelf:"center"}}>
           <TouchableOpacity
             style={styles.scheduleButton}
             onPress={() => navigation.navigate('Add Market')}
@@ -274,6 +275,15 @@ const isTodayItemAdded = (listItems = []) => {
             <FontAwesome5 name="calendar-plus" size={16} color="#fff" style={styles.scheduleIcon} />
             <Text style={styles.scheduleButtonText}>Schedule New Visit</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.scheduleButton}
+            onPress={() => navigation.navigate('Weekly Orders')}
+          >
+            <FontAwesome5 name="shopping-cart" size={16} color="#fff" style={styles.scheduleIcon} />
+            <Text style={styles.scheduleButtonText}>Online Orders</Text>
+          </TouchableOpacity>
+</View>
           {renderPagination()}
          <FlatList
   data={marketData}
@@ -399,21 +409,23 @@ emptyText: {
   },
   scheduleButton: {
     backgroundColor: '#2A6B57',
-    borderRadius: 25,
+    borderRadius: 5,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    padding: 10,
+    // paddingHorizontal: 20,
     alignSelf: 'center',
     marginVertical: 20,
+    margin:5,
+    width:"auto"
   },
   scheduleIcon: {
     marginRight: 8,
   },
   scheduleButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
   },
   paginationContainer: {

@@ -441,12 +441,12 @@ const ProceedtoCheckout = ({ route, navigation }) => {
         axios
           .post(`${BASE_URL}order-service/orderPlacedPaymet`, payload)
           .then((res) => {
-            console.log("Order Placed:", res);
+            console.log("Order Placed:", res.data);
             if (selectedPaymentMode == "COD") {
-              Alert.alert("Order Placed", "Order Placed Successfully!", [
+              Alert.alert("Order Placed", `Order Placed Successfully!,Order Id is ${res.data.orderId.slice(-4)}`, [
                 {
                   text: "OK",
-                  onPress: () => navigation.navigate("Place Order"),
+                  onPress: () => navigation.navigate("Market Visits"),
                 },
               ]);
                 setPlacedLoader(false);
@@ -502,7 +502,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
           Alert.alert("Order Placed", "Order Placed Successfully!", [
             {
               text: "OK",
-              onPress: () => navigation.navigate("Place Order"),
+              onPress: () => navigation.navigate("Market Visits"),
             },
           ]);
           setPlacedLoader(false)
@@ -775,7 +775,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
                   Alert.alert("Order Confirmed!", "Order Placed Successfully", [
                     {
                       text: "OK",
-                      onPress: () => navigation.navigate("Place Order"),
+                      onPress: () => navigation.navigate("Market Visits"),
                     },
                   ]);
                 })

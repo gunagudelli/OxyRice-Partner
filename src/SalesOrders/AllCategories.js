@@ -60,7 +60,6 @@ if(route.params?.type=="Market" || route.params?.type=="ONLINE"){
 
 
 
-
 const fetchRiceMarketInventory = async () => {
   try {
     setLoading(true);
@@ -68,32 +67,39 @@ const fetchRiceMarketInventory = async () => {
       `${BASE_URL}product-service/market/${route.params?.marketId}`
     );
     const marketData = res.data;
-console.log("Offlijne fetchRiceMarketInventory",res.data)
-    // Filter only rice items (1kg and 5kg)
-    const riceItems = marketData.listItems.filter(item => {
-      const isRice = item.itemName.toLowerCase().includes('rice');
-      const isValidWeight = item.weight === 1 || item.weight === 5;
-      const isValidUnit = !item.itemName.toLowerCase().includes('gms'); // Exclude grams
-      return isRice && isValidWeight && isValidUnit;
+    console.log("Offline fetchRiceMarketInventory", res.data);
+
+    // Get today's date in DD-MM-YYYY format
+    const today = new Date();
+    const todayStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
+
+    // Filter only items added today
+    const todayItems = marketData.listItems.filter(item => {
+      const itemDateStr = item.itemAddedDate?.trim(); // assume it's already in DD-MM-YYYY
+      return itemDateStr === todayStr;
     });
 
-    // Transform data to match your expected format
-    const transformedData = riceItems.map(item => ({
+    // Transform data
+    const transformedData = todayItems.map(item => ({
       itemId: item.itemId,
       itemName: item.itemName,
-      itemMrp: item.itemPrice, // Assuming itemPrice is MRP
-      units: "kgs",
+      itemMrp: item.itemPrice,
+      units: item.unit || "kgs", // fallback if unit missing
       weight: item.weight,
-      itemPrice: item.offerPrice || item.itemPrice, // Use offer price if available
+      itemPrice: item.offerPrice || item.itemPrice,
       quantity: item.qty,
-      displayWeight: `${item.weight}kgs`,
-      catName: "Rice" // Since the API doesn't provide categories, we'll group all as Rice
+      displayWeight: `${item.weight}${item.unit || 'kgs'}`,
+      catName: item.categoryType || "General"
     }));
 
-    // Get unique weights for filter options
+    // Get unique weights and categories
     const weightSet = new Set();
-    transformedData.forEach(item => weightSet.add(item.displayWeight));
-    
+    const categorySet = new Set();
+    transformedData.forEach(item => {
+      weightSet.add(item.displayWeight);
+      categorySet.add(item.catName);
+    });
+
     const sortedWeights = Array.from(weightSet).sort((a, b) => {
       const aNum = parseFloat(a);
       const bNum = parseFloat(b);
@@ -101,18 +107,16 @@ console.log("Offlijne fetchRiceMarketInventory",res.data)
     });
 
     // Set state
-    setCategories(["All", "Rice"]); // Only Rice category available
+    setCategories(["All", ...Array.from(categorySet)]);
     setWeightOptions(["All", ...sortedWeights]);
     setAllData(transformedData);
 
   } catch (error) {
-    console.error("Error fetching rice market inventory:", error.response);
+    console.error("Error fetching rice market inventory:", error?.response || error);
   } finally {
     setLoading(false);
   }
 };
-
-
 
 
 const fetchAllCategoryInventory = async () => {
@@ -124,52 +128,94 @@ const fetchAllCategoryInventory = async () => {
     const data = res.data;
 
     const riceData = data.find(item => item.categoryType === "RICE");
-    
-    if (!riceData) {
+    const festivalData = data.find(item => item.categoryType === "FESTIVAL");
+
+    const allFlattenedData = [];
+    const riceWeightsSet = new Set();
+    const categoryNames = new Set();
+
+    const isOnline = route.params?.type === "ONLINE";
+    const allowedWeights = isOnline ? [1, 5, 10, 26] : [1, 5];
+
+    // Process RICE category
+    if (riceData) {
+      riceData.categories.forEach(category => {
+        const isFestivalFromBackend =
+          category.categoryType === "FESTIVAL" || // Ideal: backend tags it clearly
+          category.isFestival === true ||         // Even better: explicit boolean flag
+          false; // fallback if not present
+
+        if (category.itemsResponseDtoList?.length) {
+          category.itemsResponseDtoList.forEach(item => {
+            const unit = item.units?.toLowerCase();
+            const weight = item.weight;
+
+            const isValidUnit = unit === "kgs";
+            const isAllowedWeight = allowedWeights.includes(weight);
+
+            // Allow: If it's festival-type OR weight matches
+            const shouldInclude =
+              isFestivalFromBackend || (isValidUnit && isAllowedWeight);
+
+            if (shouldInclude) {
+              const flattenedItem = {
+                ...item,
+                catName: category.categoryName,
+                categoryType: "RICE",
+                displayWeight: `${item.weight}${item.units}`,
+              };
+              allFlattenedData.push(flattenedItem);
+              riceWeightsSet.add(flattenedItem.displayWeight);
+              categoryNames.add(category.categoryName);
+            }
+          });
+        }
+      });
+    }
+
+    // Process FESTIVAL category (always include all items)
+    if (festivalData) {
+      festivalData.categories.forEach(category => {
+        if (category.itemsResponseDtoList?.length) {
+          category.itemsResponseDtoList.forEach(item => {
+            const flattenedItem = {
+              ...item,
+              catName: category.categoryName,
+              categoryType: "FESTIVAL",
+              displayWeight: `${item.weight || ""}${item.units || ""}`,
+            };
+            allFlattenedData.push(flattenedItem);
+            categoryNames.add(category.categoryName);
+          });
+        }
+      });
+    }
+
+    // If no data found
+    if (!riceData && !festivalData) {
       setAllData([]);
       setWeightOptions(["All"]);
       setCategories(["All"]);
       return;
     }
 
-    const flattenedData = [];
-    const weightSet = new Set();
-
-    riceData.categories.forEach((category) => {
-      if (category.itemsResponseDtoList?.length) {
-        category.itemsResponseDtoList.forEach((item) => {
-          // Filter: Only weight 1 or 5 AND units = 'kgs' (case-insensitive)
-          const isValidWeight = item.weight === 1 || item.weight === 5;
-          const isValidUnit = item.units?.toLowerCase() === "kgs";
-
-          if (isValidWeight && isValidUnit) {
-            const flattenedItem = {
-              ...item,
-              catName: category.categoryName,
-              displayWeight: `${item.weight}${item.units}`,
-            };
-            flattenedData.push(flattenedItem);
-            weightSet.add(flattenedItem.displayWeight);
-          }
-        });
-      }
-    });
-
-    const sortedWeights = Array.from(weightSet).sort((a, b) => {
+    // Set final data
+    const sortedRiceWeights = Array.from(riceWeightsSet).sort((a, b) => {
       const aNum = parseFloat(a);
       const bNum = parseFloat(b);
-      return aNum - bNum; // Simple numeric sort since we only have kgs
+      return aNum - bNum;
     });
 
-    setCategories(["All", ...new Set(riceData.categories.map(cat => cat.categoryName))]);
-    setWeightOptions(["All", ...sortedWeights]);
-    setAllData(flattenedData);
+    setCategories(["All", ...Array.from(categoryNames)]);
+    setWeightOptions(["All", ...sortedRiceWeights]);
+    setAllData(allFlattenedData);
   } catch (error) {
-    console.error("Error fetching rice inventory:", error);
+    console.error("Error fetching inventory:", error);
   } finally {
     setLoading(false);
   }
 };
+
 
   const openQuantityModal = (item) => {
     setCurrentItem(item);

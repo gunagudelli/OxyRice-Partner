@@ -10,6 +10,7 @@ import {
   RefreshControl,
   TextInput,
   Alert,
+  Modal
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
@@ -22,7 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/Ionicons";
 
 const WeeklyOrders = ({ navigation, route }) => {
-  const { isTestOrder } = route.params;
+  // const { isTestOrder } = route.params;
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [orderAddress, setOrderAddress] = useState();
@@ -36,7 +37,11 @@ const WeeklyOrders = ({ navigation, route }) => {
   const [searchError, setSearchError] = useState("");
   const [updatingOrders, setUpdatingOrders] = useState(new Set());
   const accessToken = useSelector((state) => state.counter);
-
+const [rejectReason, setRejectReason] = useState('');
+const[rejectReasonError,setRejectReasonError]=useState(false)
+const[rejectModal,setRejectModal]=useState(false)
+const[orderId,setOrderId]=useState('')
+const[rejectLoader,setRejectLoader]=useState(false)
   useFocusEffect(
     useCallback(() => {
       const getdata = async () => {
@@ -64,6 +69,8 @@ const WeeklyOrders = ({ navigation, route }) => {
     android: "rgba(221, 160, 221, 0.3)",
     WEB: "rgba(240, 230, 140, 0.3)",
     ios: "rgba(255, 228, 181, 0.3)",
+    MARKET: "rgba(176, 224, 230, 0.3)",
+    WHATSAPP: "rgba(255, 222, 173, 0.3)",
   };
 
   // Fetch user data to get user ID and primary type
@@ -79,7 +86,7 @@ const WeeklyOrders = ({ navigation, route }) => {
         console.log("User Primary Type:", parsedUserData.primaryType);
       }
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.error("Error fetching user data:", error.response);
       Alert.alert("Error", "Failed to load user data. Please log in again.");
     }
   };
@@ -101,9 +108,7 @@ const WeeklyOrders = ({ navigation, route }) => {
 
       // Filter orders based on status and test user preference
       const acceptedOrders = response.data.filter((order) => {
-        return (
-          order && order.orderStatus === "1" && order.testUser === isTestOrder
-        );
+        return order && order.orderStatus === "1";
       });
 
       setOrders(acceptedOrders);
@@ -111,7 +116,7 @@ const WeeklyOrders = ({ navigation, route }) => {
       setFilteredOrders(acceptedOrders);
     } catch (error) {
       setLoader(false);
-      console.error("Error fetching orders:", error);
+      console.error("Error fetching orders:", error.response);
 
       let errorMessage = "Failed to load orders. Please try again.";
       if (error.response?.status === 401) {
@@ -281,17 +286,18 @@ const WeeklyOrders = ({ navigation, route }) => {
     return (
       <View>
         {/* Only show orders that match the current filter criteria */}
-        {item.orderStatus == 1 && item.testUser == isTestOrder ? (
-          <TouchableOpacity
+        {item.orderStatus == 1 ? (
+          <View
             style={styles.orderItem}
-            onPress={() =>
+           
+          >
+            <TouchableOpacity  onPress={() =>
               navigation.navigate("Order Details", {
                 orderId: item.orderId,
                 orderStatus: item.orderStatus,
-                istestUser: route.params.isTestOrder,
+                // istestUser: route.params.isTestOrder,
               })
-            }
-          >
+            }>
             {/* Header Row: Order ID and User Type Tags */}
             <View style={styles.headerRow}>
               <View style={styles.orderIdContainer}>
@@ -439,7 +445,7 @@ const WeeklyOrders = ({ navigation, route }) => {
                 </View>
               </View>
             )}
-
+</TouchableOpacity>
             {/* Weekly Market Assignment Status */}
             {item?.weeklyMarket && (
               <View style={styles.buttonContainer}>
@@ -462,7 +468,7 @@ const WeeklyOrders = ({ navigation, route }) => {
                     <View style={styles.buttonContent}>
                       <Ionicons name="calendar" size={18} color="#fff" />
                       <Text style={styles.buttonText}>
-                         Mark as Weekly Market
+                        Mark as Weekly Market
                       </Text>
                     </View>
                   )}
@@ -499,14 +505,22 @@ const WeeklyOrders = ({ navigation, route }) => {
             )}
 
             {/* User Assignment Info */}
-            {userPrimaryType && (
-              <View style={styles.userInfoContainer}>
-                <Ionicons name="person-outline" size={16} color="#007bff" />
-                <Text style={styles.userInfoText}>
-                  You are: {userPrimaryType}
-                </Text>
-              </View>
-            )}
+            <View style={{ flexDirection: "row",alignSelf:"center" }}>
+              <>
+                {userPrimaryType && (
+                  <View style={styles.userInfoContainer}>
+                    <Ionicons name="person-outline" size={16} color="#007bff" />
+                    <Text style={[styles.userInfoText,{color:"#007bff"}]}>You are a {userPrimaryType}</Text>
+                  </View>
+                )}
+              </>
+              <>
+                {/* <TouchableOpacity style={styles.RejectContainer} onPress={()=>{setRejectModal(true),setOrderId(item.orderId)}}>
+                  <Ionicons name="close" size={16} color="red" />
+                  <Text style={[styles.userInfoText,{color:"red"}]}>Reject</Text>
+                </TouchableOpacity> */}
+              </>
+            </View>
 
             {/* Delivered Button */}
             <View style={styles.buttonContainer}>
@@ -558,7 +572,7 @@ const WeeklyOrders = ({ navigation, route }) => {
                 )}
               </TouchableOpacity>
             </View>
-          </TouchableOpacity>
+          </View>
         ) : null}
       </View>
     );
@@ -574,13 +588,44 @@ const WeeklyOrders = ({ navigation, route }) => {
     );
   }
 
+  const handleReject=(orderId)=>{
+console.log({orderId})
+if(rejectReason=="" || rejectReason==null){
+  setRejectReasonError(true)
+  return false
+}
+let data={
+  orderId: orderId, 
+  cancelReason: rejectReason 
+}
+    setRejectLoader(true)
+
+axios({
+  method:"post",
+  url:BASE_URL+`order-service/reject_orders`,
+  data:data
+})
+.then(function(response){
+  console.log("response Reject",response.data)
+  setRejectLoader(false)
+  setRejectModal(false)
+  setRejectReason('')
+  Alert.alert('Success',`Order ${orderId} rejected Successfully`)
+})
+.catch(function(error){
+  console.log("Error Reject",error.response)
+  setRejectLoader(false)
+  Alert.alert('Error',error.response.data.message)
+})
+  }
+
   const renderNoOrdersFound = () => {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="document-outline" size={50} color="#ccc" />
         <Text style={styles.emptyText}>No orders available</Text>
         <Text style={styles.emptySubText}>
-          {isTestOrder ? "No test orders found" : "No live orders found"}
+          {/* {isTestOrder ? "No test orders found" : "No live orders found"} */}
         </Text>
       </View>
     );
@@ -662,6 +707,40 @@ const WeeklyOrders = ({ navigation, route }) => {
           />
         )}
       </View>
+
+       <Modal visible={rejectModal} transparent animationType="slide">
+      <View style={styles.modalBackdrop}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Enter Reason for Rejection {orderId}</Text>
+
+          <TextInput
+            placeholder="Enter reject reason here..."
+            value={rejectReason}
+            onChangeText={(text)=>{setRejectReason(text),setRejectReasonError(false)}}
+            style={styles.textInput}
+            multiline
+          />
+          {rejectReasonError==true?
+          <Text style={{color:"red",alignSelf:"center"}}>Reason should be Mandatory</Text>
+          :null}
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity style={styles.closeButton} onPress={()=>setRejectModal(false)}>
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+{rejectLoader==false?
+            <TouchableOpacity style={styles.rejectButton} onPress={()=>handleReject(orderId)}>
+              <Text style={styles.buttonText}>Reject</Text>
+            </TouchableOpacity>
+            :
+            <View style={styles.rejectButton}>
+              <ActivityIndicator size='small' color="white"/>
+            </View>
+            }
+          </View>
+        </View>
+      </View>
+    </Modal>
     </View>
   );
 };
@@ -978,13 +1057,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#e3f2fd",
     padding: 10,
     borderRadius: 8,
-    marginBottom: 16,
+    margin: 5,
     borderLeftWidth: 3,
     borderLeftColor: "#007bff",
+    width: width*0.8,
+  },
+  RejectContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ff938b",
+    padding: 10,
+    borderRadius: 8,
+    margin: 5,
+    borderLeftWidth: 3,
+    borderLeftColor: "red",
+    width: width*0.4,
   },
   userInfoText: {
     fontSize: 14,
-    color: "#007bff",
+    // color: "red",
     fontWeight: "600",
     marginLeft: 8,
   },
@@ -994,14 +1085,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 16,
+    margin: 10,
   },
   weeklyMarketButton: {
     backgroundColor: "#007bff",
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    // paddingHorizontal: 16,
     borderRadius: 10,
-    width: "48%",
+    width: width*0.4,
     shadowColor: "#007bff",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 2 },
@@ -1013,7 +1104,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 10,
-    width: "48%",
+    width: width*0.4,
     shadowColor: "#28a745",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 2 },
@@ -1045,5 +1136,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#999",
     fontStyle: "italic",
+  },
+   modalBackdrop: {
+    flex: 1,
+    backgroundColor: '#00000088',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  textInput: {
+    height: 100,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  closeButton: {
+    backgroundColor: '#888',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  rejectButton: {
+    backgroundColor: '#d9534f',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
