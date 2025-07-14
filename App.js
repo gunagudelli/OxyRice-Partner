@@ -165,12 +165,12 @@ export default function App() {
           <Stack.Screen name="PaymentStatus" component={PaymentStatusScreen} />
           <Stack.Screen name="ImageUploader" component={ImageUploader} />
           <Stack.Screen name="Add Store" component={AddstoreScreen} />
-          {/* <Stack.Screen name="Store Details" component={StoreDetailsScreen} options={{
+          <Stack.Screen name="Store Details" component={StoreDetailsScreen} options={{
               headerShown: true,
               headerRight: () => <Logout />,
               headerLeft: () => <></>,
-            }}/> */}
-          <Stack.Screen
+            }}/>
+          {/* <Stack.Screen
             name="Store Details"
             component={StoreDetailsScreen}
             options={{
@@ -182,7 +182,7 @@ export default function App() {
               },
               headerTintColor: "white", // icon/text color
             }}
-          />
+          /> */}
 
           <Stack.Screen name="Store Orders" component={PlacedOrdersScreen} />
           <Stack.Screen name="Checkout" component={Checkout} />

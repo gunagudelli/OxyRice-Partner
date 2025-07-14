@@ -351,17 +351,24 @@ if (exchangeOrdersResponse.status === "fulfilled") {
           color: "#2980b9",
           onPress: () => navigation.navigate("Scan Multiple Barcodes"),
         },
-        ...(userStage == "Live"
-          ? [
-              {
+        // ...(userStage == "Live:Test"
+        //   ? [
+        //       {
+        //         id: 4,
+        //         title: "Stock Exchange",
+        //         icon: "sync-outline",
+        //         color: "#1abc9c",
+        //         onPress: () => navigation.navigate("Stock Exchange"),
+        //       },
+        //     ]
+        //   : []),
+         {
                 id: 4,
                 title: "Stock Exchange",
                 icon: "sync-outline",
                 color: "#1abc9c",
                 onPress: () => navigation.navigate("Stock Exchange"),
               },
-            ]
-          : []),
       ],
     },
     orders: [
