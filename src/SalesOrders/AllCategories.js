@@ -23,7 +23,7 @@ const AllCategories = ({ route, navigation }) => {
   const [selectedWeight, setSelectedWeight] = useState("All");
   const [categories, setCategories] = useState([]);
   const [quantities, setQuantities] = useState({});
-
+  const [searchQuery, setSearchQuery] = useState("");
   const [weightOptions, setWeightOptions] = useState(["All"]);
   const [loading, setLoading] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -31,12 +31,12 @@ const AllCategories = ({ route, navigation }) => {
   const [currentItem, setCurrentItem] = useState(null);
   const [quantityInput, setQuantityInput] = useState("");
   const [cartQuantities, setCartQuantities] = useState({});
+  const [amtRecieved, setAmtRecieved] = useState("");
   const spinValue = new Animated.Value(0);
-  // const customerId = "939d875f-af3e-4292-b45e-5ade22366428";
   const customerId = route.params?.userId; //Offline user
   const userType = route.params?.type;
   useEffect(() => {
-    console.log("All Categories", route.params);  
+    console.log("All Categories", route.params);
     Animated.loop(
       Animated.timing(spinValue, {
         toValue: 1,
@@ -44,178 +44,209 @@ const AllCategories = ({ route, navigation }) => {
         useNativeDriver: true,
       })
     ).start();
-if(route.params?.type=="Market" || route.params?.type=="ONLINE"){
-    fetchAllCategoryInventory();
-}else{
-  if(route.params?.type=="OFFLINE"){
-  fetchRiceMarketInventory()
-  }
-}
+    if (route.params?.type == "Market" || route.params?.type == "ONLINE") {
+      fetchAllCategoryInventory();
+    } else {
+      if (
+        route.params?.type == "OFFLINE" ||
+        route.params?.type == "EODReport"
+      ) {
+        fetchRiceMarketInventory();
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    console.log("All categories:", categories);
+    console.log("All data:", allData);
+    console.log("Filtered items:", filteredItems);
+  }, [categories, allData, filteredItems]);
 
   const spin = spinValue.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
   });
 
+  const fetchRiceMarketInventory = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        route.params?.type != "EODReport"
+          ? `${BASE_URL}product-service/market/${route.params?.marketId}`
+          : `${BASE_URL}product-service/market/${route.params?.MarketDetails?.marketId}`
+      );
+      const marketData = res.data;
+      console.log("Offline fetchRiceMarketInventory", res.data);
 
+      // Get today's date in DD-MM-YYYY format
+      const today = new Date();
+      const todayStr = `${String(today.getDate()).padStart(2, "0")}-${String(
+        today.getMonth() + 1
+      ).padStart(2, "0")}-${today.getFullYear()}`;
 
-const fetchRiceMarketInventory = async () => {
-  try {
-    setLoading(true);
-    const res = await axios.get(
-      `${BASE_URL}product-service/market/${route.params?.marketId}`
-    );
-    const marketData = res.data;
-    console.log("Offline fetchRiceMarketInventory", res.data);
+      // Filter only items added today
+      const todayItems = marketData.listItems.filter((item) => {
+        const itemDateStr = item.itemAddedDate?.trim(); // assume it's already in DD-MM-YYYY
+        return itemDateStr === todayStr;
+      });
 
-    // Get today's date in DD-MM-YYYY format
-    const today = new Date();
-    const todayStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
+      // Transform data
+      const transformedData = todayItems.map((item) => ({
+        itemId: item.itemId,
+        itemName: item.itemName,
+        itemMrp: item.itemPrice,
+        units: item.unit || "kgs", // fallback if unit missing
+        weight: item.weight,
+        itemPrice: item.offerPrice || item.itemPrice,
+        quantity: item.qty,
+        displayWeight: `${item.weight}${item.unit || "kgs"}`,
+        catName: item.categoryType || "General",
+      }));
 
-    // Filter only items added today
-    const todayItems = marketData.listItems.filter(item => {
-      const itemDateStr = item.itemAddedDate?.trim(); // assume it's already in DD-MM-YYYY
-      return itemDateStr === todayStr;
-    });
+      // Get unique weights and categories
+      const weightSet = new Set();
+      const categorySet = new Set();
+      transformedData.forEach((item) => {
+        weightSet.add(item.displayWeight);
+        categorySet.add(item.catName);
+      });
 
-    // Transform data
-    const transformedData = todayItems.map(item => ({
-      itemId: item.itemId,
-      itemName: item.itemName,
-      itemMrp: item.itemPrice,
-      units: item.unit || "kgs", // fallback if unit missing
-      weight: item.weight,
-      itemPrice: item.offerPrice || item.itemPrice,
-      quantity: item.qty,
-      displayWeight: `${item.weight}${item.unit || 'kgs'}`,
-      catName: item.categoryType || "General"
-    }));
+      const sortedWeights = Array.from(weightSet).sort((a, b) => {
+        const aNum = parseFloat(a);
+        const bNum = parseFloat(b);
+        return aNum - bNum;
+      });
 
-    // Get unique weights and categories
-    const weightSet = new Set();
-    const categorySet = new Set();
-    transformedData.forEach(item => {
-      weightSet.add(item.displayWeight);
-      categorySet.add(item.catName);
-    });
+      // Set state
+      setCategories(["All", ...Array.from(categorySet)]);
+      setWeightOptions(["All", ...sortedWeights]);
+      setAllData(transformedData);
+    } catch (error) {
+      console.error(
+        "Error fetching rice market inventory:",
+        error?.response || error
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const sortedWeights = Array.from(weightSet).sort((a, b) => {
-      const aNum = parseFloat(a);
-      const bNum = parseFloat(b);
-      return aNum - bNum;
-    });
+  const fetchAllCategoryInventory = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        `${BASE_URL}product-service/showGroupItemsForCustomrs`
+      );
+      const data = res.data;
+      console.log("fetchAllCategoryInventory", res.data[0].categoryType);
+      const riceData = data.find((item) => item.categoryType === "RICE");
+      const GroceryData = data.find((item) => item.categoryType === "Grocery");
+      const festivalData = data.find(
+        (item) => item.categoryType === "FESTIVAL"
+      );
 
-    // Set state
-    setCategories(["All", ...Array.from(categorySet)]);
-    setWeightOptions(["All", ...sortedWeights]);
-    setAllData(transformedData);
+      const allFlattenedData = [];
+      const riceWeightsSet = new Set();
+      const categoryNames = new Set();
 
-  } catch (error) {
-    console.error("Error fetching rice market inventory:", error?.response || error);
-  } finally {
-    setLoading(false);
-  }
-};
+      const isOnline = route.params?.type === "ONLINE";
+      const allowedWeights = isOnline ? [1, 5, 10, 26] : [1, 5, 10, 26];
 
+      // Process RICE category
+      if (riceData) {
+        riceData.categories.forEach((category) => {
+          const isFestivalFromBackend =
+            category.categoryType === "FESTIVAL" || // Ideal: backend tags it clearly
+            category.isFestival === true || // Even better: explicit boolean flag
+            false; // fallback if not present
 
-const fetchAllCategoryInventory = async () => {
-  try {
-    setLoading(true);
-    const res = await axios.get(
-      `${BASE_URL}product-service/showGroupItemsForCustomrs`
-    );
-    const data = res.data;
+          if (category.itemsResponseDtoList?.length) {
+            category.itemsResponseDtoList.forEach((item) => {
+              const unit = item.units?.toLowerCase();
+              const weight = item.weight;
 
-    const riceData = data.find(item => item.categoryType === "RICE");
-    const festivalData = data.find(item => item.categoryType === "FESTIVAL");
+              const isValidUnit = unit === "kgs";
+              const isAllowedWeight = allowedWeights.includes(weight);
 
-    const allFlattenedData = [];
-    const riceWeightsSet = new Set();
-    const categoryNames = new Set();
+              // Allow: If it's festival-type OR weight matches
+              const shouldInclude =
+                isFestivalFromBackend || (isValidUnit && isAllowedWeight);
 
-    const isOnline = route.params?.type === "ONLINE";
-    const allowedWeights = isOnline ? [1, 5, 10, 26] : [1, 5];
+              if (shouldInclude) {
+                const flattenedItem = {
+                  ...item,
+                  catName: category.categoryName,
+                  categoryType: "RICE",
+                  displayWeight: `${item.weight}${item.units}`,
+                };
+                allFlattenedData.push(flattenedItem);
+                riceWeightsSet.add(flattenedItem.displayWeight);
+                categoryNames.add(category.categoryName);
+              }
+            });
+          }
+        });
+      }
 
-    // Process RICE category
-    if (riceData) {
-      riceData.categories.forEach(category => {
-        const isFestivalFromBackend =
-          category.categoryType === "FESTIVAL" || // Ideal: backend tags it clearly
-          category.isFestival === true ||         // Even better: explicit boolean flag
-          false; // fallback if not present
-
-        if (category.itemsResponseDtoList?.length) {
-          category.itemsResponseDtoList.forEach(item => {
-            const unit = item.units?.toLowerCase();
-            const weight = item.weight;
-
-            const isValidUnit = unit === "kgs";
-            const isAllowedWeight = allowedWeights.includes(weight);
-
-            // Allow: If it's festival-type OR weight matches
-            const shouldInclude =
-              isFestivalFromBackend || (isValidUnit && isAllowedWeight);
-
-            if (shouldInclude) {
+      if (GroceryData) {
+        GroceryData.categories.forEach((category) => {
+          if (category.itemsResponseDtoList?.length) {
+            category.itemsResponseDtoList.forEach((item) => {
               const flattenedItem = {
                 ...item,
                 catName: category.categoryName,
-                categoryType: "RICE",
-                displayWeight: `${item.weight}${item.units}`,
+                categoryType: "Grocery",
+                displayWeight: `${item.weight || ""}${item.units || ""}`,
               };
               allFlattenedData.push(flattenedItem);
-              riceWeightsSet.add(flattenedItem.displayWeight);
               categoryNames.add(category.categoryName);
-            }
-          });
-        }
+            });
+          }
+        });
+      }
+
+      // Process FESTIVAL category (always include all items)
+      if (festivalData) {
+        festivalData.categories.forEach((category) => {
+          if (category.itemsResponseDtoList?.length) {
+            category.itemsResponseDtoList.forEach((item) => {
+              const flattenedItem = {
+                ...item,
+                catName: category.categoryName,
+                categoryType: "FESTIVAL",
+                displayWeight: `${item.weight || ""}${item.units || ""}`,
+              };
+              allFlattenedData.push(flattenedItem);
+              categoryNames.add(category.categoryName);
+            });
+          }
+        });
+      }
+
+      // If no data found
+      if (!riceData && !festivalData && !GroceryData) {
+        setAllData([]);
+        setWeightOptions(["All"]);
+        setCategories(["All"]);
+        return;
+      }
+
+      // Set final data
+      const sortedRiceWeights = Array.from(riceWeightsSet).sort((a, b) => {
+        const aNum = parseFloat(a);
+        const bNum = parseFloat(b);
+        return aNum - bNum;
       });
+
+      setCategories(["All", ...Array.from(categoryNames)]);
+      setWeightOptions(["All", ...sortedRiceWeights]);
+      setAllData(allFlattenedData);
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+    } finally {
+      setLoading(false);
     }
-
-    // Process FESTIVAL category (always include all items)
-    if (festivalData) {
-      festivalData.categories.forEach(category => {
-        if (category.itemsResponseDtoList?.length) {
-          category.itemsResponseDtoList.forEach(item => {
-            const flattenedItem = {
-              ...item,
-              catName: category.categoryName,
-              categoryType: "FESTIVAL",
-              displayWeight: `${item.weight || ""}${item.units || ""}`,
-            };
-            allFlattenedData.push(flattenedItem);
-            categoryNames.add(category.categoryName);
-          });
-        }
-      });
-    }
-
-    // If no data found
-    if (!riceData && !festivalData) {
-      setAllData([]);
-      setWeightOptions(["All"]);
-      setCategories(["All"]);
-      return;
-    }
-
-    // Set final data
-    const sortedRiceWeights = Array.from(riceWeightsSet).sort((a, b) => {
-      const aNum = parseFloat(a);
-      const bNum = parseFloat(b);
-      return aNum - bNum;
-    });
-
-    setCategories(["All", ...Array.from(categoryNames)]);
-    setWeightOptions(["All", ...sortedRiceWeights]);
-    setAllData(allFlattenedData);
-  } catch (error) {
-    console.error("Error fetching inventory:", error);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const openQuantityModal = (item) => {
     setCurrentItem(item);
@@ -225,16 +256,24 @@ const fetchAllCategoryInventory = async () => {
 
   const handleAddItemsQuantity = () => {
     const qty = parseInt(quantityInput);
+    console.log("handleAddItemsQuantity", qty, currentItem);
     if (!qty || qty <= 0) {
       Alert.alert("Invalid Quantity", "Please enter a valid number.");
       return;
     }
-
-    const itemPayload = {
-      itemId: currentItem.itemId,
-      qty,
-      weight: currentItem.weight || 0,
-    };
+    if (route.params.type === "EODReport") {
+      var itemPayload = {
+        itemId: currentItem.itemId,
+        sellBagsCount: qty,
+        totalAmountRecived: amtRecieved || 0,
+      };
+    } else {
+      var itemPayload = {
+        itemId: currentItem.itemId,
+        qty,
+        weight: currentItem.weight || 0,
+      };
+    }
 
     setSelectedItems((prevItems) => {
       const updatedItems = prevItems.filter(
@@ -253,11 +292,21 @@ const fetchAllCategoryInventory = async () => {
         Alert.alert("Invalid Quantity", "Please enter a valid number.");
         return;
       }
-      const newItem = {
-        itemId: currentItem.itemId,
-        qty,
-        weight: currentItem.weight || 0,
-      };
+
+      if (route.params.type === "EODReport") {
+        var newItem = {
+          itemId: currentItem.itemId,
+          sellBagsCount: qty,
+          totalAmountRecived: amtRecieved || 0,
+        };
+      } else {
+        var newItem = {
+          itemId: currentItem.itemId,
+          qty,
+          weight: currentItem.weight || 0,
+        };
+      }
+
       finalItems = finalItems
         .filter((i) => i.itemId !== currentItem.itemId)
         .concat(newItem);
@@ -274,11 +323,20 @@ const fetchAllCategoryInventory = async () => {
     const year = today.getFullYear();
 
     console.log({ finalItems });
-    const payload = {
-      listItems: finalItems,
-      marketId: route.params.MarketDetails.marketId,
-      visitDate: `${year}-${month}-${day}`,
-    };
+    if (route.params.type === "EODReport") {
+      var payload = {
+        listSellsCount: finalItems,
+        marketId: route.params.MarketDetails.marketId,
+        visitDate: `${year}-${month}-${day}`,
+      };
+    } else {
+      var payload = {
+        listItems: finalItems,
+        marketId: route.params.MarketDetails.marketId,
+        visitDate: `${year}-${month}-${day}`,
+      };
+    }
+
     console.log({ payload });
     axios
       .post(`${BASE_URL}product-service/addMarketItems`, payload)
@@ -435,9 +493,14 @@ const fetchAllCategoryInventory = async () => {
     const existingItem = selectedItems.find((i) => i.itemId === item.itemId);
     const offlineQty = quantities[item.itemId] || 0;
     const onlineQty = cartQuantities[item.itemId] || 0;
+    const existingSaleItem = selectedItems.find(
+      (i) => i.itemId === item.itemId
+    );
+    // console.log("Existing Sale Item:", existingSaleItem);
 
     return (
       <View style={styles.card}>
+        <Text >sadjvh</Text>
         <Image
           source={{ uri: item.itemImage }}
           style={styles.image}
@@ -446,9 +509,42 @@ const fetchAllCategoryInventory = async () => {
         <Text style={styles.title}>{item.itemName}</Text>
         <Text style={styles.price}>₹{item.itemPrice}</Text>
         <Text style={styles.weight}>
-          {item.weight} {item.weight === 1 ? "Kg" : "Kgs"}
+          {item.weight} {item.units}
         </Text>
-        {route.params.type === "Market" ? (
+        {route.params.type === "EODReport" ? (
+          <Text style={{ color: "orange", fontWeight: "bold" }}>
+            Bags Count : {item.quantity}
+          </Text>
+        ) : null}
+
+        {route.params.type === "EODReport" ? (
+          existingSaleItem ? (
+            <>
+              <Text style={styles.qtyText}>
+                Sale Count: {existingSaleItem.sellBagsCount}
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.addButton,
+                  { backgroundColor: "#FFA500", marginTop: 10 },
+                ]}
+                onPress={() => openQuantityModal(item)}
+              >
+                <Text style={styles.addButtonText}>Update</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.addButton,
+                { backgroundColor: "#4CAF50", marginTop: 10 },
+              ]}
+              onPress={() => openQuantityModal(item)}
+            >
+              <Text style={styles.addButtonText}>Sale Count</Text>
+            </TouchableOpacity>
+          )
+        ) : route.params.type === "Market" ? (
           existingItem ? (
             <>
               <Text style={styles.qtyText}>Qty: {existingItem.qty}</Text>
@@ -538,8 +634,8 @@ const fetchAllCategoryInventory = async () => {
       id: route.params?.userId,
       offlineItems: offlineItems,
     };
-console.log({offlineItems})
-    console.log({payload})
+    console.log({ offlineItems });
+    console.log({ payload });
     try {
       const response = await axios.post(
         `${BASE_URL}user-service/offlineOrdersItems`,
@@ -571,7 +667,11 @@ console.log({offlineItems})
       (item.weight &&
         item.units &&
         `${item.weight}${item.units}` === selectedWeight);
-    return categoryMatch && weightMatch;
+    const searchMatch =
+      searchQuery === "" ||
+      item.itemName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return categoryMatch && weightMatch && searchMatch;
   });
 
   const renderLoader = () => (
@@ -621,8 +721,26 @@ console.log({offlineItems})
               </TouchableOpacity>
             </View>
           )}
+
+          <TextInput
+            mode="outlined"
+            placeholder="Search items..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            dense={true}
+            left={<TextInput.Icon icon="magnify" />}
+            right={
+              searchQuery ? (
+                <TextInput.Icon
+                  icon="close"
+                  onPress={() => setSearchQuery("")}
+                />
+              ) : null
+            }
+            style={styles.searchInput}
+          />
           {renderCategoryTabs()}
-          {renderWeightTabs()}
+          {route.params.type !== "EODReport" ? <>{renderWeightTabs()}</> : null}
           <FlatList
             data={filteredItems}
             renderItem={renderItem}
@@ -644,17 +762,36 @@ console.log({offlineItems})
       {modalVisible && (
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              Enter quantity for {currentItem?.itemName}
-            </Text>
-            <TextInput
-              value={quantityInput}
-              onChangeText={setQuantityInput}
-              keyboardType="numeric"
-              label="Enter quantity"
-              mode="outlined"
-              style={styles.input}
-            />
+            <>
+              {route.params.type === "EODReport" ? (
+                <Text style={styles.modalTitle}>
+                  Enter Sale Count for {currentItem?.itemName}
+                </Text>
+              ) : (
+                <Text style={styles.modalTitle}>
+                  Enter quantity for {currentItem?.itemName}
+                </Text>
+              )}
+              <TextInput
+                value={quantityInput}
+                onChangeText={setQuantityInput}
+                keyboardType="numeric"
+                label="Enter quantity"
+                mode="outlined"
+                style={styles.input}
+              />
+
+              {route.params.type === "EODReport" ? (
+                <TextInput
+                  value={amtRecieved}
+                  onChangeText={setAmtRecieved}
+                  keyboardType="numeric"
+                  label="Enter Amount Recieved"
+                  mode="outlined"
+                  style={styles.input}
+                />
+              ) : null}
+            </>
             <View style={styles.modalActions}>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
@@ -697,8 +834,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     backgroundColor: "#E0E0E0",
-    borderRadius: 20,
-    marginRight: 8,
+    borderRadius: 10,
+    margin: 8,
     // minWidth: 50,
     justifyContent: "center",
     alignItems: "center",
@@ -715,7 +852,7 @@ const styles = StyleSheet.create({
   weightTab: {
     paddingHorizontal: 16,
     // paddingVertical: 10,
-    borderRadius: 16,
+    borderRadius: 10,
     marginHorizontal: 5,
     backgroundColor: "#f3f4f6",
     borderWidth: 1,
@@ -777,6 +914,15 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     textAlign: "center",
+  },
+  searchInput: {
+    backgroundColor: "#fff",
+    // marginHorizontal: 10,
+    marginVertical: 10,
+    borderRadius: 8,
+    height: 50,
+    width: width * 0.9,
+    alignSelf: "center",
   },
   qtyText: {
     fontSize: 14,
@@ -882,11 +1028,11 @@ const styles = StyleSheet.create({
     // paddingVertical: 12,
     // paddingHorizontal: 30,
     borderRadius: 5,
-    width: width*0.5,
-    alignSelf:"flex-end",
+    width: width * 0.5,
+    alignSelf: "flex-end",
     alignItems: "center",
-    margin:10,
-    elevation:10
+    margin: 10,
+    elevation: 10,
   },
   checkoutButtonText: {
     marginTop: 10,

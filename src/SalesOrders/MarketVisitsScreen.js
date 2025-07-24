@@ -165,18 +165,24 @@ const isTodayItemAdded = (listItems = []) => {
       <View style={styles.visitActions}>
         
         <TouchableOpacity
-          style={[styles.visitButton, {backgroundColor: '#2A6B57'}]}
+          style={[styles.visitButton, {backgroundColor: '#2A6B57',marginRight:5}]}
           onPress={() => navigation.navigate('All Categories', { MarketDetails: item,type:"Market" })}
         >
           <Text style={styles.primaryButtonText}>Add market items</Text>
         </TouchableOpacity>
 
-         {/* <TouchableOpacity
-          style={[styles.visitButton, {backgroundColor: '#0384d5'}]}
-          onPress={() => navigation.navigate('Place Order', { MarketDetails: item,type:"Market" })}
+         <TouchableOpacity
+          style={[styles.visitButton,  {
+      backgroundColor: isTodayItemAdded(item.listItems) ? '#e76cf1' : '#d3d3d3',
+      marginRight:5,
+      opacity: isTodayItemAdded(item.listItems) ? 1 : 0.6
+    }]}
+      disabled={!isTodayItemAdded(item.listItems)}
+
+          onPress={() => navigation.navigate('All Categories', { MarketDetails: item,type:"EODReport" })}
         >
-          <Text style={styles.primaryButtonText}>Place Order</Text>
-        </TouchableOpacity> */}
+          <Text style={[styles.primaryButtonText, { color: isTodayItemAdded(item.listItems) ? '#fff' : '#000' }]}>EOD Report</Text>
+        </TouchableOpacity>
 
        <TouchableOpacity
   style={[
@@ -321,6 +327,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderWidth: 0.6,
     borderColor: '#000',
+    width:width*0.9,
+    alignSelf:"center"
   },
   visitHeader: {
     padding: 15,
@@ -362,10 +370,10 @@ const styles = StyleSheet.create({
     borderTopColor: '#f0f0f0',
   },
   visitButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    padding: 8,
+    // paddingHorizontal: 15,
     borderRadius: 6,
-    marginLeft: 8,
+    // marginLeft: 8,
   },
   visitButtonText: {
     fontSize: 14,

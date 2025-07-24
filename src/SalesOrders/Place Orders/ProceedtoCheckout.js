@@ -536,8 +536,10 @@ const ProceedtoCheckout = ({ route, navigation }) => {
     setPlacedLoader(true)
     const data = {
       mid: "1152305",
-      // amount: couponValue==''?cartData?.amountToPay : total,
-      amount: 1,
+      amount: route.params.MarketDetails.type == "ONLINE"
+                ? cartData?.amountToPay - couponValue
+                : cartData?.overalAmt - couponValue,
+      // amount: 1,
       merchantTransactionId: transactionId,
       transactionDate: new Date(),
       terminalId: "getepay.merchant128638@icici",
@@ -561,7 +563,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
       txnNote: "Rice Order In Live",
       vpa: "Getepay.merchant129014@icici",
     };
-    // console.log({ data });
+    console.log({ data });
     getepayPortal(data);
     //   GoogleAnalyticsService.purchase(
     //     transactionId,
