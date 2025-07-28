@@ -16,6 +16,7 @@ import axios from "axios";
 import BASE_URL from "../../config";
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width / 2 - 30;
+import OfferModal from "./Place Orders/OfferModal";
 
 const AllCategories = ({ route, navigation }) => {
   const [allData, setAllData] = useState([]);
@@ -32,7 +33,11 @@ const AllCategories = ({ route, navigation }) => {
   const [quantityInput, setQuantityInput] = useState("");
   const [cartQuantities, setCartQuantities] = useState({});
   const [amtRecieved, setAmtRecieved] = useState("");
+  const [ comboOffers, setComboOffers ] = useState();
+    const [offerShow, setOfferShow] = useState(false);
+
   const spinValue = new Animated.Value(0);
+
   const customerId = route.params?.userId; //Offline user
   const userType = route.params?.type;
   useEffect(() => {
@@ -76,7 +81,7 @@ const AllCategories = ({ route, navigation }) => {
           : `${BASE_URL}product-service/market/${route.params?.MarketDetails?.marketId}`
       );
       const marketData = res.data;
-      console.log("Offline fetchRiceMarketInventory", res.data);
+      // console.log("Offline fetchRiceMarketInventory", res.data);
 
       // Get today's date in DD-MM-YYYY format
       const today = new Date();
@@ -343,7 +348,7 @@ const AllCategories = ({ route, navigation }) => {
       .then((response) => {
         Alert.alert(
           "Success",
-          `Items added successfully for market ${route.params.MarketDetails.marketName}`
+          `Items added successfully for ${route.params.MarketDetails.marketName}`
         );
         setSelectedItems([]);
         setModalVisible(false);
@@ -354,16 +359,32 @@ const AllCategories = ({ route, navigation }) => {
   };
 
   const addItemfunc = async (itemId) => {
-    try {
-      await axios.post(`${BASE_URL}cart-service/cart/addAndIncrementCart`, {
+   
+     axios.post(`${BASE_URL}cart-service/cart/addAndIncrementCart`, {
         itemId,
         customerId,
-      });
-      setCartQuantities((prev) => ({ ...prev, [itemId]: 1 }));
-    } catch (error) {
+      })
+      .then((response)=>{
+       setCartQuantities((prev) => ({ ...prev, [itemId]: 1 }));
+       getComboOffersfunc(itemId)
+      })
+     .catch ((error)=>{
       console.error("Error addAndIncrementCart:", error.response);
-    }
+     }) 
   };
+
+  function getComboOffersfunc(itemId){
+    console.log("getComboOffersfunc called with itemId:", itemId);
+    axios.get(`${BASE_URL}product-service/getComboInfo/${itemId}`)
+    .then((response) => {
+      console.log("getComboOffers Response", response.data);
+setComboOffers(response.data)
+ setOfferShow(true);
+    })
+    .catch((error) => {
+      console.error("Error fetching combo offers:", error);
+    })
+  }
 
   const incrementQty = async (itemId) => {
     try {
@@ -423,6 +444,7 @@ const AllCategories = ({ route, navigation }) => {
       .then((res) => {
         console.log("Updated:", res);
         Alert.alert("Success", `Item quantity updated successfully!`);
+        // getComboOffersfunc(itemId)
       })
       .catch((err) => {
         console.error("Error updating offline item:", err);
@@ -500,14 +522,52 @@ const AllCategories = ({ route, navigation }) => {
 
     return (
       <View style={styles.card}>
-        <Text >sadjvh</Text>
-        <Image
+        <View style={{flexDirection:"row", justifyContent:"space-between", width:"100%"}}>
+{item.quantity > 0 && item.quantity <= 5 ? (
+  <Text
+    style={{
+      backgroundColor: '#FFA500', // bright orange
+      // paddingVertical: 6,
+      paddingHorizontal: 6,
+      margin: 5,
+      alignSelf: 'flex-start',
+      borderRadius: 12,
+      fontWeight: '600',
+      fontSize: 14,
+      color: '#fff',
+      textShadowColor: 'rgba(0, 0, 0, 0.2)',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 2,
+      overflow: 'hidden',
+    }}
+  >
+    {item.quantity} item{item.quantity > 1 ? 's' : ''} left
+  </Text>
+) : <Text></Text>}
+
+<Text  style={{
+      backgroundColor: 'red', // bright orange
+      // paddingVertical: 6,
+      paddingHorizontal: 6,
+      margin: 5,
+      alignSelf: 'flex-end',
+      // borderRadius: 12,
+      fontWeight: '600',
+      fontSize: 14,
+      color: '#fff',
+      textShadowColor: 'rgba(0, 0, 0, 0.2)',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 2,
+      overflow: 'hidden',
+    }}>{item.savePercentage} % Off</Text>
+ </View>
+  <Image
           source={{ uri: item.itemImage }}
           style={styles.image}
           resizeMode="contain"
         />
-        <Text style={styles.title}>{item.itemName}</Text>
-        <Text style={styles.price}>₹{item.itemPrice}</Text>
+        <Text style={styles.title}> {item.itemName}</Text>
+        <Text style={styles.price}><Text style={{ textDecorationLine: 'line-through', color: '#888' }}>₹{item.itemMrp}</Text> ₹{item.itemPrice}</Text>
         <Text style={styles.weight}>
           {item.weight} {item.units}
         </Text>
@@ -556,12 +616,23 @@ const AllCategories = ({ route, navigation }) => {
               </TouchableOpacity>
             </>
           ) : (
+            <>
+            {item.quantity != 0 ? (
             <TouchableOpacity
               style={[styles.addButton, { backgroundColor: "#4A90E2" }]}
               onPress={() => openQuantityModal(item)}
             >
               <Text style={styles.addButtonText}>Add</Text>
             </TouchableOpacity>
+            ):
+             <View
+              style={[styles.addButton, { backgroundColor: "#c0c0c0" }]}
+              // onPress={() => openQuantityModal(item)}
+            >
+              <Text style={styles.addButtonText}>Out of Stock</Text>
+            </View>
+            }
+            </>
           )
         ) : (
           <>
@@ -612,6 +683,7 @@ const AllCategories = ({ route, navigation }) => {
             )}
           </>
         )}
+      
       </View>
     );
   };
@@ -815,6 +887,14 @@ const AllCategories = ({ route, navigation }) => {
           </View>
         </View>
       )}
+       { comboOffers && (
+        <OfferModal
+        visible={offerShow}
+        comboOffers={comboOffers}
+        onClose={() => setOfferShow(false)}
+        customerId={customerId}
+      />
+       )}
     </View>
   );
 };

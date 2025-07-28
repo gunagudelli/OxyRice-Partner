@@ -12,6 +12,7 @@ import {
   Pressable,
   Linking,
   ActivityIndicator,
+  ActivityIndicatorBase,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -38,6 +39,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
   const [placedLoader, setPlacedLoader] = useState(false);
   const customerId = route.params.MarketDetails?.userId;
   //   const customerId = "939d875f-af3e-4292-b45e-5ade22366428";
+  const [quantityLoader, setQuantityLoader] = useState(false);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [qrCode, setQrCode] = useState("");
   const [qrShowModal, setQrShowModal] = useState(false);
@@ -118,18 +120,23 @@ const ProceedtoCheckout = ({ route, navigation }) => {
   }
 
   const handleIncrement = (item) => {
+    setQuantityLoader(true);
     axios
       .post(`${BASE_URL}cart-service/cart/addAndIncrementCart`, {
         itemId: item.itemId,
         customerId: customerId,
       })
       .then((response) => {
-        console.log(response), getCartDetails();
+        console.log(response), setQuantityLoader(false), getCartDetails();
       })
-      .catch((err) => console.log("Increment Error", err.response));
+      .catch((err) => {
+        console.log("Increment Error", err.response), setQuantityLoader(false);
+      });
   };
 
   const handleDecrement = (item) => {
+    setQuantityLoader(true);
+
     console.log({ item });
     axios
       .patch(`${BASE_URL}cart-service/cart/minusCartItem`, {
@@ -138,8 +145,11 @@ const ProceedtoCheckout = ({ route, navigation }) => {
       })
       .then((response) => {
         console.log(response), getCartDetails();
+        setQuantityLoader(false);
       })
-      .catch((err) => console.log("Decrement Error", err));
+      .catch((err) => {
+        console.log("Decrement Error", err), setQuantityLoader(false);
+      });
   };
 
   const handleRemove = (item) => {
@@ -203,25 +213,28 @@ const ProceedtoCheckout = ({ route, navigation }) => {
   };
 
   function handleRemoveOfflineItem(item) {
-    Alert.alert('Confirmation', 'Are you sure you want to remove this item?', [{
-      text: 'No',
-      style: 'cancel',
-    },
-    {
-      text: 'Yes',
-      onPress: () =>   axios({
-      method: "delete",
-      url: `${BASE_URL}user-service/deleteOfflineItem/${item.offlineUserItemsId}`,
-    })
-      .then((response) => {
-        console.log("Offline Item Removed:", response.data);
-        getCartOfflineDetails();
-      })
-      .catch((error) => {
-        console.error("Error removing offline item:", error);
-        Alert.alert("Error", "Failed to remove item. Please try again.");
-      }),
-    }])
+    Alert.alert("Confirmation", "Are you sure you want to remove this item?", [
+      {
+        text: "No",
+        style: "cancel",
+      },
+      {
+        text: "Yes",
+        onPress: () =>
+          axios({
+            method: "delete",
+            url: `${BASE_URL}user-service/deleteOfflineItem/${item.offlineUserItemsId}`,
+          })
+            .then((response) => {
+              console.log("Offline Item Removed:", response.data);
+              getCartOfflineDetails();
+            })
+            .catch((error) => {
+              console.error("Error removing offline item:", error);
+              Alert.alert("Error", "Failed to remove item. Please try again.");
+            }),
+      },
+    ]);
   }
 
   const applyCouponfunc = () => {
@@ -273,14 +286,17 @@ const ProceedtoCheckout = ({ route, navigation }) => {
       type: AddOrMinusItem,
       userOfflineOrdersId: customerId, // pass from route or state
     };
+    setQuantityLoader(true);
     axios
       .post(`${BASE_URL}user-service/addOrMinusOfflineItems`, data)
       .then((res) => {
         console.log("Updated:", res);
+        setQuantityLoader(false);
         Alert.alert("Success", `Item quantity updated successfully!`);
         getCartOfflineDetails();
       })
       .catch((err) => {
+        setQuantityLoader(false);
         console.error("Error updating offline item:", err);
         Alert.alert(
           "Error",
@@ -295,7 +311,27 @@ const ProceedtoCheckout = ({ route, navigation }) => {
       <>
         {route.params?.MarketDetails.type == "ONLINE" ? (
           <View style={styles.itemContainer}>
-            <Image source={{ uri: item.image }} style={styles.itemImage} />
+            <View>
+              <Image source={{ uri: item.image }} style={styles.itemImage} />
+              {item.status != "ADD" ? (
+                <Text
+                  style={{
+                    backgroundColor: "#b7950b",
+                    paddingVertical: 4,
+                    paddingHorizontal: 8,
+                    borderRadius: 5,
+                    color: "#fff",
+                    marginTop: 5,
+                    textAlign: "center",
+                    fontWeight: "bold",
+                    fontSize: 12,
+                    width: width * 0.15,
+                  }}
+                >
+                  {item.status}
+                </Text>
+              ) : null}
+            </View>
             <View style={styles.itemDetails}>
               <View
                 style={{
@@ -311,21 +347,85 @@ const ProceedtoCheckout = ({ route, navigation }) => {
               <Text style={styles.itemWeight}>
                 Weight: {item.weight} {item.weight == 1 ? "Kg" : "Kgs"}
               </Text>
-              <Text style={styles.itemPrice}>Price: ₹{item.totalPrice}</Text>
+              <Text style={styles.itemPrice}>
+                Price:{" "}
+                <Text
+                  style={{ textDecorationLine: "line-through", color: "#888" }}
+                >
+                  ₹{item.priceMrp}
+                </Text>{" "}
+                ₹{item.totalPrice}
+              </Text>{" "}
               <View style={styles.quantityRow}>
-                <TouchableOpacity
-                  onPress={() => handleDecrement(item)}
-                  style={styles.iconButton}
-                >
-                  <Text style={styles.iconText}>-</Text>
-                </TouchableOpacity>
+                {item.status == "ADD" ? (
+                  <>
+                    {quantityLoader == false ? (
+                      <TouchableOpacity
+                        onPress={() => handleDecrement(item)}
+                        style={[
+                          styles.iconButton,
+                          { backgroundColor: "orange" },
+                        ]}
+                      >
+                        <Text style={styles.iconText}>-</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View
+                        style={[
+                          styles.iconButton,
+                          { backgroundColor: "orange" },
+                        ]}
+                      >
+                        <ActivityIndicator
+                          size={"small"}
+                          color="white"
+                          loading={quantityLoader}
+                        />
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <View
+                    style={[styles.iconButton, { backgroundColor: "#c0c0c0" }]}
+                  >
+                    <Text style={styles.iconText}>-</Text>
+                  </View>
+                )}
                 <Text style={styles.itemQuantity}>{item.cartQuantity}</Text>
-                <TouchableOpacity
-                  onPress={() => handleIncrement(item)}
-                  style={styles.iconButton}
-                >
-                  <Text style={styles.iconText}>+</Text>
-                </TouchableOpacity>
+                {item.status == "ADD" ? (
+                  <>
+                    {quantityLoader == false ? (
+                      <TouchableOpacity
+                        onPress={() => handleIncrement(item)}
+                        style={[
+                          styles.iconButton,
+                          { backgroundColor: "#50C878" },
+                        ]}
+                      >
+                        <Text style={styles.iconText}>+</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View
+                        style={[
+                          styles.iconButton,
+                          { backgroundColor: "#50C878" },
+                        ]}
+                      >
+                        <ActivityIndicator
+                          size={"small"}
+                          color="white"
+                          loading={quantityLoader}
+                        />
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <View
+                    style={[styles.iconButton, { backgroundColor: "#c0c0c0" }]}
+                  >
+                    <Text style={styles.iconText}>+</Text>
+                  </View>
+                )}
               </View>
             </View>
           </View>
@@ -349,27 +449,54 @@ const ProceedtoCheckout = ({ route, navigation }) => {
               </Text>
               <Text style={styles.itemPrice}>Price: ₹{item.price}</Text>
               <View style={styles.quantityRow}>
-                <TouchableOpacity
-                  onPress={() => {
-                    route.params.MarketDetails.type == "ONLINE"
-                      ? handleDecrement(item)
-                      : addorminusOfflineItem(item, "MINUS");
-                  }}
-                  style={styles.iconButton}
-                >
-                  <Text style={styles.iconText}>-</Text>
-                </TouchableOpacity>
+                <>
+                  {quantityLoader == false ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        route.params.MarketDetails.type == "ONLINE"
+                          ? handleDecrement(item)
+                          : addorminusOfflineItem(item, "MINUS");
+                      }}
+                      style={[styles.iconButton, { backgroundColor: "orange" }]}
+                    >
+                      <Text style={styles.iconText}>-</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View
+                      style={[styles.iconButton, { backgroundColor: "orange" }]}
+                    >
+                      <ActivityIndicator
+                        size={"small"}
+                        color="white"
+                        loading={quantityLoader}
+                      />
+                    </View>
+                  )}
+                </>
                 <Text style={styles.itemQuantity}>Quantity : {item.qty}</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    route.params.MarketDetails.type == "ONLINE"
-                      ? handleIncrement(item)
-                      : addorminusOfflineItem(item, "ADD");
-                  }}
-                  style={styles.iconButton}
-                >
-                  <Text style={styles.iconText}>+</Text>
-                </TouchableOpacity>
+                <>
+                  {quantityLoader == false ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        route.params.MarketDetails.type == "ONLINE"
+                          ? handleIncrement(item)
+                          : addorminusOfflineItem(item, "ADD");
+                      }}
+                      style={[
+                        styles.iconButton,
+                        { backgroundColor: "#50C878" },
+                      ]}
+                    >
+                      <Text style={styles.iconText}>+</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <ActivityIndicator
+                      size={"small"}
+                      color="white"
+                      loading={quantityLoader}
+                    />
+                  )}
+                </>
               </View>
             </View>
           </View>
@@ -443,13 +570,19 @@ const ProceedtoCheckout = ({ route, navigation }) => {
           .then((res) => {
             console.log("Order Placed:", res.data);
             if (selectedPaymentMode == "COD") {
-              Alert.alert("Order Placed", `Order Placed Successfully!,Order Id is ${res.data.orderId.slice(-4)}`, [
-                {
-                  text: "OK",
-                  onPress: () => navigation.navigate("Market Visits"),
-                },
-              ]);
-                setPlacedLoader(false);
+              Alert.alert(
+                "Order Placed",
+                `Order Placed Successfully!,Order Id is ${res.data.orderId.slice(
+                  -4
+                )}`,
+                [
+                  {
+                    text: "OK",
+                    onPress: () => navigation.navigate("Market Visits"),
+                  },
+                ]
+              );
+              setPlacedLoader(false);
             } else {
               setTransactionId(res.data.paymentId);
               paymentInitiation();
@@ -466,7 +599,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
         Alert.alert("Unable to fetch location", "Please check the address");
       }
     } catch (error) {
-        setPlacedLoader(false);
+      setPlacedLoader(false);
       console.log("Geocode API Error:", error || error);
       Alert.alert("Error", "Failed to get coordinates");
     }
@@ -477,9 +610,9 @@ const ProceedtoCheckout = ({ route, navigation }) => {
       var data = {
         paidAmount: cartData?.overalAmt - couponValue,
         paymentType: selectedPaymentMode == "COD" ? "COD" : "ONLINE",
-          totalGst: gstValue,
-          totalPrice: cartData?.overalAmt - couponValue,
-          totalQty: cartData?.totalCount,
+        totalGst: gstValue,
+        totalPrice: cartData?.overalAmt - couponValue,
+        totalQty: cartData?.totalCount,
         userOfflineOrdersId: customerId,
       };
     } else {
@@ -488,7 +621,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
         userOfflineOrdersId: customerId,
       };
     }
-        setPlacedLoader(true)
+    setPlacedLoader(true);
 
     console.log({ data });
     axios({
@@ -497,15 +630,18 @@ const ProceedtoCheckout = ({ route, navigation }) => {
       data: data,
     })
       .then((response) => {
-        console.log("response", response.data);
+        console.log("response offlinePayments", response.data);
         if (selectedPaymentMode == "COD") {
           Alert.alert("Order Placed", "Order Placed Successfully!", [
             {
               text: "OK",
-              onPress: () => navigation.navigate("Market Visits"),
+              onPress: () => {
+                navigation.navigate("Market Visits"),
+                  setPlacedLoader(false),
+                  setPaymentModalVisible(false);
+              },
             },
           ]);
-          setPlacedLoader(false)
         } else {
           setTransactionId(response.data);
           paymentInitiation();
@@ -513,7 +649,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
       })
       .catch((error) => {
         console.log("Error in Offline Payment:", error.response);
-        setPlacedLoader(false)
+        setPlacedLoader(false);
       });
   };
 
@@ -533,12 +669,13 @@ const ProceedtoCheckout = ({ route, navigation }) => {
   }, [paymentStatus, paymentId]);
 
   const paymentInitiation = () => {
-    setPlacedLoader(true)
+    setPlacedLoader(true);
     const data = {
       mid: "1152305",
-      amount: route.params.MarketDetails.type == "ONLINE"
-                ? cartData?.amountToPay - couponValue
-                : cartData?.overalAmt - couponValue,
+      amount:
+        route.params.MarketDetails.type == "ONLINE"
+          ? cartData?.amountToPay - couponValue
+          : cartData?.overalAmt - couponValue,
       // amount: 1,
       merchantTransactionId: transactionId,
       transactionDate: new Date(),
@@ -617,8 +754,9 @@ const ProceedtoCheckout = ({ route, navigation }) => {
           "Cart Summary",
           `The total amount for your cart is ₹${
             route.params.MarketDetails.type == "ONLINE"
-                ? cartData?.amountToPay - couponValue
-                : cartData?.overalAmt - couponValue}. Please proceed to checkout to complete your purchase.`,
+              ? cartData?.amountToPay - couponValue
+              : cartData?.overalAmt - couponValue
+          }. Please proceed to checkout to complete your purchase.`,
           [
             {
               text: "No",
@@ -773,7 +911,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
                     "Order Placed with Payment API:",
                     secondResponse.data
                   );
-                  setPlacedLoader(false)
+                  setPlacedLoader(false);
                   Alert.alert("Order Confirmed!", "Order Placed Successfully", [
                     {
                       text: "OK",
@@ -789,7 +927,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
                   setLoading(false);
                 });
             } else {
-                          setPlacedLoader(false)
+              setPlacedLoader(false);
 
               setLoading(false);
             }
@@ -887,7 +1025,10 @@ const ProceedtoCheckout = ({ route, navigation }) => {
             </Text>
 
             <Text style={styles.summaryText}>
-              Discounted by Free Items: ₹{cartData.discountedByFreeItems>0? cartData.discountedByFreeItems :0}
+              Discounted by Free Items: ₹
+              {cartData.discountedByFreeItems > 0
+                ? cartData.discountedByFreeItems
+                : 0}
             </Text>
 
             {couponValue > 0 ? (
@@ -915,7 +1056,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
               onPress={() => setPaymentModalVisible(true)}
               style={styles.payButton}
             >
-              Pay ₹
+              Continue ₹
               {route.params.MarketDetails.type == "ONLINE"
                 ? cartData?.amountToPay - couponValue
                 : cartData?.overalAmt - couponValue}
@@ -1000,7 +1141,7 @@ const ProceedtoCheckout = ({ route, navigation }) => {
               value={pincode}
               onChangeText={(number) => setPincode(number)}
               style={styles.input}
-              keyboardType="number"
+              keyboardType="numeric"
               mode="outlined"
               dense={true}
               maxLength={6}
@@ -1029,39 +1170,68 @@ const ProceedtoCheckout = ({ route, navigation }) => {
               </TouchableOpacity>
             </View>
 
-            {placedLoader == false ? (
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 10,
+              }}
+            >
               <>
-                <Pressable
-                  onPress={() => {
-                    setPaymentModalVisible(false);
-                    {
-                      route.params.MarketDetails.type == "ONLINE"
-                        ? RegisteredUserPaymentfunc()
-                        : OfflineUserPaymentfunc();
-                    }
-                    // console.log("Pay Now:", {
-                    //   mode: selectedPaymentMode,
-                    //   amount: cartData?.amountToPay,
-                    // });
-                  }}
-                  style={styles.modalPayButton}
+                <TouchableOpacity
+                  style={[
+                    styles.modalPayButton,
+                    { backgroundColor: "#c0c0c0" },
+                  ]}
+                  onPress={() => setPaymentModalVisible(false)}
                 >
-                  <Text style={styles.payButtonText}>
-                    Pay ₹
-                    {route.params.MarketDetails.type == "ONLINE"
-                      ? cartData?.amountToPay - couponValue
-                      : cartData?.overalAmt - couponValue}
-                  </Text>
-                </Pressable>
+                  <Text style={{ fontWeight: "bold" }}>Cancel</Text>
+                </TouchableOpacity>
               </>
-            ) : (
-              <View style={styles.modalPayButton}>
-                <Text style={styles.payButtonText}>
-                  Pay ₹{couponValue == "" ? cartData?.amountToPay : total}{" "}
-                  <ActivityIndicator size="small" color="#fff" />
-                </Text>
-              </View>
-            )}
+              <>
+                {placedLoader == false ? (
+                  <>
+                    <Pressable
+                      onPress={() => {
+                        // setPaymentModalVisible(false);
+                        {
+                          route.params.MarketDetails.type == "ONLINE"
+                            ? RegisteredUserPaymentfunc()
+                            : OfflineUserPaymentfunc();
+                        }
+                        // console.log("Pay Now:", {
+                        //   mode: selectedPaymentMode,
+                        //   amount: cartData?.amountToPay,
+                        // });
+                      }}
+                      style={[
+                        styles.modalPayButton,
+                        { backgroundColor: "#007AFF" },
+                      ]}
+                    >
+                      <Text style={styles.payButtonText}>
+                        Pay ₹
+                        {route.params.MarketDetails.type == "ONLINE"
+                          ? cartData?.amountToPay - couponValue
+                          : cartData?.overalAmt - couponValue}
+                      </Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <View
+                    style={[
+                      styles.modalPayButton,
+                      { backgroundColor: "#007AFF" },
+                    ]}
+                  >
+                    <Text style={styles.payButtonText}>
+                      Pay ₹{couponValue == "" ? cartData?.amountToPay : total}{" "}
+                      <ActivityIndicator size="small" color="#fff" />
+                    </Text>
+                  </View>
+                )}
+              </>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1122,6 +1292,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 4,
+    width: width * 0.5,
   },
   itemWeight: {
     fontSize: 14,
@@ -1148,11 +1319,14 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   iconButton: {
-    padding: 6,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 4,
+    // padding: 6,
+    // borderWidth: 1,
+    // borderColor: "#ccc",
+    height: 25,
+    width: 25,
+    borderRadius: 100,
     marginHorizontal: 8,
+    alignItems: "center",
   },
   iconText: {
     fontSize: 18,
@@ -1281,11 +1455,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   modalPayButton: {
-    marginTop: 20,
-    backgroundColor: "#007AFF",
+    // marginTop: 20,
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 8,
+    marginHorizontal: 10,
   },
   payButtonText: {
     color: "#fff",

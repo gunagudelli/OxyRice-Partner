@@ -68,6 +68,8 @@ import allReducers from "./Redux/reducers";
 import OrdersReport from "./src/Orders/OrdersReport";
 import OrderStats from "./src/Orders/OrderStats";
 import PinCodeWiseOrders from "./src/Orders/PinCodeWiseOrders";
+import { Marker } from "react-native-svg";
+import MarketList from "./src/Orders/Market/MarketList";
 
 const Stack = createNativeStackNavigator();
 const store = createStore(allReducers);
@@ -165,6 +167,8 @@ export default function App() {
           <Stack.Screen name="PaymentStatus" component={PaymentStatusScreen} />
           <Stack.Screen name="ImageUploader" component={ImageUploader} />
           <Stack.Screen name="Add Store" component={AddstoreScreen} />
+                    <Stack.Screen name="Market List" component={MarketList} />
+
           <Stack.Screen name="Store Details" component={StoreDetailsScreen} options={{
               headerShown: true,
               headerRight: () => <Logout />,

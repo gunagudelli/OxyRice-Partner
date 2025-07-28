@@ -1076,7 +1076,7 @@ const OrderDetails = ({ route }) => {
         </Text>
         <Text style={styles.label}>
           DELIVERY FEE :{" "}
-          <Text style={styles.value}>Rs :{orderData?.deliveryfee || 0}</Text>
+          <Text style={styles.value}>Rs +{orderData?.deliveryFee || 0}</Text>
         </Text>
 
         {/* Show GST only if it's greater than zero */}

@@ -328,6 +328,13 @@ if (exchangeOrdersResponse.status === "fulfilled") {
           color: "#00BCD4",
           onPress: () => navigation.navigate("User Queries"),
         },
+        {
+          id: 5,
+          title: "Market Details",
+          icon: "chatbubbles-outline",
+          color: "orange",
+          onPress: () => navigation.navigate("Market List"),
+        },
       ],
       scanActions: [
         {

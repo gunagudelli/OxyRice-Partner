@@ -164,9 +164,10 @@ Alert.alert('Sorry', error.response.data.message || "Failed to register user");
           // getOfflineUserId()
         })
         .catch((error) => {
-          setFormData({...formData, loader:false})
           console.log("Error in offlineRegistration:", error.response);
           Alert.alert("Error", error.response.data.error || "Failed to register user");
+                    setFormData({...formData, loader:false})
+
           // Alert.alert("Success", "User Registered Successfully", [
           //   {
           //     text: "OK",
