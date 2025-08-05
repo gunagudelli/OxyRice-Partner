@@ -171,7 +171,7 @@ const isTodayItemAdded = (listItems = []) => {
           <Text style={styles.primaryButtonText}>Add market items</Text>
         </TouchableOpacity>
 
-         <TouchableOpacity
+         {/* <TouchableOpacity
           style={[styles.visitButton,  {
       backgroundColor: isTodayItemAdded(item.listItems) ? '#e76cf1' : '#d3d3d3',
       marginRight:5,
@@ -182,7 +182,7 @@ const isTodayItemAdded = (listItems = []) => {
           onPress={() => navigation.navigate('All Categories', { MarketDetails: item,type:"EODReport" })}
         >
           <Text style={[styles.primaryButtonText, { color: isTodayItemAdded(item.listItems) ? '#fff' : '#000' }]}>EOD Report</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
        <TouchableOpacity
   style={[

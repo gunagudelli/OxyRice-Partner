@@ -71,6 +71,8 @@ import PinCodeWiseOrders from "./src/Orders/PinCodeWiseOrders";
 import { Marker } from "react-native-svg";
 import MarketList from "./src/Orders/Market/MarketList";
 
+import VehicleDetails from "./src/Vehicle/VehicleDetails";
+import VehiclesList from "./src/Vehicle/VehiclesList";
 const Stack = createNativeStackNavigator();
 const store = createStore(allReducers);
 
@@ -80,8 +82,8 @@ export default function App() {
       <NetworkAlert />
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="App Update"
-          // initialRouteName='Address Book'
+          // initialRouteName="App Update"
+          initialRouteName='Vehicle Details'
           // initialRouteName="LoginWithPassword"
           screenOptions={{
             headerStyle: {
@@ -159,6 +161,7 @@ export default function App() {
             name="Delivery Boy Orders"
             component={AssignedAndDelivered}
           />
+
           <Stack.Screen name="All Orders" component={AllOrders} />
           <Stack.Screen name="Split Bags" component={SplitBags} />
           <Stack.Screen name="All Split Bags" component={AllSplitBags} />
@@ -187,6 +190,8 @@ export default function App() {
               headerTintColor: "white", // icon/text color
             }}
           /> */}
+          <Stack.Screen name="Vehicles List" component={VehiclesList} />
+<Stack.Screen name="Vehicle Details" component={VehicleDetails} />
 
           <Stack.Screen name="Store Orders" component={PlacedOrdersScreen} />
           <Stack.Screen name="Checkout" component={Checkout} />

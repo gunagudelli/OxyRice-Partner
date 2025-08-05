@@ -460,13 +460,13 @@ if (exchangeOrdersResponse.status === "fulfilled") {
         color: "#673AB7",
         onPress: () => navigation.navigate("Delivery Boys"),
       },
-      // {
-      //   id: 2,
-      //   title: "User Queries",
-      //   icon: "chatbubbles-outline",
-      //   color: "#00BCD4",
-      //   onPress: () => navigation.navigate("User Queries"),
-      // },
+      {
+        id: 2,
+        title: "Vehicle List",
+        icon: "car-sport-outline",
+        color: "#00BCD4",
+        onPress: () => navigation.navigate("Vehicles List"),
+      },
       // {
       //   id: 3,
       //   title: "Customer Feedback",

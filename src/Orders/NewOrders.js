@@ -93,8 +93,6 @@ const [addressDetails, setAddressDetails] = useState({
   }));
 
 
-
-
    useEffect(() => {
     const fetchAreaByPincode = async () => {
       if (addressDetails.pincode.length === 6) {

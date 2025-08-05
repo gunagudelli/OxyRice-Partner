@@ -101,27 +101,25 @@ const LoginWithPassword = () => {
 
     setFormData({ ...formData, loading: true });
 
-    try {
       // Check if the endpoint is correct - this is where the error is happening
-      const loginUrl = `${BASE_URL}user-service/userEmailPassword`;
 
-      const response = await axios({
+     axios({
         method: "post",
-        url: loginUrl,
+        url: `${BASE_URL}user-service/userEmailPassword`,
         data: {
           email: formData.email,
           password: formData.password,
         },
-        timeout: 10000, // Set a timeout
-      });
+      })
+.then((response) => {
 
-      console.log("Login response:", response.data);
+      console.log("Login response:", response);
 
       if (response.data && response.data.accessToken) {
         dispatch(AccessToken(response.data));
         dispatch(UserID("Live"));
-        await AsyncStorage.setItem("userData", JSON.stringify(response.data));
-        const isSeller = response.data.primaryType === "SELLER";
+         AsyncStorage.setItem("userData", JSON.stringify(response.data));
+    setFormData({ ...formData, loading: false });
 
         // Show success greeting popup
         Alert.alert(
@@ -146,41 +144,14 @@ const LoginWithPassword = () => {
       } else {
         Alert.alert("Login Failed", "Invalid credentials or server error");
       }
-    } catch (error) {
-      console.log("Login error details:", error);
-
-      // Handle specific error cases
-      if (error.response) {
-        // The server responded with a status code outside the 2xx range
-        console.log("Error response data:", error.response.data);
-        console.log("Error response status:", error.response.status);
-
-        if (error.response.status === 500) {
-          Alert.alert(
-            "Server Error",
-            "The server encountered an internal error. Please try again later or contact support."
-          );
-        } else {
-          Alert.alert(
-            "Login Failed",
-            error.response.data?.message ||
-              "Unable to log in. Please check your credentials."
-          );
-        }
-      } else if (error.request) {
-        // The request was made but no response was received
-        Alert.alert(
-          "Connection Error",
-          "Unable to connect to the server. Please check your internet connection."
-        );
-      } else {
-        // Something happened in setting up the request
-        Alert.alert("Error", "An unexpected error occurred. Please try again.");
-      }
-    } finally {
+      })
+    .catch((error) => {
+      console.error("Login error:", error);
       setFormData({ ...formData, loading: false });
-    }
-  };
+      Alert.alert("Login Failed", "Invalid credentials or server error");
+    })
+  
+  }
 
   return (
     <KeyboardAvoidingView
