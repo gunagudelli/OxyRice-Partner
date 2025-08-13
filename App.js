@@ -73,6 +73,9 @@ import MarketList from "./src/Orders/Market/MarketList";
 
 import VehicleDetails from "./src/Vehicle/VehicleDetails";
 import VehiclesList from "./src/Vehicle/VehiclesList";
+import MyFuelReport from "./src/Vehicle/FuelDetails";
+
+
 const Stack = createNativeStackNavigator();
 const store = createStore(allReducers);
 
@@ -82,8 +85,8 @@ export default function App() {
       <NetworkAlert />
       <NavigationContainer>
         <Stack.Navigator
-          // initialRouteName="App Update"
-          initialRouteName='Vehicle Details'
+          initialRouteName="App Update"
+          // initialRouteName='Vehicle Details'
           // initialRouteName="LoginWithPassword"
           screenOptions={{
             headerStyle: {
@@ -192,6 +195,7 @@ export default function App() {
           /> */}
           <Stack.Screen name="Vehicles List" component={VehiclesList} />
 <Stack.Screen name="Vehicle Details" component={VehicleDetails} />
+<Stack.Screen name="Fuel Reports" component={MyFuelReport} />
 
           <Stack.Screen name="Store Orders" component={PlacedOrdersScreen} />
           <Stack.Screen name="Checkout" component={Checkout} />

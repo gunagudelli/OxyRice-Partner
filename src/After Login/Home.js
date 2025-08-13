@@ -467,13 +467,13 @@ if (exchangeOrdersResponse.status === "fulfilled") {
         color: "#00BCD4",
         onPress: () => navigation.navigate("Vehicles List"),
       },
-      // {
-      //   id: 3,
-      //   title: "Customer Feedback",
-      //   icon: "star-outline",
-      //   color: "#FFC107",
-      //   onPress: () => navigation.navigate("Customer Feedback"),
-      // },
+      {
+        id: 3,
+        title: "Fuel Details",
+        icon: "gas-outline",
+        color: "#FFC107",
+        onPress: () => navigation.navigate("Fuel Reports"),
+      },
       // {
       //   id: 4,
       //   title: "Payment Method Status",
